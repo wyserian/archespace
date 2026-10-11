@@ -25,7 +25,7 @@ import MfaSettings from '../components/MfaSettings'
 import { validateVaultPin, getWeakPinWarning } from '../lib/crypto/vaultPin'
 import WeakPinWarning from '../components/WeakPinWarning'
 import { VAULT_PIN_MIN_LENGTH, VAULT_AUTO_LOCK_OPTIONS } from '../lib/constants'
-import { PASSWORD_RULES, validatePassword } from '../lib/passwordPolicy'
+import { validatePassword } from '../lib/passwordPolicy'
 import { logAudit } from '../lib/auditLog'
 import { APP_VERSION, COMMIT_URL } from '../lib/buildInfo'
 import { isLocalMode, leaveLocalMode, LOCAL_USER } from '../lib/localMode'
@@ -626,7 +626,6 @@ export default function SettingsPage() {
                           value={newPassword}
                           onChange={e => setNewPassword(e.target.value)}
                           required
-                          minLength={PASSWORD_RULES.minLength}
                           autoComplete="new-password"
                           className={`password-field ${inputClass}`}
                         />

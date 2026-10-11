@@ -4,10 +4,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { buttonClass } from '../components/ui/buttonStyles'
-import { ArrowLeft, Check, Eye, EyeOff, KeyRound, Sparkles } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, KeyRound, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContextCore'
 import { useTheme } from '../context/ThemeCore'
-import { PASSWORD_RULES, validatePassword } from '../lib/passwordPolicy'
+import { validatePassword } from '../lib/passwordPolicy'
 import { logAudit } from '../lib/auditLog'
 import { useRouteMeta } from '../hooks/useRouteMeta'
 import { Spinner } from '../components/ui/UI'
@@ -32,14 +32,6 @@ export default function PasswordResetPage() {
   }
   const currentThemeName = themeModes.find(option => option.id === themeMode)?.name || 'Theme'
 
-  // Requirements and the match, checked as the user types.
-  const passwordChecks = [
-    { label: `At least ${PASSWORD_RULES.minLength} characters`, ok: password.length >= PASSWORD_RULES.minLength },
-    { label: 'An uppercase letter', ok: /[A-Z]/.test(password) },
-    { label: 'A lowercase letter', ok: /[a-z]/.test(password) },
-    { label: 'A number', ok: /\d/.test(password) },
-  ]
-  const confirmMatches = confirmPassword.length > 0 && password === confirmPassword
   const canSubmit = Boolean(password && confirmPassword)
 
   const handleSubmit = async (e) => {
@@ -124,7 +116,6 @@ export default function PasswordResetPage() {
                     onBlur={() => setCapsLock(false)}
                     required
                     autoFocus
-                    minLength={PASSWORD_RULES.minLength}
                     autoComplete="new-password"
                     className="password-field w-full bg-bg-elevated border border-bg-border rounded-xl px-4 py-3 pr-11 text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors text-sm"
                   />
@@ -140,23 +131,6 @@ export default function PasswordResetPage() {
                 {capsLock && (
                   <p className="mt-1.5 text-[11px] text-amber-400">Caps Lock is on</p>
                 )}
-                <ul className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
-                  {passwordChecks.map(check => (
-                    <li
-                      key={check.label}
-                      className={`flex items-center gap-1.5 text-[11px] transition-colors ${
-                        check.ok ? 'text-success' : 'text-text-muted'
-                      }`}
-                    >
-                      {check.ok ? (
-                        <Check size={12} className="shrink-0" />
-                      ) : (
-                        <span className="h-1 w-1 shrink-0 rounded-full bg-current opacity-60" />
-                      )}
-                      {check.label}
-                    </li>
-                  ))}
-                </ul>
               </div>
 
               <div>
@@ -170,16 +144,6 @@ export default function PasswordResetPage() {
                   autoComplete="new-password"
                   className="password-field w-full bg-bg-elevated border border-bg-border rounded-xl px-4 py-3 text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors text-sm"
                 />
-                {confirmPassword.length > 0 && (
-                  <p
-                    className={`mt-1.5 flex items-center gap-1.5 text-[11px] ${
-                      confirmMatches ? 'text-success' : 'text-danger'
-                    }`}
-                  >
-                    {confirmMatches ? <Check size={12} /> : null}
-                    {confirmMatches ? 'Passwords match' : 'Passwords do not match'}
-                  </p>
-                )}
               </div>
 
               {error && (

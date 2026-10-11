@@ -1,30 +1,35 @@
 /**
- * passwordPolicy.js - Login password strength validation.
+ * passwordPolicy.js - Login password strength validation, checked on submit
+ * (the server enforces the same rules).
  */
 
-export const PASSWORD_RULES = {
+const PASSWORD_RULES = {
   minLength: 8,
   requireUppercase: true,
   requireLowercase: true,
   requireNumber: true,
-  requireSpecial: false,
+  requireSymbol: true,
 }
 
+// ASCII punctuation, the symbols Supabase Auth counts.
+const SYMBOL = /[!-/:-@[-`{-~]/
+
+/** "a", "a and b", "a, b and c". */
+function joinList(parts) {
+  return parts.length < 2 ? parts[0] : `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}`
+}
+
+/**
+ * One sentence naming everything the password still lacks ("Password needs
+ * at least 8 characters, a number and a symbol."), or null when it's fine.
+ */
 export function validatePassword(password) {
-  if (password.length < PASSWORD_RULES.minLength) {
-    return `Password must be at least ${PASSWORD_RULES.minLength} characters.`
-  }
-  if (PASSWORD_RULES.requireUppercase && !/[A-Z]/.test(password)) {
-    return 'Password must include at least one uppercase letter.'
-  }
-  if (PASSWORD_RULES.requireLowercase && !/[a-z]/.test(password)) {
-    return 'Password must include at least one lowercase letter.'
-  }
-  if (PASSWORD_RULES.requireNumber && !/\d/.test(password)) {
-    return 'Password must include at least one number.'
-  }
-  if (PASSWORD_RULES.requireSpecial && !/[^A-Za-z0-9]/.test(password)) {
-    return 'Password must include at least one special character.'
-  }
-  return null
+  const missing = [
+    password.length < PASSWORD_RULES.minLength && `at least ${PASSWORD_RULES.minLength} characters`,
+    PASSWORD_RULES.requireUppercase && !/[A-Z]/.test(password) && 'an uppercase letter',
+    PASSWORD_RULES.requireLowercase && !/[a-z]/.test(password) && 'a lowercase letter',
+    PASSWORD_RULES.requireNumber && !/\d/.test(password) && 'a number',
+    PASSWORD_RULES.requireSymbol && !SYMBOL.test(password) && 'a symbol',
+  ].filter(Boolean)
+  return missing.length ? `Password needs ${joinList(missing)}.` : null
 }

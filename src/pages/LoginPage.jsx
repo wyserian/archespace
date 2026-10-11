@@ -5,12 +5,12 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom'
 import { buttonClass } from '../components/ui/buttonStyles'
 import { useAuth } from '../context/AuthContextCore'
-import { Lock, Eye, EyeOff, UserPlus, Mail, ArrowLeft, Check, HardDrive } from 'lucide-react'
+import { Lock, Eye, EyeOff, UserPlus, Mail, ArrowLeft, HardDrive } from 'lucide-react'
 import { enterLocalMode } from '../lib/localMode'
 import { MAX_LOGIN_ATTEMPTS, LOGIN_ATTEMPT_WINDOW_MS, LOGIN_COOLDOWN_MS } from '../lib/constants'
 import { MULTI_USER_ENABLED } from '../lib/appConfig'
 import { TERMS_VERSION } from '../lib/legal'
-import { PASSWORD_RULES, validatePassword } from '../lib/passwordPolicy'
+import { validatePassword } from '../lib/passwordPolicy'
 import { logAudit } from '../lib/auditLog'
 import { setRememberMe } from '../lib/supabase'
 import { peekAuthRedirectError, clearAuthRedirectError } from '../lib/authRedirectError'
@@ -120,15 +120,6 @@ export default function LoginPage() {
 
   const isSignUp = pathMode === 'signup' && MULTI_USER_ENABLED
   const isForgot = forgot && pathMode === 'signin'
-
-  // Password requirements and the match, checked as the user types on sign-up.
-  const passwordChecks = [
-    { label: `At least ${PASSWORD_RULES.minLength} characters`, ok: password.length >= PASSWORD_RULES.minLength },
-    { label: 'An uppercase letter', ok: /[A-Z]/.test(password) },
-    { label: 'A lowercase letter', ok: /[a-z]/.test(password) },
-    { label: 'A number', ok: /\d/.test(password) },
-  ]
-  const confirmMatches = confirmPassword.length > 0 && password === confirmPassword
 
   // Keep the submit button disabled until the required fields are filled: email
   // for the reset flow, email + password (+ confirm on sign-up) otherwise.
@@ -362,7 +353,6 @@ export default function LoginPage() {
                   required
                   autoComplete={isSignUp ? 'new-password' : 'current-password'}
                   disabled={isCoolingDown}
-                  minLength={isSignUp ? PASSWORD_RULES.minLength : undefined}
                   className="password-field w-full bg-bg-elevated border border-bg-border rounded-xl px-4 py-3 pr-11 text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors text-sm disabled:opacity-50"
                 />
                 <button
@@ -376,25 +366,6 @@ export default function LoginPage() {
               </div>
               {capsLock && (
                 <p className="mt-1.5 text-[11px] text-amber-400">Caps Lock is on</p>
-              )}
-              {isSignUp && (
-                <ul className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
-                  {passwordChecks.map(check => (
-                    <li
-                      key={check.label}
-                      className={`flex items-center gap-1.5 text-[11px] transition-colors ${
-                        check.ok ? 'text-success' : 'text-text-muted'
-                      }`}
-                    >
-                      {check.ok ? (
-                        <Check size={12} className="shrink-0" />
-                      ) : (
-                        <span className="h-1 w-1 shrink-0 rounded-full bg-current opacity-60" />
-                      )}
-                      {check.label}
-                    </li>
-                  ))}
-                </ul>
               )}
               </div>
             )}
@@ -415,16 +386,6 @@ export default function LoginPage() {
                   autoComplete="new-password"
                   className="password-field w-full bg-bg-elevated border border-bg-border rounded-xl px-4 py-3 text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors text-sm"
                 />
-                {confirmPassword.length > 0 && (
-                  <p
-                    className={`mt-1.5 flex items-center gap-1.5 text-[11px] ${
-                      confirmMatches ? 'text-success' : 'text-danger'
-                    }`}
-                  >
-                    {confirmMatches ? <Check size={12} /> : null}
-                    {confirmMatches ? 'Passwords match' : 'Passwords do not match'}
-                  </p>
-                )}
               </div>
             )}
 
