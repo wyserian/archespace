@@ -196,6 +196,9 @@ const router = createBrowserRouter([
     children: [
       { path: '/login', element: <PublicRoute title="Sign in"><LoginPage /></PublicRoute> },
       { path: '/signup', element: <PublicRoute title="Create account"><LoginPage /></PublicRoute> },
+      // A sign-up link from the mobile app, opened where the app isn't
+      // installed: the session in the link signs in here instead.
+      { path: '/auth/mobile', element: <PublicRoute title="Sign in"><LoginPage /></PublicRoute> },
       { path: '/reset-password', element: <Suspense fallback={<PageLoader />}><PasswordResetPage /></Suspense> },
       { path: '/privacy', element: <LegalRoute title="Privacy Policy"><PrivacyPage /></LegalRoute> },
       { path: '/terms', element: <LegalRoute title="Terms of Service"><TermsPage /></LegalRoute> },

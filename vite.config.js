@@ -59,6 +59,7 @@ Disallow: /reminders
 Disallow: /archive
 Disallow: /recycle-bin
 Disallow: /login
+Disallow: /auth
 Disallow: /reset-password
 
 Sitemap: ${siteUrl}/sitemap.xml

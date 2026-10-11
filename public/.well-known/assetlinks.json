@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.archespace.mobile",
+      "sha256_cert_fingerprints": [
+        "5D:D2:83:78:32:93:75:F5:5E:23:8E:7B:A0:F2:42:BB:77:DA:AE:65:B9:0B:42:B5:6D:D0:76:2C:7A:82:6E:1B"
+      ]
+    }
+  }
+]
