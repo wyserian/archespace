@@ -1,8 +1,9 @@
 /**
  * pdfExport.js - Export a space or a single item to PDF, fully client-side,
  * using pdfmake. The PDF is generated directly (no browser print dialog), so we
- * fully control every page: a header with the export time (top-left) and the
- * site URL (top-right), and the page number at the bottom right. Content rendering mirrors the mobile export.
+ * fully control every page: the export time (top-left), the name (top-right),
+ * the site URL (bottom-left) and the page number (bottom-right). Content
+ * rendering mirrors the mobile export.
  */
 import { markdownToHtml } from '../components/editors/MarkdownPreview'
 import { sanitizeRichHtml } from './sanitizeHtml'
@@ -14,6 +15,8 @@ import { kanbanColumns } from './kanban'
 
 const SITE_URL = 'https://archespace.app/'
 const CHROME_COLOR = '#8a8a8a'
+// The mint accent's deeper shade, readable on white paper.
+const BRAND_ACCENT = '#0b7f64'
 // A4 content width (595.28pt) minus the 40pt side margins, for full-width rules.
 const CONTENT_WIDTH = 515
 
@@ -365,13 +368,22 @@ async function generate(filename, content) {
     header: () => ({
       margin: [40, 22, 40, 0],
       columns: [
-        { text: stamp, fontSize: 8, color: CHROME_COLOR, margin: [0, 3, 0, 0] },
-        { text: SITE_URL, fontSize: 8, color: CHROME_COLOR, alignment: 'right' },
+        { text: stamp, fontSize: 8, color: CHROME_COLOR, margin: [0, 1.5, 0, 0] },
+        // The name as on the site and in the emails: caps, ARCHE in the accent.
+        {
+          text: [{ text: 'ARCHE', color: BRAND_ACCENT }, 'SPACE'],
+          fontSize: 9.5,
+          bold: true,
+          characterSpacing: 0.3,
+          color: '#111111',
+          alignment: 'right',
+        },
       ],
     }),
     footer: (currentPage, pageCount) => ({
       margin: [40, 0, 40, 16],
       columns: [
+        { text: SITE_URL, fontSize: 8, color: CHROME_COLOR },
         { text: `${currentPage}/${pageCount}`, fontSize: 8, color: CHROME_COLOR, alignment: 'right' },
       ],
     }),
