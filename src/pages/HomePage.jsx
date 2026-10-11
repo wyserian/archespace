@@ -69,7 +69,7 @@ const navSections = [
 
 // Every feature worth knowing about, each in a line.
 const features = [
-  { icon: FolderTree, title: 'Spaces', desc: 'Group everything into spaces and sub-spaces, with colours, tags and pins.' },
+  { icon: FolderTree, title: 'Spaces', desc: 'Group everything into spaces with sub-spaces as deep as you like, with colours, tags and pins.' },
   { icon: Layers, title: 'Item types', desc: 'Notes, rich text, lists, checklists, cards, tables, Kanban boards, code and whiteboards; star, copy, duplicate or move any of them.' },
   { icon: Search, title: 'Search', desc: 'Find anything across all your spaces, and filter by tag.' },
   { icon: BellRing, title: 'Reminders', desc: 'Once, repeating, or until you turn them off, with notifications and a list of them all.' },

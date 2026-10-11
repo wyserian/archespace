@@ -7,6 +7,7 @@ import { useEncryption } from '../context/EncryptionCore'
 import { decryptSpaces, decryptItems } from '../lib/dataProtection'
 import { GLOBAL_SEARCH_RESULT_LIMIT } from '../lib/constants'
 import { queryKeys } from '../lib/queryKeys'
+import { spacePathLabel } from '../lib/spaceTree'
 
 export function useGlobalSearchData() {
   const { cryptoKey } = useEncryption()
@@ -18,7 +19,7 @@ export function useGlobalSearchData() {
       const [{ data: spaces, error: e1 }, { data: items, error: e2 }] = await Promise.all([
         supabase
           .from('spaces')
-          .select('id, name, description, tags, color, pinned')
+          .select('id, parent_id, name, description, tags, color, pinned')
           .is('deleted_at', null)
           .is('archived_at', null)
           .order('updated_at', { ascending: false })
@@ -37,11 +38,11 @@ export function useGlobalSearchData() {
       const decryptedCols = await decryptSpaces(spaces || [], cryptoKey)
       const decryptedItems = await decryptItems(items || [], cryptoKey)
 
-      const colMap = Object.fromEntries(decryptedCols.map(c => [c.id, c.name]))
-      // Items with no space live on the dashboard.
+      const spacesById = new Map(decryptedCols.map(c => [c.id, c]))
+      // Where each item lives: its space's path, or the dashboard.
       const itemMeta = Object.fromEntries(
         decryptedItems.map(i => [i.id, {
-          spaceName: i.space_id ? (colMap[i.space_id] || 'Unknown') : 'Dashboard',
+          spaceName: i.space_id ? (spacePathLabel(i.space_id, spacesById) || 'Unknown') : 'Dashboard',
         }])
       )
 

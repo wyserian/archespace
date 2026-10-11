@@ -12,6 +12,7 @@ import { saveRows, loadRows } from '../lib/offlineCache'
 import { setReachable, isNetworkError } from '../lib/connectivity'
 import { encryptSpace, decryptSpace, decryptSpaces } from '../lib/dataProtection'
 import { duplicateSpaceWithItems } from '../lib/spaceDuplicate'
+import { archiveSpaces, deleteSpaces } from '../lib/spaceLifecycle'
 import { invalidateSpaceCollections, invalidateSpaceList } from '../lib/queryInvalidation'
 import { queryKeys } from '../lib/queryKeys'
 import { setSpaceLocks, setSpaceLocked } from '../lib/itemLock'
@@ -208,21 +209,16 @@ export function useSpaces() {
     invalidate: () => qc.invalidateQueries({ queryKey: queryKeys.spaces() }),
   }))
 
-  // Sub-space ids of `ids`, from the loaded list (spaces nest one level).
-  const childIdsOf = (ids) => {
-    const set = new Set(ids)
-    return (query.data || []).filter(s => set.has(s.parent_id)).map(s => s.id)
-  }
+  // How many spaces share a parent (a copy goes after them).
+  const siblingCount = (parentId) =>
+    (query.data || []).filter(s => (s.parent_id ?? null) === (parentId ?? null)).length
 
+  // Deleting and archiving take the space's sub-spaces with it (see
+  // spaceLifecycle.js).
   const remove = useMutation({
     mutationFn: async (id) => {
       assertOnline()
-      const ids = [id, ...childIdsOf([id])]
-      const { error } = await supabase
-        .from('spaces')
-        .update({ deleted_at: new Date().toISOString() })
-        .in('id', ids)
-      if (error) throw error
+      await deleteSpaces([id])
     },
     onSuccess: () => invalidateSpaceCollections(qc),
   })
@@ -230,19 +226,7 @@ export function useSpaces() {
   const archive = useMutation({
     mutationFn: async (id) => {
       assertOnline()
-      const now = new Date().toISOString()
-      const spaceIds = [id, ...childIdsOf([id])]
-      const { error: spaceError } = await supabase
-        .from('spaces')
-        .update({ archived_at: now })
-        .in('id', spaceIds)
-      if (spaceError) throw spaceError
-      const { error: itemError } = await supabase
-        .from('space_items')
-        .update({ archived_at: now })
-        .in('space_id', spaceIds)
-        .is('deleted_at', null)
-      if (itemError) throw itemError
+      await archiveSpaces([id])
     },
     onSuccess: () => invalidateSpaceCollections(qc),
   })
@@ -252,7 +236,7 @@ export function useSpaces() {
       assertOnline()
       const source = query.data?.find(c => c.id === id)
       if (!source) throw new Error('Space not found')
-      const newCol = await duplicateSpaceWithItems(source, cryptoKey, query.data?.length || 0)
+      const newCol = await duplicateSpaceWithItems(source, cryptoKey, siblingCount(source.parent_id))
       return decryptSpace(newCol, cryptoKey)
     },
     onSuccess: () => invalidateSpaceCollections(qc),
@@ -262,12 +246,7 @@ export function useSpaces() {
     mutationFn: async (ids) => {
       if (!ids?.length) return
       assertOnline()
-      const allIds = [...new Set([...ids, ...childIdsOf(ids)])]
-      const { error } = await supabase
-        .from('spaces')
-        .update({ deleted_at: new Date().toISOString() })
-        .in('id', allIds)
-      if (error) throw error
+      await deleteSpaces(ids)
     },
     onSuccess: () => invalidateSpaceCollections(qc),
   })
@@ -276,20 +255,7 @@ export function useSpaces() {
     mutationFn: async (ids) => {
       if (!ids?.length) return
       assertOnline()
-      const now = new Date().toISOString()
-      const spaceIds = [...new Set([...ids, ...childIdsOf(ids)])]
-      const { error: spaceError } = await supabase
-        .from('spaces')
-        .update({ archived_at: now })
-        .in('id', spaceIds)
-      if (spaceError) throw spaceError
-
-      const { error: itemError } = await supabase
-        .from('space_items')
-        .update({ archived_at: now })
-        .in('space_id', spaceIds)
-        .is('deleted_at', null)
-      if (itemError) throw itemError
+      await archiveSpaces(ids)
     },
     onSuccess: () => invalidateSpaceCollections(qc),
   })
@@ -302,8 +268,12 @@ export function useSpaces() {
   const bulkDuplicate = useMutation({
     mutationFn: async (cols) => {
       assertOnline()
+      const added = new Map() // parent -> copies made so far
       for (const source of cols) {
-        await duplicateSpaceWithItems(source, cryptoKey, query.data?.length || 0)
+        const parent = source.parent_id ?? null
+        const position = siblingCount(parent) + (added.get(parent) || 0)
+        added.set(parent, (added.get(parent) || 0) + 1)
+        await duplicateSpaceWithItems(source, cryptoKey, position)
       }
     },
     onSuccess: () => invalidateSpaceCollections(qc),

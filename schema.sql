@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS spaces (
   pinned      boolean     NOT NULL DEFAULT false,
   color       text        DEFAULT NULL,
   tags        jsonb       NOT NULL DEFAULT '[]'::jsonb,
-  parent_id   uuid        REFERENCES spaces(id) ON DELETE CASCADE DEFAULT NULL,  -- one-level nesting; NULL = top-level
+  parent_id   uuid        REFERENCES spaces(id) ON DELETE CASCADE DEFAULT NULL,  -- nests to any depth; NULL = top-level
   starred     boolean     NOT NULL DEFAULT false, -- in the Starred view; never affects ordering
   locked      boolean     NOT NULL DEFAULT false, -- Protect: the content needs the vault PIN again
   read_only   boolean     NOT NULL DEFAULT false, -- enforced by trg_spaces_read_only (section 3)

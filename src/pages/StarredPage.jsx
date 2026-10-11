@@ -13,6 +13,7 @@ import { useSpaces } from '../hooks/useSpaces'
 import { useSpaceStats } from '../hooks/useSpaceStats'
 import { useItemBoard } from '../hooks/useItemBoard'
 import { useColumnCount } from '../hooks/useColumnCount'
+import { spacePathLabel } from '../lib/spaceTree'
 import { STARRED_ITEMS } from '../hooks/useSpaceItems'
 import { useToast } from '../context/ToastCore'
 import { useRegisterPageActions } from '../context/PageActionsCore'
@@ -40,10 +41,11 @@ export default function StarredPage() {
   const [spaceDeleteConfirm, setSpaceDeleteConfirm] = useState(null)
 
   const starredSpaces = useMemo(() => spaces.filter(s => s.starred), [spaces])
-  const spaceNames = useMemo(
-    () => Object.fromEntries(spaces.map(s => [s.id, s.name || 'Untitled'])),
-    [spaces]
-  )
+  // Where each item lives: its space's path.
+  const spaceNames = useMemo(() => {
+    const byId = new Map(spaces.map(s => [s.id, s]))
+    return Object.fromEntries(spaces.map(s => [s.id, spacePathLabel(s.id, byId)]))
+  }, [spaces])
   const readOnlySpaceIds = useMemo(
     () => new Set(spaces.filter(s => s.read_only).map(s => s.id)),
     [spaces]

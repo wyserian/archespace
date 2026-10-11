@@ -22,6 +22,7 @@ import { scheduleReminders } from '../../lib/reminderNotifications'
 import { convertSecretsToNotes } from '../../lib/secretMigration'
 import { convertLegacyRichText } from '../../lib/richText/richTextMigration'
 import { queryKeys } from '../../lib/queryKeys'
+import { pathOf } from '../../lib/spaceTree'
 import { SIGN_OUT_TEXT } from '../../lib/localMode'
 import AppSidebar from './AppSidebar'
 
@@ -89,11 +90,13 @@ export default function AppShell() {
     onOpen: () => navigate('/reminders'),
   }), [reminders, navigate])
 
-  // The open space's top-level space (a sub-space highlights its parent).
+  // The open space's top-level space (a sub-space at any depth highlights it).
   const active = activeFromPath(location.pathname)
   const openId = active === 'space' ? location.pathname.split('/')[2] : null
-  const openSpace = openId ? spaces.find(s => s.id === openId) : null
-  const activeSpaceId = openSpace?.parent_id || openId
+  const activeSpaceId = useMemo(
+    () => (openId ? pathOf(openId, new Map(spaces.map(s => [s.id, s])))[0]?.id ?? openId : null),
+    [openId, spaces]
+  )
 
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem('arche:sidebar-collapsed') === '1' } catch { return false }

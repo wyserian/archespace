@@ -20,6 +20,7 @@ import { IconButton } from '../components/ui/Button'
 import ItemBoardModals from '../components/ItemBoardModals'
 import { Spinner } from '../components/ui/UI'
 import { REMINDER_GROUPS, compareReminders, reminderGroup } from '../lib/reminder'
+import { spacePathLabel } from '../lib/spaceTree'
 
 export default function RemindersPage() {
   const navigate = useNavigate()
@@ -28,10 +29,11 @@ export default function RemindersPage() {
   const { items, isLoading: itemsLoading } = board
   const cols = useColumnCount()
 
-  const spaceNames = useMemo(
-    () => Object.fromEntries(spaces.map(s => [s.id, s.name || 'Untitled'])),
-    [spaces]
-  )
+  // Where each item lives: its space's path.
+  const spaceNames = useMemo(() => {
+    const byId = new Map(spaces.map(s => [s.id, s]))
+    return Object.fromEntries(spaces.map(s => [s.id, spacePathLabel(s.id, byId)]))
+  }, [spaces])
   const readOnlySpaceIds = useMemo(
     () => new Set(spaces.filter(s => s.read_only).map(s => s.id)),
     [spaces]

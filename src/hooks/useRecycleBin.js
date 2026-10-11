@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useEncryption } from '../context/EncryptionCore'
 import { fetchStoredCollection } from '../lib/storedCollectionQuery'
+import { restoreSpaces, reviveItemSpaces } from '../lib/spaceLifecycle'
 import { invalidateRecycleBin } from '../lib/queryInvalidation'
 import { queryKeys } from '../lib/queryKeys'
 
@@ -28,14 +29,10 @@ export function useRecycleBin() {
     }),
   })
 
+  // Restoring brings back what was deleted along with it, and any deleted or
+  // archived space above it, so it shows where it was (spaceLifecycle.js).
   const restoreSpace = useMutation({
-    mutationFn: async (id) => {
-      const { error } = await supabase
-        .from('spaces')
-        .update({ deleted_at: null })
-        .eq('id', id)
-      if (error) throw error
-    },
+    mutationFn: (id) => restoreSpaces([id]),
     onSuccess: () => invalidateRecycleBin(qc),
   })
 
@@ -54,6 +51,7 @@ export function useRecycleBin() {
         .update({ deleted_at: null })
         .eq('id', id)
       if (error) throw error
+      await reviveItemSpaces([id])
     },
     onSuccess: () => invalidateRecycleBin(qc),
   })
@@ -69,11 +67,7 @@ export function useRecycleBin() {
   const bulkRestoreSpaces = useMutation({
     mutationFn: async (ids) => {
       if (!ids?.length) return
-      const { error } = await supabase
-        .from('spaces')
-        .update({ deleted_at: null })
-        .in('id', ids)
-      if (error) throw error
+      await restoreSpaces(ids)
     },
     onSuccess: () => invalidateRecycleBin(qc),
   })
@@ -86,6 +80,7 @@ export function useRecycleBin() {
         .update({ deleted_at: null })
         .in('id', ids)
       if (error) throw error
+      await reviveItemSpaces(ids)
     },
     onSuccess: () => invalidateRecycleBin(qc),
   })

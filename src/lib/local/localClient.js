@@ -11,6 +11,7 @@
  */
 import { LOCAL_USER, leaveLocalMode } from '../localMode'
 import { TABLES } from './localStore'
+import { descendantsOf } from '../spaceTree'
 
 const PIN_MAX_ATTEMPTS = 5
 const PIN_LOCK_MS = 5 * 60 * 1000
@@ -211,11 +212,10 @@ class LocalEngine {
     const { table } = query
     const rows = this.matching(query)
     if (table === 'spaces') {
-      // ON DELETE CASCADE: sub-spaces, and the items of every space removed.
-      const ids = new Set(rows.map(r => r.id))
-      for (const space of this.tables.spaces.values()) {
-        if (ids.has(space.parent_id)) ids.add(space.id)
-      }
+      // ON DELETE CASCADE: sub-spaces at every level, and the items of every
+      // space removed.
+      const roots = rows.map(r => r.id)
+      const ids = new Set([...roots, ...descendantsOf(roots, [...this.tables.spaces.values()])])
       const items = [...this.tables.space_items.values()].filter(i => ids.has(i.space_id))
       await this.erase('space_items', items)
       await this.erase('spaces', [...ids].map(id => this.tables.spaces.get(id)))

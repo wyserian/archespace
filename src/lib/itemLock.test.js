@@ -45,6 +45,28 @@ describe('locked items', () => {
     expect(isSpaceHidden('open')).toBe(false)
   })
 
+  it('hides spaces nested deep under a locked space, and opens the whole chain', () => {
+    const chain = Array.from({ length: 8 }, (_, i) => ({
+      id: `d${i}`, locked: i === 0 || i === 5, parent_id: i ? `d${i - 1}` : null,
+    }))
+    setSpaceLocks(chain)
+    const deep = { ...note('z', 'deep'), space_id: 'd7' }
+    expect(isSpaceHidden('d7')).toBe(true)
+    expect(isContentHidden(deep)).toBe(true)
+    revealSpace('d7')
+    expect(isSpaceHidden('d0')).toBe(false)
+    expect(isSpaceHidden('d5')).toBe(false)
+    expect(isContentHidden(deep)).toBe(false)
+  })
+
+  it('stops at a parent loop', () => {
+    setSpaceLocks([
+      { id: 'loop-a', locked: false, parent_id: 'loop-b' },
+      { id: 'loop-b', locked: false, parent_id: 'loop-a' },
+    ])
+    expect(isSpaceHidden('loop-a')).toBe(false)
+  })
+
   it('searches a locked item by title and tags only, until opened', () => {
     const items = [note('a', 'bank details', true), note('b', 'bank holiday')]
     const find = (q) => filterGlobalSearch({ spaces: [], items }, q).items.map(i => i.id)

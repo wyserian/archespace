@@ -8,6 +8,7 @@
  */
 import { LayoutDashboard, Folder } from 'lucide-react'
 import { ITEM_TYPE_OPTIONS } from '../lib/itemTypes'
+import { spacePathLabel, treeOrder } from '../lib/spaceTree'
 import { useToast } from '../context/ToastCore'
 import { Modal } from './ui/UI'
 import { buttonClass } from './ui/buttonStyles'
@@ -27,7 +28,10 @@ export default function ItemBoardModals({ board, spaces }) {
 
   // Inside a space, items can also move out to the dashboard.
   // A read-only space takes no new items, so it's never a destination.
-  const destinationSpaces = spaces.filter(candidate => candidate.id !== spaceId && !candidate.read_only)
+  // Listed as a tree: each space followed by its sub-spaces, indented.
+  const spacesById = new Map(spaces.map(s => [s.id, s]))
+  const destinationSpaces = treeOrder(spaces)
+    .filter(({ space: candidate }) => candidate.id !== spaceId && !candidate.read_only)
   const canMoveToDashboard = spaceId !== null
 
   return (
@@ -160,23 +164,30 @@ export default function ItemBoardModals({ board, spaces }) {
                   </span>
                 </button>
               )}
-              {destinationSpaces.map(candidate => (
-                <button
-                  key={candidate.id}
-                  type="button"
-                  onClick={() => handleMoveItems(candidate.id, candidate.name || 'space')}
-                  disabled={move.isPending}
-                  className={menuItemClass()}
-                >
-                  <Folder size={14} className="shrink-0 text-text-muted" />
-                  <span className="min-w-0">
-                    <span className="block text-text-primary truncate">{candidate.name}</span>
-                    {candidate.description && (
-                      <span className="block text-[11px] font-normal text-text-muted truncate">{candidate.description}</span>
-                    )}
-                  </span>
-                </button>
-              ))}
+              {destinationSpaces.map(({ space: candidate, depth }) => {
+                // A sub-space shows where it is; a top-level space its description.
+                const hint = depth > 0
+                  ? spacePathLabel(candidate.parent_id, spacesById)
+                  : candidate.description
+                return (
+                  <button
+                    key={candidate.id}
+                    type="button"
+                    onClick={() => handleMoveItems(candidate.id, candidate.name || 'space')}
+                    disabled={move.isPending}
+                    className={menuItemClass()}
+                    style={{ paddingLeft: `${8 + Math.min(depth, 4) * 14}px` }}
+                  >
+                    <Folder size={14} className="shrink-0 text-text-muted" />
+                    <span className="min-w-0">
+                      <span className="block text-text-primary truncate">{candidate.name || 'Untitled'}</span>
+                      {hint && (
+                        <span className="block text-[11px] font-normal text-text-muted truncate">{hint}</span>
+                      )}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           )}
         </Modal>

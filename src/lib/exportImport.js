@@ -62,8 +62,13 @@ export async function exportSpaces(spaces, cryptoKey) {
   }
 
   try {
+    // Nesting: each space's `key` is its place in the list, and a sub-space
+    // names its parent's as `parentKey`.
+    const keyOf = new Map(spaces.map((c, i) => [c.id, i]))
     const exportedSpaces = await Promise.all(
-      spaces.map(async (c) => ({
+      spaces.map(async (c, i) => ({
+        key: i,
+        ...(keyOf.has(c.parent_id) ? { parentKey: keyOf.get(c.parent_id) } : {}),
         name: c.name ?? '',
         description: c.description ?? '',
         color: typeof c.color === 'string' ? c.color : null,
@@ -96,6 +101,43 @@ export async function exportSpaces(spaces, cryptoKey) {
     console.error('Export failed:', error)
     throw error
   }
+}
+
+/**
+ * The order to import a backup's spaces in, parents first: [index,
+ * parentIndex]. A space's `parentKey` names another space's `key`; one that
+ * names no space (or loops) imports at the top level, as do older backups,
+ * which have neither.
+ */
+export function nestingOrder(spaces) {
+  const indexOfKey = new Map()
+  spaces.forEach((s, i) => {
+    if (s?.key != null && !indexOfKey.has(s.key)) indexOfKey.set(s.key, i)
+  })
+  const parentOf = spaces.map((s, i) => {
+    const p = s?.parentKey == null ? undefined : indexOfKey.get(s.parentKey)
+    return p === undefined || p === i ? null : p
+  })
+  const children = new Map()
+  parentOf.forEach((p, i) => {
+    if (p != null) children.set(p, [...(children.get(p) || []), i])
+  })
+  const order = []
+  const placed = new Set()
+  const place = (start) => {
+    const queue = [start]
+    while (queue.length) {
+      const i = queue.shift()
+      if (placed.has(i)) continue
+      placed.add(i)
+      order.push([i, placed.has(parentOf[i]) && i !== start ? parentOf[i] : null])
+      queue.push(...(children.get(i) || []))
+    }
+  }
+  spaces.forEach((_, i) => { if (parentOf[i] == null) place(i) })
+  // Whatever is left is in a parent loop: break it at the top level.
+  spaces.forEach((_, i) => place(i))
+  return order
 }
 
 /** Validate an item's content shape for its type (matches the current editors). */
@@ -235,13 +277,17 @@ export async function importSpaces(file, userId, cryptoKey, { askBackupPin } = {
     throw new Error(`Too many spaces. The maximum allowed is ${MAX_IMPORT_SPACES}.`)
   }
 
+  if (spacesList.some(col => !col || typeof col !== 'object')) {
+    throw new Error('Invalid backup: each space must be an object.')
+  }
+
   let itemsImported = 0
   let itemsSkipped = 0
+  // Backup position -> new space id, for the sub-spaces that follow.
+  const newIds = new Map()
 
-  for (const col of spacesList) {
-    if (!col || typeof col !== 'object') {
-      throw new Error('Invalid backup: each space must be an object.')
-    }
+  for (const [index, parentIndex] of nestingOrder(spacesList)) {
+    const col = spacesList[index]
 
     const name = (typeof col.name === 'string' && col.name.trim()
       ? col.name.trim()
@@ -264,11 +310,13 @@ export async function importSpaces(file, userId, cryptoKey, { askBackupPin } = {
         color: typeof col.color === 'string' ? col.color : null,
         pinned: !!col.pinned,
         locked: col.locked === true,
+        parent_id: parentIndex == null ? null : newIds.get(parentIndex) ?? null,
         user_id: userId,
       })
       .select()
       .single()
     if (colErr) throw colErr
+    newIds.set(index, newCol.id)
 
     const items = Array.isArray(col.items) ? col.items : []
     if (items.length > MAX_IMPORT_ITEMS_PER_SPACE) {

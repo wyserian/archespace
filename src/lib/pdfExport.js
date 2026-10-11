@@ -405,8 +405,11 @@ export async function exportItemToPdf(item) {
   await generate(title, content)
 }
 
-/** Export a space with all of its (decrypted) items. */
-export async function exportSpaceToPdf(space, items) {
+/**
+ * Export a space with all of its (decrypted) items. Its sub-spaces are listed
+ * by name only (each exports on its own).
+ */
+export async function exportSpaceToPdf(space, items, subSpaces = []) {
   const name = (space?.name || '').trim() || 'Space'
   const content = [
     // The space name once, at the start of the document (not per page).
@@ -417,6 +420,14 @@ export async function exportSpaceToPdf(space, items) {
   }
   if (Array.isArray(space?.tags) && space.tags.length > 0) {
     content.push({ text: space.tags.map(t => `#${t}`).join('   '), fontSize: 10, color: '#666666', margin: [0, 0, 0, 8] })
+  }
+  if (subSpaces.length > 0) {
+    content.push({
+      text: `Sub-spaces: ${subSpaces.map(s => s.name || 'Untitled').join(', ')}`,
+      fontSize: 10,
+      color: '#666666',
+      margin: [0, 0, 0, 8],
+    })
   }
   const list = items || []
   if (!list.length) {

@@ -31,7 +31,7 @@ A companion Mobile/Flutter app lives in a [separate repository](https://github.c
 - **Zero-knowledge encryption**: the server only ever stores ciphertext ([Security](#security))
 - **Vault PIN** with a recovery code, auto-lock and passkey / biometric unlock
 - **Protected** items and spaces, and **read-only** spaces
-- **Spaces** with sub-spaces, tags and colours
+- **Spaces** with sub-spaces nested to any depth, tags and colours
 - **Item types**: notes, rich text, lists, checklists, cards, tables, Kanban boards, whiteboards and code ([Item types](#item-types))
 - **Reminders** that repeat or stay until turned off, all listed in one view
 - **Search** across spaces, tags and content

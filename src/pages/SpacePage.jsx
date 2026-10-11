@@ -4,7 +4,10 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, CheckSquare, ListChecks, FileDown, FolderPlus, Search, SearchX, X, PencilOff, Shield, ShieldCheck } from 'lucide-react'
+import {
+  ArrowLeft, Plus, CheckSquare, ListChecks, FileDown, FolderPlus, Search, SearchX, X, PencilOff, Shield, ShieldCheck,
+  ChevronRight, MoreHorizontal, Folder,
+} from 'lucide-react'
 import { useDragReorder } from '../hooks/useDragReorder'
 import { useSpaces } from '../hooks/useSpaces'
 import { useItemBoard } from '../hooks/useItemBoard'
@@ -29,8 +32,54 @@ import { useSpaceStats } from '../hooks/useSpaceStats'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { useRouteMeta } from '../hooks/useRouteMeta'
 import { sortEntities } from '../lib/sortEntities'
+import { pathOf } from '../lib/spaceTree'
 import { isItemRevealed, revealSpace, useSpaceHidden } from '../lib/itemLock'
 import { useVaultPinPrompt } from '../context/VaultPinPromptCore'
+
+/**
+ * The spaces above this one as links (A › B ›), before its title. Deeper than
+ * two levels, the middle folds into a "…" menu of the spaces it hides.
+ */
+function SpaceBreadcrumbs({ ancestors, navigate }) {
+  if (ancestors.length === 0) return null
+  const link = (s) => (
+    <button
+      key={s.id}
+      type="button"
+      onClick={() => navigate(`/space/${s.id}`)}
+      title={s.name || 'Untitled'}
+      className="min-w-0 max-w-[9rem] truncate text-sm text-text-muted hover:text-text-primary transition-colors"
+    >
+      {s.name || 'Untitled'}
+    </button>
+  )
+  const separator = (key) => <ChevronRight key={key} size={13} className="shrink-0 text-text-muted/70" aria-hidden="true" />
+  const folded = ancestors.length > 2 ? ancestors.slice(1, -1) : []
+  const shown = folded.length ? [ancestors[0], null, ancestors.at(-1)] : ancestors
+  return (
+    <nav aria-label="Space path" className="flex items-center gap-1 min-w-0 shrink">
+      {shown.map((s, i) => [
+        s ? link(s) : (
+          <ActionMenu
+            key="more"
+            label="More spaces in this path"
+            icon={MoreHorizontal}
+            bordered={false}
+            compact
+            align="left"
+            actions={folded.map(f => ({
+              id: f.id,
+              label: f.name || 'Untitled',
+              icon: Folder,
+              onClick: () => navigate(`/space/${f.id}`),
+            }))}
+          />
+        ),
+        separator(`sep-${i}`),
+      ])}
+    </nav>
+  )
+}
 
 export default function SpacePage() {
   const { id } = useParams()
@@ -61,9 +110,13 @@ export default function SpacePage() {
   // Read-only (stored on the server): items can be viewed, copied and
   // exported, but nothing in the space can be added or changed.
   const readOnly = !!space?.read_only
-  // One-level nesting: sub-spaces live under a top-level space only.
-  const isTopLevel = space ? !space.parent_id : false
-  const parentSpace = space?.parent_id ? spaces.find(s => s.id === space.parent_id) : null
+  // Spaces nest to any depth: the spaces above this one (top first), for the
+  // breadcrumbs and the back button, and its own sub-spaces.
+  const ancestors = useMemo(
+    () => pathOf(id, new Map(spaces.map(s => [s.id, s]))).slice(0, -1),
+    [spaces, id]
+  )
+  const parentSpace = ancestors.at(-1) ?? null
   const subSpaces = useMemo(() => spaces.filter(s => s.parent_id === id), [spaces, id])
   const { data: spaceStats = {} } = useSpaceStats()
   const [spaceModal, setSpaceModal] = useState(null) // { type:'create' } | { type:'edit', col }
@@ -330,7 +383,10 @@ export default function SpacePage() {
               className="-ml-1.5"
               onClick={() => navigate(parentSpace ? `/space/${parentSpace.id}` : '/app')}
             />
-            <h1 className="flex-1 min-w-0 text-sm font-semibold text-text-primary truncate">{spaceName}</h1>
+            <div className="flex-1 min-w-0 flex items-center gap-1">
+              <SpaceBreadcrumbs ancestors={ancestors} navigate={navigate} />
+              <h1 className="min-w-0 text-sm font-semibold text-text-primary truncate">{spaceName}</h1>
+            </div>
           </div>
         </header>
         <main className="flex-1 flex items-center justify-center px-6 pb-16">
@@ -450,9 +506,12 @@ export default function SpacePage() {
             onClick={() => navigate(parentSpace ? `/space/${parentSpace.id}` : '/app')}
           />
 
-          {/* Space title & description */}
+          {/* Where it sits (the spaces above it), then its title & description */}
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-semibold text-text-primary truncate">{space?.name}</h1>
+            <div className="flex items-center gap-1 min-w-0">
+              <SpaceBreadcrumbs ancestors={ancestors} navigate={navigate} />
+              <h1 className="min-w-0 text-sm font-semibold text-text-primary truncate">{space?.name}</h1>
+            </div>
             {space?.description && (
               <p className="text-xs text-text-muted truncate mt-0.5">{space.description}</p>
             )}
@@ -493,12 +552,12 @@ export default function SpacePage() {
               <IconButton
                 icon={FileDown}
                 label="Export space as PDF"
-                onClick={() => exportSpaceToPdf(space, items)}
+                onClick={() => exportSpaceToPdf(space, items, subSpaces)}
               />
             )}
-            {/* New: a menu of New item / New sub-space where both apply;
-                inside a sub-space, Add item directly. */}
-            {!readOnly && !selectMode && (isTopLevel ? (
+            {/* New: a menu of New item / New space (a sub-space of this one,
+                at any depth). */}
+            {!readOnly && !selectMode && (
               <ActionMenu
                 label={online ? 'New' : 'Unavailable offline'}
                 triggerLabel="New"
@@ -509,19 +568,7 @@ export default function SpacePage() {
                   { id: 'space', label: 'New space', icon: FolderPlus, onClick: () => setSpaceModal({ type: 'create' }) },
                 ]}
               />
-            ) : (
-              <Button
-                variant="primary"
-                size="sm"
-                icon={Plus}
-                disabled={!online}
-                title={online ? 'Add item' : 'Unavailable offline'}
-                onClick={openAddItem}
-                className="ml-1"
-              >
-                Add item
-              </Button>
-            ))}
+            )}
           </div>
         </div>
       </header>

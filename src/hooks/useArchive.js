@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useEncryption } from '../context/EncryptionCore'
 import { fetchStoredCollection } from '../lib/storedCollectionQuery'
+import { binArchivedSpaces, reviveItemSpaces, unarchiveSpaces } from '../lib/spaceLifecycle'
 import { invalidateArchive, invalidateSpaceCollections } from '../lib/queryInvalidation'
 import { queryKeys } from '../lib/queryKeys'
 
@@ -28,36 +29,17 @@ export function useArchive() {
     }),
   })
 
+  // Unarchiving brings back the sub-spaces and items archived along with it,
+  // and any removed space above it (spaceLifecycle.js).
   const unarchiveSpace = useMutation({
-    mutationFn: async (id) => {
-      const { error } = await supabase
-        .from('spaces')
-        .update({ archived_at: null })
-        .eq('id', id)
-      if (error) throw error
-      const { error: itemError } = await supabase
-        .from('space_items')
-        .update({ archived_at: null })
-        .eq('space_id', id)
-        .not('archived_at', 'is', null)
-      if (itemError) throw itemError
-    },
+    mutationFn: (id) => unarchiveSpaces([id]),
     onSuccess: () => invalidateArchive(qc),
   })
 
   const bulkUnarchiveSpaces = useMutation({
     mutationFn: async (ids) => {
       if (!ids?.length) return
-      const { error: colErr } = await supabase
-        .from('spaces')
-        .update({ archived_at: null })
-        .in('id', ids)
-      if (colErr) throw colErr
-      const { error: itemErr } = await supabase
-        .from('space_items')
-        .update({ archived_at: null })
-        .in('space_id', ids)
-      if (itemErr) throw itemErr
+      await unarchiveSpaces(ids)
     },
     onSuccess: () => invalidateArchive(qc),
   })
@@ -70,6 +52,7 @@ export function useArchive() {
         .update({ archived_at: null })
         .in('id', ids)
       if (error) throw error
+      await reviveItemSpaces(ids)
     },
     onSuccess: () => invalidateArchive(qc),
   })
@@ -81,29 +64,16 @@ export function useArchive() {
         .update({ archived_at: null })
         .eq('id', id)
       if (error) throw error
+      await reviveItemSpaces([id])
     },
     onSuccess: () => invalidateArchive(qc),
   })
 
-  // Move to bin (archive -> recycle bin)
-  // Sets deleted_at and clears archived_at so the row leaves the archive and
-  // appears in the bin (which requires archived_at to be null).
+  // Move to bin (archive -> recycle bin): the row leaves the archive and
+  // appears in the bin (which requires archived_at to be null), with the
+  // sub-spaces and items archived along with it.
   const moveSpaceToBin = useMutation({
-    mutationFn: async (id) => {
-      const now = new Date().toISOString()
-      const { error } = await supabase
-        .from('spaces')
-        .update({ deleted_at: now, archived_at: null })
-        .eq('id', id)
-      if (error) throw error
-      // Send its archived items to the bin too, so none are left orphaned.
-      const { error: itemError } = await supabase
-        .from('space_items')
-        .update({ deleted_at: now, archived_at: null })
-        .eq('space_id', id)
-        .not('archived_at', 'is', null)
-      if (itemError) throw itemError
-    },
+    mutationFn: (id) => binArchivedSpaces([id]),
     onSuccess: () => invalidateSpaceCollections(qc),
   })
 
@@ -121,18 +91,7 @@ export function useArchive() {
   const bulkMoveSpacesToBin = useMutation({
     mutationFn: async (ids) => {
       if (!ids?.length) return
-      const now = new Date().toISOString()
-      const { error: colErr } = await supabase
-        .from('spaces')
-        .update({ deleted_at: now, archived_at: null })
-        .in('id', ids)
-      if (colErr) throw colErr
-      const { error: itemErr } = await supabase
-        .from('space_items')
-        .update({ deleted_at: now, archived_at: null })
-        .in('space_id', ids)
-        .not('archived_at', 'is', null)
-      if (itemErr) throw itemErr
+      await binArchivedSpaces(ids)
     },
     onSuccess: () => invalidateSpaceCollections(qc),
   })

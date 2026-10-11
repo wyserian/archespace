@@ -1,14 +1,16 @@
 /**
  * itemLock.js - Protected items and spaces. A protected item keeps its title
  * and tags in view, and a protected space its name, but the content needs the
- * vault PIN again. An item in a protected space (or in a sub-space of one) is
- * hidden too, wherever it's listed (Starred, search). Protect is the `locked`
- * flag on the row; the content is encrypted with the vault key like any other.
+ * vault PIN again. An item in a protected space (or in a sub-space of one, at
+ * any depth) is hidden too, wherever it's listed (Starred, search). Protect is
+ * the `locked` flag on the row; the content is encrypted with the vault key
+ * like any other.
  *
  * What has been opened lives only in memory: a reload, or the vault locking,
  * hides it all again.
  */
 import { useSyncExternalStore } from 'react'
+import { chainOf } from './spaceTree'
 
 const revealed = new Set()
 // Space id -> { locked, parentId }, recorded whenever the spaces load.
@@ -31,21 +33,14 @@ export function isItemRevealed(id) {
   return revealed.has(id)
 }
 
-// A space and the spaces above it (spaces nest one level; the bound only
-// guards against a bad cycle).
+// A space and every space above it, as [id, { locked, parentId }].
 function spaceChain(spaceId) {
-  const chain = []
-  let id = spaceId
-  for (let depth = 0; id && depth < 4; depth++) {
-    const space = spaceLocks.get(id)
-    if (!space) break
-    chain.push([id, space])
-    id = space.parentId
-  }
-  return chain
+  return chainOf(spaceId, id => spaceLocks.get(id)?.parentId)
+    .filter(id => spaceLocks.has(id))
+    .map(id => [id, spaceLocks.get(id)])
 }
 
-/** Whether a space's contents must stay hidden (it or its parent protected). */
+/** Whether a space's contents must stay hidden (it or a space above it protected). */
 export function isSpaceHidden(spaceId) {
   return spaceChain(spaceId).some(([id, s]) => s.locked && !revealed.has(id))
 }
