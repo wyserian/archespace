@@ -15,6 +15,7 @@ const MENU_GAP = 8
  * `triggerLabel` turns the trigger into a primary button with that text (the
  * "+ New" menu); otherwise it's a round icon button (`icon`, dots by default).
  * `openOnHover` (default true) opens it on pointer hover as well as click.
+ * `triggerProps` go on the trigger button (a table grip makes it draggable).
  */
 export function ActionMenu({
   actions,
@@ -26,6 +27,7 @@ export function ActionMenu({
   triggerLabel,
   openOnHover = true,
   disabled = false,
+  triggerProps,
 }) {
   const [open, setOpen] = useState(false)
   const [position, setPosition] = useState({ top: 0, left: 0, origin: 'top' })
@@ -190,6 +192,7 @@ export function ActionMenu({
       onClick={(event) => event.stopPropagation()}
     >
       <button
+        {...triggerProps}
         ref={buttonRef}
         type="button"
         disabled={disabled}
