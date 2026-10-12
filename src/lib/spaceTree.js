@@ -86,6 +86,14 @@ export function treeOrder(spaces) {
 }
 
 /**
+ * The spaces something can move into, in tree order: all but `exclude` (a Set
+ * of ids) and read-only ones, which take nothing new.
+ */
+export function moveDestinations(spaces, exclude = new Set()) {
+  return treeOrder(spaces).filter(({ space }) => !exclude.has(space.id) && !space.read_only)
+}
+
+/**
  * Where a space sits, for labels: "A › B › C", folded to "A › … › D" when
  * it's deeper than three levels.
  */

@@ -42,6 +42,7 @@ import { Button, IconButton } from '../components/ui/Button'
 import { ViewToggle } from '../components/ui/ViewToggle'
 import { SpaceModal } from '../components/space/SpaceModal'
 import { SpaceCard } from '../components/space/SpaceCard'
+import { MoveSpacesDialog } from '../components/space/MoveSpacesDialog'
 import { usePersistedSort } from '../hooks/usePersistedSort'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { sortEntities } from '../lib/sortEntities'
@@ -57,7 +58,7 @@ export default function DashboardPage() {
   const { openPalette, registerCommands, closePalette } = useCommandPalette()
   const {
     data: spaces = [], isLoading, create, update, togglePin, toggleStar, toggleReadOnly, toggleLock, remove, reorder,
-    archive, duplicate, bulkRemove, bulkArchive, bulkSetPinned, bulkDuplicate,
+    archive, move, duplicate, bulkRemove, bulkArchive, bulkSetPinned, bulkDuplicate,
   } = useSpaces()
   // Dashboard items: items that belong to no space, shown after the spaces.
   const board = useItemBoard(null)
@@ -91,6 +92,8 @@ export default function DashboardPage() {
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   // { spaceIds, itemIds } awaiting the "move to bin" confirmation.
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(null)
+  // { ids, onDone } of the spaces being moved.
+  const [moveSpaces, setMoveSpaces] = useState(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [confirmSignOut, setConfirmSignOut] = useState(false)
   const online = useOnlineStatus()
@@ -254,6 +257,7 @@ export default function DashboardPage() {
       setDeleteConfirm(null)
       setMobileMenuOpen(false)
       setBulkDeleteConfirm(null)
+      setMoveSpaces(null)
       closeItemDialogs()
       exitSelectMode()
     },
@@ -370,6 +374,7 @@ export default function DashboardPage() {
         onSuccess: () => toast.success('Space duplicated'),
         onError: () => toast.error("Couldn't duplicate the space."),
       })}
+      onMove={(id) => setMoveSpaces({ ids: [id] })}
       onArchive={(id) => archive.mutate(id, {
         onSuccess: () => toast.success('Space archived'),
         onError: () => toast.error("Couldn't archive the space."),
@@ -913,12 +918,19 @@ export default function DashboardPage() {
                     "Couldn't duplicate the selection.",
                   ),
                 },
-                // Only items move (into a space); spaces can't.
+                // Spaces or items move, not both at once (a read-only space
+                // stays where it is).
                 hasSelectedItems && selectedSpaceIds.size === 0 && {
                   id: 'move',
                   label: 'Move',
                   icon: BULK_ICONS.move,
                   onClick: () => board.openMoveItems([...selectedItemIds], exitSelectMode),
+                },
+                !hasSelectedItems && selectedSpaces.length > 0 && !selectedSpaces.some(s => s.read_only) && {
+                  id: 'move',
+                  label: 'Move',
+                  icon: BULK_ICONS.move,
+                  onClick: () => setMoveSpaces({ ids: [...selectedSpaceIds], onDone: exitSelectMode }),
                 },
                 {
                   id: 'archive',
@@ -1022,6 +1034,16 @@ export default function DashboardPage() {
 
       {/* Dashboard item dialogs: add, move to bin, move, unsaved guard */}
       <ItemBoardModals board={board} spaces={spaces} />
+
+      {moveSpaces && (
+        <MoveSpacesDialog
+          ids={moveSpaces.ids}
+          spaces={spaces}
+          move={move}
+          onDone={moveSpaces.onDone}
+          onClose={() => setMoveSpaces(null)}
+        />
+      )}
 
       {deleteConfirm && (
         <Modal

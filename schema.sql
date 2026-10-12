@@ -282,6 +282,36 @@ CREATE TRIGGER trg_space_items_read_only
   BEFORE INSERT OR UPDATE ON space_items
   FOR EACH ROW EXECUTE FUNCTION guard_read_only_items();
 
+-- Space nesting. A space's parent is another of the same user's spaces, never
+-- the space itself or one of its own sub-spaces (that would make a loop).
+CREATE OR REPLACE FUNCTION guard_space_parent()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.parent_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM spaces WHERE id = NEW.parent_id AND user_id = NEW.user_id) THEN
+    RAISE EXCEPTION 'The parent space was not found.';
+  END IF;
+  IF EXISTS (
+    WITH RECURSIVE up(id, parent_id) AS (
+      SELECT id, parent_id FROM spaces WHERE id = NEW.parent_id
+      UNION
+      SELECT s.id, s.parent_id FROM spaces s JOIN up ON s.id = up.parent_id
+    )
+    SELECT 1 FROM up WHERE id = NEW.id
+  ) THEN
+    RAISE EXCEPTION 'A space can''t move inside itself.';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_spaces_parent ON spaces;
+CREATE TRIGGER trg_spaces_parent
+  BEFORE INSERT OR UPDATE OF parent_id ON spaces
+  FOR EACH ROW EXECUTE FUNCTION guard_space_parent();
+
 -- The recycle bin is never emptied automatically: only a permanent delete by
 -- the user removes anything. Drop the old 30-day purge, and its pg_cron job
 -- if one was set up.

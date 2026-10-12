@@ -12,7 +12,7 @@ import { saveRows, loadRows } from '../lib/offlineCache'
 import { setReachable, isNetworkError } from '../lib/connectivity'
 import { encryptSpace, decryptSpace, decryptSpaces } from '../lib/dataProtection'
 import { duplicateSpaceWithItems } from '../lib/spaceDuplicate'
-import { archiveSpaces, deleteSpaces } from '../lib/spaceLifecycle'
+import { archiveSpaces, deleteSpaces, moveSpaces } from '../lib/spaceLifecycle'
 import { invalidateSpaceCollections, invalidateSpaceList } from '../lib/queryInvalidation'
 import { queryKeys } from '../lib/queryKeys'
 import { setSpaceLocks, setSpaceLocked } from '../lib/itemLock'
@@ -231,6 +231,16 @@ export function useSpaces() {
     onSuccess: () => invalidateSpaceCollections(qc),
   })
 
+  // Move spaces into another space (`parentId`), or to the top level for null.
+  const move = useMutation({
+    mutationFn: async ({ ids, parentId }) => {
+      if (!ids?.length) return
+      assertOnline()
+      await moveSpaces(ids, parentId)
+    },
+    onSuccess: () => invalidateSpaceCollections(qc),
+  })
+
   const duplicate = useMutation({
     mutationFn: async (id) => {
       assertOnline()
@@ -290,6 +300,7 @@ export function useSpaces() {
     remove,
     reorder,
     archive,
+    move,
     duplicate,
     bulkRemove,
     bulkArchive,

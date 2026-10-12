@@ -9,7 +9,7 @@ vi.mock('./supabase', async () => {
 
 const { supabase } = await import('./supabase')
 const {
-  archiveSpaces, binArchivedSpaces, deleteSpaces, restoreSpaces, reviveItemSpaces, unarchiveSpaces,
+  archiveSpaces, binArchivedSpaces, deleteSpaces, moveSpaces, restoreSpaces, reviveItemSpaces, unarchiveSpaces,
 } = await import('./spaceLifecycle')
 
 // a > b > c > d, with an item in each; e on its own.
@@ -96,6 +96,28 @@ describe('spaceLifecycle', () => {
     await supabase.from('space_items').update({ deleted_at: null }).eq('id', ids.dItem)
     await reviveItemSpaces([ids.dItem])
     expect((await state()).spaces).toEqual({ a: 'active', b: 'active', c: 'active', d: 'active', e: 'active' })
+  })
+
+  it('moves a space with everything in it, never inside itself', async () => {
+    await moveSpaces([ids.c], ids.e)
+    const parents = async () => {
+      const { data } = await supabase.from('spaces').select('id, name, parent_id')
+      const nameOf = new Map(data.map(s => [s.id, s.name]))
+      return Object.fromEntries(data.map(s => [s.name, nameOf.get(s.parent_id) ?? null]))
+    }
+    expect(await parents()).toEqual({ a: null, b: 'a', c: 'e', d: 'c', e: null })
+    await moveSpaces([ids.c], null)
+    expect((await parents()).c).toBe(null)
+    await expect(moveSpaces([ids.a], ids.b)).rejects.toThrow()
+    await expect(moveSpaces([ids.c], ids.c)).rejects.toThrow()
+  })
+
+  it('moves a selection whose parent is selected too as one', async () => {
+    await moveSpaces([ids.b, ids.c], ids.e)
+    const { data } = await supabase.from('spaces').select('id, parent_id')
+    const parentOf = Object.fromEntries(data.map(s => [s.id, s.parent_id]))
+    expect(parentOf[ids.b]).toBe(ids.e)
+    expect(parentOf[ids.c]).toBe(ids.b)
   })
 
   it('hard-deleting a space removes every level below it', async () => {

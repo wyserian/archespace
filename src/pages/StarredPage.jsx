@@ -22,6 +22,7 @@ import { IconButton } from '../components/ui/Button'
 import ItemBoardModals from '../components/ItemBoardModals'
 import { SpaceCard } from '../components/space/SpaceCard'
 import { SpaceModal } from '../components/space/SpaceModal'
+import { MoveSpacesDialog } from '../components/space/MoveSpacesDialog'
 import { ConfirmDialog, Spinner } from '../components/ui/UI'
 
 export default function StarredPage() {
@@ -29,7 +30,7 @@ export default function StarredPage() {
   const { toast } = useToast()
   const {
     data: spaces = [], isLoading: spacesLoading,
-    update, togglePin, toggleStar, toggleReadOnly, toggleLock, remove, archive, duplicate,
+    update, togglePin, toggleStar, toggleReadOnly, toggleLock, remove, archive, duplicate, move,
   } = useSpaces()
   const { data: spaceStats = {} } = useSpaceStats()
   // Starred items from every space (and the dashboard).
@@ -39,6 +40,7 @@ export default function StarredPage() {
 
   const [spaceModal, setSpaceModal] = useState(null) // { type: 'edit', col }
   const [spaceDeleteConfirm, setSpaceDeleteConfirm] = useState(null)
+  const [moveSpaceId, setMoveSpaceId] = useState(null)
 
   const starredSpaces = useMemo(() => spaces.filter(s => s.starred), [spaces])
   // Where each item lives: its space's path.
@@ -57,6 +59,7 @@ export default function StarredPage() {
       closeItemDialogs()
       setSpaceModal(null)
       setSpaceDeleteConfirm(null)
+      setMoveSpaceId(null)
     },
   }), [closeItemDialogs])
   useRegisterPageActions(pageActions)
@@ -90,6 +93,7 @@ export default function StarredPage() {
         onSuccess: () => toast.success('Space duplicated'),
         onError: () => toast.error("Couldn't duplicate the space."),
       })}
+      onMove={setMoveSpaceId}
       onArchive={(id) => archive.mutate(id, {
         onSuccess: () => toast.success('Space archived'),
         onError: () => toast.error("Couldn't archive the space."),
@@ -171,7 +175,10 @@ export default function StarredPage() {
         )}
       </main>
 
-      {/* Space edit / delete */}
+      {/* Space edit / move / delete */}
+      {moveSpaceId && (
+        <MoveSpacesDialog ids={[moveSpaceId]} spaces={spaces} move={move} onClose={() => setMoveSpaceId(null)} />
+      )}
       {spaceModal?.type === 'edit' && (
         <SpaceModal
           initial={spaceModal.col}

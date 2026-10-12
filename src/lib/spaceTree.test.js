@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ancestorsOf, chainOf, descendantsOf, pathOf, spacePathLabel, treeOrder } from './spaceTree'
+import { ancestorsOf, chainOf, descendantsOf, moveDestinations, pathOf, spacePathLabel, treeOrder } from './spaceTree'
 
 // a > b > c > d, a > e, f (top level)
 const spaces = [
@@ -46,6 +46,12 @@ describe('spaceTree', () => {
     const positioned = spaces.map((s, i) => ({ ...s, position: s.id === 'e' ? -1 : i }))
     expect(treeOrder(positioned).map(({ space, depth }) => `${space.id}${depth}`))
       .toEqual(['a0', 'e1', 'b1', 'c2', 'd3', 'f0'])
+  })
+
+  it('offers move destinations in tree order, without excluded or read-only spaces', () => {
+    const marked = spaces.map(s => ({ ...s, read_only: s.id === 'e' }))
+    expect(moveDestinations(marked, new Set(['b', 'c', 'd'])).map(({ space }) => space.id))
+      .toEqual(['a', 'f'])
   })
 
   it('stops at a parent loop', () => {

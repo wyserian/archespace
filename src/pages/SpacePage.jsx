@@ -19,6 +19,7 @@ import { useShortcut } from '../context/ShortcutsCore'
 import SpaceItem from '../components/SpaceItem'
 import { SpaceCard } from '../components/space/SpaceCard'
 import { SpaceModal } from '../components/space/SpaceModal'
+import { MoveSpacesDialog } from '../components/space/MoveSpacesDialog'
 import { exportSpaceToPdf } from '../lib/pdfExport'
 import BulkSelectionBar from '../components/BulkSelectionBar'
 import { BULK_ICONS } from '../components/BulkSelectionIcons'
@@ -98,6 +99,7 @@ export default function SpacePage() {
     remove: removeSpace,
     archive: archiveSpace,
     duplicate: duplicateSpace,
+    move: moveSpace,
   } = useSpaces()
 
   // Items, their card callbacks, unsaved-edit guard and item dialogs.
@@ -121,6 +123,7 @@ export default function SpacePage() {
   const { data: spaceStats = {} } = useSpaceStats()
   const [spaceModal, setSpaceModal] = useState(null) // { type:'create' } | { type:'edit', col }
   const [spaceDeleteConfirm, setSpaceDeleteConfirm] = useState(null)
+  const [moveSpaceId, setMoveSpaceId] = useState(null)
 
   // Private route: noindex, and a generic tab title - never the space name,
   // which would leak private data into the browser tab, history, and app
@@ -462,6 +465,7 @@ export default function SpacePage() {
         onSuccess: () => toast.success('Space duplicated'),
         onError: () => toast.error("Couldn't duplicate the space."),
       })}
+      onMove={(sid) => setMoveSpaceId(sid)}
       onArchive={(sid) => archiveSpace.mutate(sid, {
         onSuccess: () => toast.success('Space archived'),
         onError: () => toast.error("Couldn't archive the space."),
@@ -864,6 +868,15 @@ export default function SpacePage() {
             setSpaceDeleteConfirm(null)
           }}
           onClose={() => setSpaceDeleteConfirm(null)}
+        />
+      )}
+
+      {moveSpaceId && (
+        <MoveSpacesDialog
+          ids={[moveSpaceId]}
+          spaces={spaces}
+          move={moveSpace}
+          onClose={() => setMoveSpaceId(null)}
         />
       )}
 

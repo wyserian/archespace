@@ -6,7 +6,7 @@
  * action-menu behaviour: borderless cards, a soft space-colour strip, tags
  * coloured by name inline with the item count, and a 3-dot menu.
  */
-import { Pin, PinOff, Star, StarOff, Pencil, PencilOff, PencilLine, Trash2, Copy, Archive, MoreVertical, Shield, ShieldCheck, ShieldOff } from 'lucide-react'
+import { Pin, PinOff, Star, StarOff, Pencil, PencilOff, PencilLine, Trash2, Copy, MoveRight, Archive, MoreVertical, Shield, ShieldCheck, ShieldOff } from 'lucide-react'
 import { getColorPreset, softColorValue, tagColorValue } from '../../lib/spaceColors'
 import { ActionMenu } from '../ui/ActionMenu'
 import { SelectCheck } from '../ui/SelectCheck'
@@ -57,7 +57,7 @@ function ProtectedMark({ hidden }) {
 export function SpaceCard({
   col, index, search, dragIndex, dragOverIndex,
   handleDragStart, handleDragOver, handleDrop, handleDragEnd,
-  navigate, togglePin, toggleStar, toggleReadOnly, toggleLock, setModal, setDeleteConfirm, onDuplicate, onArchive,
+  navigate, togglePin, toggleStar, toggleReadOnly, toggleLock, setModal, setDeleteConfirm, onDuplicate, onMove, onArchive,
   stats,
   onTagClick,
   activeTags = [],
@@ -153,6 +153,9 @@ export function SpaceCard({
     // Editing shows the description, so a hidden protected space opens first.
     !col.read_only && !hidden && { id: 'edit', label: 'Edit', icon: Pencil, disabled: !online, onClick: () => setModal({ type: 'edit', col }) },
     { id: 'duplicate', label: 'Duplicate', icon: Copy, disabled: !online, onClick: () => onDuplicate?.(col.id) },
+    // A read-only space stays where it is; a hidden one opens first (moving it
+    // out of a protected space would show it without the PIN).
+    onMove && !col.read_only && !hidden && { id: 'move', label: 'Move', icon: MoveRight, disabled: !online, onClick: () => onMove(col.id) },
     { id: 'archive', label: 'Archive', icon: Archive, disabled: !online, onClick: () => onArchive?.(col.id) },
     { id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', disabled: !online, onClick: () => setDeleteConfirm(col.id) },
   ]

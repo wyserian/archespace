@@ -1,6 +1,6 @@
 /**
- * spaceLifecycle.js - Deleting, archiving and restoring spaces as whole
- * subtrees (spaces nest to any depth). Each step first reads the user's space
+ * spaceLifecycle.js - Deleting, archiving, restoring and moving spaces as
+ * whole subtrees (spaces nest to any depth). Each step first reads the user's space
  * tree (ids, parents and dates only), so it reaches every level.
  *
  * - Deleting or archiving a space takes its active sub-spaces with it, at the
@@ -113,6 +113,26 @@ export async function binArchivedSpaces(ids) {
   for (const [at, spaceIds] of removedWith(ids, tree, byId, 'archived_at')) {
     await check(supabase.from('spaces').update(removed).in('id', spaceIds))
     await check(supabase.from('space_items').update(removed).in('space_id', spaceIds).eq('archived_at', at))
+  }
+}
+
+/**
+ * Move spaces, with everything in them, into `parentId` (null = top level),
+ * after the spaces already there. A space can't go inside itself or one of its
+ * own sub-spaces, and one whose parent is moving too stays inside it.
+ */
+export async function moveSpaces(ids, parentId) {
+  const { tree, byId } = await loadTree()
+  const parentOf = id => byId.get(id)?.parent_id ?? null
+  const moving = new Set(ids)
+  if (parentId && chainOf(parentId, parentOf).some(id => moving.has(id))) {
+    throw new Error("A space can't move inside itself.")
+  }
+  const roots = ids.filter(id =>
+    parentOf(id) !== (parentId ?? null) && !ancestorsOf(id, parentOf).some(up => moving.has(up)))
+  let position = tree.filter(s => isActive(s) && parentOf(s.id) === (parentId ?? null)).length
+  for (const id of roots) {
+    await check(supabase.from('spaces').update({ parent_id: parentId ?? null, position: position++ }).eq('id', id))
   }
 }
 
