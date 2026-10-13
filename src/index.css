@@ -1,9 +1,11 @@
 /**
  * index.css - Global styles and the theme tokens (CSS variables) that
- * tailwind.config.js maps to its colours. Font: DM Sans (Google Fonts).
+ * tailwind.config.js maps to its colours. Font: DM Sans, served from this
+ * site (bundled from @fontsource-variable/dm-sans), so no request leaves it.
  */
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+@import '@fontsource-variable/dm-sans/opsz.css';
+@import '@fontsource-variable/dm-sans/opsz-italic.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -164,7 +166,7 @@
 body {
   background: var(--bg-base);
   color: var(--text-primary);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'DM Sans Variable', sans-serif;
   -webkit-font-smoothing: antialiased;
   transition: background 0.2s ease, color 0.2s ease;
 }

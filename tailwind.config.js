@@ -15,7 +15,7 @@ export default {
         nav: '955px',
       },
       fontFamily: {
-        sans: ['"DM Sans"', 'sans-serif'],
+        sans: ['"DM Sans Variable"', 'sans-serif'],
       },
       colors: {
         bg: {

@@ -227,14 +227,6 @@ export default defineConfig({
             expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 365, purgeOnQuotaError: true },
           },
         },
-        {
-          urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-          handler: 'CacheFirst',
-          options: {
-            cacheName: 'google-fonts-cache',
-            expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-          },
-        },
       ],
     },
   }), cloudflare(), seoPlugin(), excalidrawFontsPlugin(), excalidrawEnglishOnlyPlugin()],
