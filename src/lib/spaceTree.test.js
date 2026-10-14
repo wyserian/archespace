@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { ancestorsOf, chainOf, descendantsOf, moveDestinations, pathOf, spacePathLabel, treeOrder } from './spaceTree'
+import {
+  ancestorsOf, chainOf, descendantsOf, moveDestinations, pathOf, rollUpCounts, spacePathLabel, treeOrder,
+} from './spaceTree'
 
 // a > b > c > d, a > e, f (top level)
 const spaces = [
@@ -52,6 +54,12 @@ describe('spaceTree', () => {
     const marked = spaces.map(s => ({ ...s, read_only: s.id === 'e' }))
     expect(moveDestinations(marked, new Set(['b', 'c', 'd'])).map(({ space }) => space.id))
       .toEqual(['a', 'f'])
+  })
+
+  it('adds every level\'s count into the spaces above it', () => {
+    // a > b > c > d, a > e, f; an archived space "x" isn't listed.
+    expect(rollUpCounts({ a: 1, c: 2, d: 3, e: 4, f: 5, x: 9 }, spaces))
+      .toEqual({ a: 10, b: 5, c: 5, d: 3, e: 4, f: 5 })
   })
 
   it('stops at a parent loop', () => {

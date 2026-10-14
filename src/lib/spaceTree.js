@@ -94,6 +94,24 @@ export function moveDestinations(spaces, exclude = new Set()) {
 }
 
 /**
+ * Each space's count with the counts of every space below it added in.
+ * `counts` maps a space id to its own count; the result has every space in
+ * `spaces` (rows with `id` and `parent_id`), and leaves out counts of spaces
+ * not among them.
+ */
+export function rollUpCounts(counts, spaces) {
+  const byId = new Map(spaces.map(s => [s.id, s]))
+  const totals = Object.fromEntries(spaces.map(s => [s.id, 0]))
+  for (const [id, count] of Object.entries(counts)) {
+    if (!byId.has(id)) continue
+    for (const at of chainOf(id, x => byId.get(x)?.parent_id)) {
+      if (at in totals) totals[at] += count
+    }
+  }
+  return totals
+}
+
+/**
  * Where a space sits, for labels: "A › B › C", folded to "A › … › D" when
  * it's deeper than three levels.
  */
