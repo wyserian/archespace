@@ -9,6 +9,7 @@ import {
   ChevronRight, MoreHorizontal, Folder,
 } from 'lucide-react'
 import { useDragReorder } from '../hooks/useDragReorder'
+import { useDualEntitySelection } from '../hooks/useDualEntitySelection'
 import { useSpaces } from '../hooks/useSpaces'
 import { useItemBoard } from '../hooks/useItemBoard'
 import ItemBoardModals from '../components/ItemBoardModals'
@@ -101,6 +102,10 @@ export default function SpacePage() {
     duplicate: duplicateSpace,
     move: moveSpace,
     reorder: reorderSpaces,
+    bulkRemove: bulkRemoveSpaces,
+    bulkArchive: bulkArchiveSpaces,
+    bulkSetPinned: bulkSetSpacesPinned,
+    bulkDuplicate: bulkDuplicateSpaces,
   } = useSpaces()
 
   // Items, their card callbacks, unsaved-edit guard and item dialogs.
@@ -124,7 +129,10 @@ export default function SpacePage() {
   const { data: spaceStats = {} } = useSpaceStats()
   const [spaceModal, setSpaceModal] = useState(null) // { type:'create' } | { type:'edit', col }
   const [spaceDeleteConfirm, setSpaceDeleteConfirm] = useState(null)
-  const [moveSpaceId, setMoveSpaceId] = useState(null)
+  // { ids, onDone } of the sub-spaces being moved.
+  const [spaceMoveRequest, setSpaceMoveRequest] = useState(null)
+  // { spaceIds, itemIds } awaiting the "move to bin" confirmation.
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(null)
 
   // Private route: noindex, and a generic tab title - never the space name,
   // which would leak private data into the browser tab, history, and app
@@ -133,9 +141,6 @@ export default function SpacePage() {
 
   const { registerCommands, closePalette } = useCommandPalette()
 
-  // Local UI state
-  const [selectMode, setSelectMode]       = useState(false)
-  const [selectedIds, setSelectedIds]     = useState(() => new Set())
   const [itemSort, setItemSort] = usePersistedSort('arche-sort-items')
 
   // While inside a space, expose a "New item" entry in the command palette
@@ -204,16 +209,16 @@ export default function SpacePage() {
     })
   }
 
-  // Tag filter (within this space)
+  // Tag filter (within this space: its sub-spaces and items)
   const [selectedTags, setSelectedTags] = useState([])
   const allTags = useMemo(() => {
     const set = new Set()
-    for (const it of items) for (const t of (it.tags || [])) set.add(t)
+    for (const entry of [...subSpaces, ...items]) for (const t of (entry.tags || [])) set.add(t)
     return Array.from(set).sort((a, b) => a.localeCompare(b))
-  }, [items])
-  // Only selected tags that some item still carries take effect. A selected
-  // tag that was just removed from every item (its pill disappears) would
-  // otherwise leave the filter matching nothing and the space looking empty.
+  }, [subSpaces, items])
+  // Only selected tags that something here still carries take effect. A
+  // selected tag that was just removed from everything (its pill disappears)
+  // would otherwise leave the filter matching nothing and the space looking empty.
   const activeTags = useMemo(
     () => selectedTags.filter(t => allTags.includes(t)),
     [selectedTags, allTags]
@@ -226,29 +231,43 @@ export default function SpacePage() {
       return current.includes(tag) ? current.filter(t => t !== tag) : [...current, tag]
     })
   }, [allTags])
-  // In-space search (item title + tags)
+  // In-space search (sub-space names, item titles, and tags)
   const [query, setQuery] = useState('')
   const trimmedQuery = query.trim().toLowerCase()
 
-  // An item matches when it carries any of the active tags (OR) and, while
-  // searching, its title or one of its tags contains the query.
-  const visibleItems = useMemo(() => {
-    if (activeTags.length === 0 && !trimmedQuery) return items
-    return items.filter(it => {
-      const tags = it.tags || []
-      if (activeTags.length > 0 && !tags.some(t => activeTags.includes(t))) return false
-      if (trimmedQuery) {
-        const inTitle = (it.title || '').toLowerCase().includes(trimmedQuery)
-        const inTags = tags.some(t => t.toLowerCase().includes(trimmedQuery))
-        if (!inTitle && !inTags) return false
-      }
-      return true
-    })
-  }, [items, activeTags, trimmedQuery])
+  // A sub-space or item matches when it carries any of the active tags (OR)
+  // and, while searching, its name or title or one of its tags contains the query.
+  const matches = useCallback((name, tags = []) => {
+    if (activeTags.length > 0 && !tags.some(t => activeTags.includes(t))) return false
+    if (!trimmedQuery) return true
+    return (name || '').toLowerCase().includes(trimmedQuery)
+      || tags.some(t => t.toLowerCase().includes(trimmedQuery))
+  }, [activeTags, trimmedQuery])
+  const filtering = activeTags.length > 0 || !!trimmedQuery
 
-  const sortedItems = useMemo(
-    () => sortEntities(visibleItems, itemSort, i => i.title),
-    [visibleItems, itemSort]
+  const sortedSubSpaces = useMemo(() => sortEntities(
+    filtering ? subSpaces.filter(s => matches(s.name, s.tags)) : subSpaces,
+    itemSort,
+    s => s.name,
+  ), [subSpaces, filtering, matches, itemSort])
+  const sortedItems = useMemo(() => sortEntities(
+    filtering ? items.filter(it => matches(it.title, it.tags)) : items,
+    itemSort,
+    i => i.title,
+  ), [items, filtering, matches, itemSort])
+
+  // Selection: sub-spaces and items together, as on the dashboard.
+  const {
+    selectMode, setSelectMode, selectedSpaceIds, selectedItemIds,
+    selectedCount, exitSelectMode, selectAll, toggleSpace, toggleItem,
+  } = useDualEntitySelection(sortedSubSpaces, sortedItems)
+  const selectedSpaces = useMemo(
+    () => subSpaces.filter(s => selectedSpaceIds.has(s.id)),
+    [subSpaces, selectedSpaceIds]
+  )
+  const selectedItems = useMemo(
+    () => items.filter(i => selectedItemIds.has(i.id)),
+    [items, selectedItemIds]
   )
   // Grid (masonry) and list share the same items; list is a single column.
   const online = useOnlineStatus()
@@ -292,33 +311,13 @@ export default function SpacePage() {
 
   // Manual drag order (in both list and grid views) only applies to the
   // default sort; other sorts and select mode disable it.
-  const reorderDisabled = readOnly || selectMode || itemSort !== 'default' || activeTags.length > 0 || !!trimmedQuery
-  // Sub-spaces always show in their own order (the sort and filters are for items).
-  const subSpaceReorderDisabled = readOnly || selectMode
-
-  const selectedCount = selectedIds.size
-  const selectedItems = useMemo(
-    () => items.filter(i => selectedIds.has(i.id)),
-    [items, selectedIds]
-  )
-  const exitSelectMode = useCallback(() => {
-    setSelectMode(false)
-    setSelectedIds(new Set())
-  }, [])
-
-  const toggleSelected = useCallback((id) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }, [])
+  const reorderDisabled = readOnly || selectMode || itemSort !== 'default' || filtering
 
   const { closeAll: closeItemDialogs } = board
   const pageActions = useMemo(() => ({
     onEscape: () => {
       closeItemDialogs()
+      setBulkDeleteConfirm(null)
       exitSelectMode()
     },
   }), [closeItemDialogs, exitSelectMode])
@@ -348,10 +347,10 @@ export default function SpacePage() {
   // Sub-spaces reorder among themselves, by dragging their cards. The whole
   // list is saved, so the other spaces keep their places.
   const subSpaceDrag = useDragReorder({
-    disabled: subSpaceReorderDisabled,
+    disabled: reorderDisabled,
     onDrop: (fromIndex, toIndex) => {
-      const fromId = subSpaces[fromIndex]?.id
-      const toId = subSpaces[toIndex]?.id
+      const fromId = sortedSubSpaces[fromIndex]?.id
+      const toId = sortedSubSpaces[toIndex]?.id
       if (!fromId || !toId) return
       const reordered = [...spaces]
       const [moved] = reordered.splice(reordered.findIndex(s => s.id === fromId), 1)
@@ -367,17 +366,27 @@ export default function SpacePage() {
     dragItemRef.current = itemsRef.current[index]
   }, [onDragStart])
 
-  const runBulkAction = async (fn) => {
+  /** "2 spaces", "3 items", or "2 spaces and 3 items". */
+  const describeSelection = (spaceCount, itemCount) => [
+    spaceCount > 0 && `${spaceCount} ${spaceCount === 1 ? 'space' : 'spaces'}`,
+    itemCount > 0 && `${itemCount} ${itemCount === 1 ? 'item' : 'items'}`,
+  ].filter(Boolean).join(' and ')
+  const selectionLabel = describeSelection(selectedSpaceIds.size, selectedItemIds.size)
+  const hasSelectedItems = selectedItemIds.size > 0
+
+  /** Run a bulk action on the selected sub-spaces and items, then leave select mode. */
+  const runBulkAction = async (fn, successMessage, errorMessage) => {
     if (selectedCount === 0) return
-    if (board.hasDirty([...selectedIds])) {
+    if (board.hasDirty([...selectedItemIds])) {
       toast.error('Save or discard unsaved changes before bulk actions')
       return
     }
     try {
-      await fn()
+      await fn([...selectedSpaceIds], [...selectedItemIds])
+      if (successMessage) toast.success(successMessage)
       exitSelectMode()
     } catch {
-      toast.error("Couldn't complete that action.")
+      toast.error(errorMessage || "Couldn't complete that action.")
     }
   }
 
@@ -445,8 +454,8 @@ export default function SpacePage() {
         item={item}
         index={index}
         selectMode={selectMode}
-        selected={selectedIds.has(item.id)}
-        onSelectedChange={toggleSelected}
+        selected={selectedItemIds.has(item.id)}
+        onSelectedChange={toggleItem}
         forcedCollapsed={board.collapsedIds.has(item.id)}
         {...board.cardProps}
         onDragStart={handleItemDragStart}
@@ -467,7 +476,12 @@ export default function SpacePage() {
       search=""
       layout={viewMode === 'grid' ? 'grid' : 'list'}
       stats={spaceStats}
-      reorderDisabled={subSpaceReorderDisabled}
+      activeTags={activeTags}
+      onTagClick={toggleTagFilter}
+      selectMode={selectMode}
+      selected={selectedSpaceIds.has(sub.id)}
+      onToggleSelect={() => toggleSpace(sub.id)}
+      reorderDisabled={reorderDisabled}
       dragIndex={subSpaceDrag.dragIndex}
       dragOverIndex={subSpaceDrag.dragOverIndex}
       handleDragStart={subSpaceDrag.handleDragStart}
@@ -485,7 +499,7 @@ export default function SpacePage() {
         onSuccess: () => toast.success('Space duplicated'),
         onError: () => toast.error("Couldn't duplicate the space."),
       })}
-      onMove={(sid) => setMoveSpaceId(sid)}
+      onMove={(sid) => setSpaceMoveRequest({ ids: [sid] })}
       onArchive={(sid) => archiveSpace.mutate(sid, {
         onSuccess: () => toast.success('Space archived'),
         onError: () => toast.error("Couldn't archive the space."),
@@ -493,9 +507,10 @@ export default function SpacePage() {
     />
   )
 
-  // Sub-spaces, then items, as separate sections (sub-spaces hide while
-  // selecting items). Each is labelled only when both show.
-  const subSpaceNodes = selectMode ? [] : subSpaces.map((sub, i) => renderSubSpaceCard(sub, i))
+  // Sub-spaces, then items, as separate sections, each labelled only when both
+  // show. Search, tags, sort and select cover both.
+  const hasContent = subSpaces.length + items.length > 0
+  const subSpaceNodes = sortedSubSpaces.map((sub, i) => renderSubSpaceCard(sub, i))
   const itemNodes = sortedItems.map((item, index) => renderItemCard(item, index))
   const labelSections = subSpaceNodes.length > 0 && itemNodes.length > 0
   const sectionLabelClass = 'mb-3 px-1 text-base font-semibold text-text-primary'
@@ -618,7 +633,7 @@ export default function SpacePage() {
               </div>
             ))}
           </div>
-        ) : (items.length === 0 && subSpaces.length === 0) ? (
+        ) : !hasContent ? (
           /* Empty state */
           <div className="text-center py-20">
             <div className="w-14 h-14 rounded-2xl bg-bg-surface border border-bg-border flex items-center justify-center mx-auto mb-4">
@@ -640,13 +655,13 @@ export default function SpacePage() {
             )}
           </div>
         ) : (
-          /* Items in list (single column) or grid (round-robin masonry) view */
+          /* Sub-spaces and items in list (single column) or grid (round-robin masonry) view */
           <>
-            {/* Search row: compact in-space search (item titles and tags) on the
-                left; the view, sort and select controls right-aligned. In select
-                mode the search gives way to Select all + Done, with Done where
-                Select was. */}
-            {items.length > 0 && (
+            {/* Search row: compact in-space search (names, titles and tags) on
+                the left; the view, sort and select controls right-aligned. In
+                select mode the search gives way to Select all + Done, with Done
+                where Select was. */}
+            {hasContent && (
               <div className="mb-3 flex items-center gap-2">
                 {!selectMode && (
                   <div className="flex h-8 sm:h-9 min-w-0 flex-1 sm:max-w-md items-center gap-2 rounded-full bg-bg-card pl-3.5 pr-1.5 focus-within:ring-1 focus-within:ring-accent-border transition-shadow">
@@ -662,8 +677,8 @@ export default function SpacePage() {
                           setQuery('')
                         }
                       }}
-                      placeholder="Search items"
-                      aria-label="Search items in this space"
+                      placeholder="Search this space"
+                      aria-label="Search this space"
                       className="min-w-0 flex-1 bg-transparent text-[13.5px] text-text-primary placeholder-text-muted focus:outline-none"
                     />
                     {query && (
@@ -683,7 +698,7 @@ export default function SpacePage() {
                   {!selectMode && (
                     <ViewToggle value={viewMode} onChange={changeViewMode} />
                   )}
-                  {!selectMode && items.length > 1 && (
+                  {!selectMode && subSpaces.length + items.length > 1 && (
                     <SortMenu value={itemSort} onChange={setItemSort} />
                   )}
                   {selectMode && (
@@ -693,7 +708,7 @@ export default function SpacePage() {
                       icon={ListChecks}
                       iconOnlyOnMobile
                       aria-label="Select all"
-                      onClick={() => setSelectedIds(new Set(items.map(i => i.id)))}
+                      onClick={selectAll}
                     >
                       Select all
                     </Button>
@@ -703,7 +718,7 @@ export default function SpacePage() {
                     size="sm"
                     icon={CheckSquare}
                     iconOnlyOnMobile
-                    aria-label={selectMode ? 'Done selecting' : 'Select items'}
+                    aria-label={selectMode ? 'Done selecting' : 'Select'}
                     onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}
                   >
                     {selectMode ? 'Done' : 'Select'}
@@ -751,12 +766,12 @@ export default function SpacePage() {
             )}
             {/* A search or tag filter that matches nothing (the search bar above
                 stays usable). */}
-            {sortedItems.length === 0 && items.length > 0 && (trimmedQuery || activeTags.length > 0) && (
+            {filtering && sortedSubSpaces.length + sortedItems.length === 0 && (
               <div className="flex flex-col items-center px-6 pt-12 pb-6 text-center">
                 <SearchX size={36} className="text-text-muted" />
-                <p className="mt-3 font-medium text-text-secondary">No matching items</p>
+                <p className="mt-3 font-medium text-text-secondary">Nothing matches</p>
                 <p className="mt-1 text-sm text-text-muted">
-                  {trimmedQuery ? `No items match "${query.trim()}".` : 'No items have the selected tags.'}
+                  {trimmedQuery ? `Nothing here matches "${query.trim()}".` : 'Nothing here has the selected tags.'}
                 </p>
               </div>
             )}
@@ -777,37 +792,44 @@ export default function SpacePage() {
                   id: 'pin',
                   label: 'Pin',
                   icon: BULK_ICONS.pin,
-                  onClick: () => runBulkAction(() =>
-                    bulkSetPinned.mutateAsync({ ids: [...selectedIds], pinned: true }).then(() =>
-                      toast.success(`Pinned ${selectedCount} items`)
-                    )
+                  onClick: () => runBulkAction(
+                    (spaceIds, itemIds) => Promise.all([
+                      spaceIds.length && bulkSetSpacesPinned.mutateAsync({ ids: spaceIds, pinned: true }),
+                      itemIds.length && bulkSetPinned.mutateAsync({ ids: itemIds, pinned: true }),
+                    ]),
+                    `Pinned ${selectionLabel}`,
+                    "Couldn't pin the selection.",
                   ),
                 },
                 !readOnly && {
                   id: 'unpin',
                   label: 'Unpin',
                   icon: BULK_ICONS.unpin,
-                  onClick: () => runBulkAction(() =>
-                    bulkSetPinned.mutateAsync({ ids: [...selectedIds], pinned: false }).then(() =>
-                      toast.success('Unpinned items')
-                    )
+                  onClick: () => runBulkAction(
+                    (spaceIds, itemIds) => Promise.all([
+                      spaceIds.length && bulkSetSpacesPinned.mutateAsync({ ids: spaceIds, pinned: false }),
+                      itemIds.length && bulkSetPinned.mutateAsync({ ids: itemIds, pinned: false }),
+                    ]),
+                    `Unpinned ${selectionLabel}`,
+                    "Couldn't unpin the selection.",
                   ),
                 },
-                {
+                // Collapse / expand only apply to item cards.
+                hasSelectedItems && {
                   id: 'collapse',
                   label: 'Collapse',
                   icon: BULK_ICONS.collapse,
                   onClick: () => {
-                    board.setManyCollapsed([...selectedIds], true)
-                    toast.info(`Collapsed ${selectedCount} items`)
+                    board.setManyCollapsed([...selectedItemIds], true)
+                    toast.info(`Collapsed ${selectedItemIds.size} items`)
                   },
                 },
-                {
+                hasSelectedItems && {
                   id: 'expand',
                   label: 'Expand',
                   icon: BULK_ICONS.expand,
                   onClick: () => {
-                    board.setManyCollapsed([...selectedIds], false)
+                    board.setManyCollapsed([...selectedItemIds], false)
                     toast.info('Expanded items')
                   },
                 },
@@ -815,26 +837,40 @@ export default function SpacePage() {
                   id: 'duplicate',
                   label: 'Duplicate',
                   icon: BULK_ICONS.copy,
-                  onClick: () => runBulkAction(() =>
-                    bulkDuplicate.mutateAsync(selectedItems).then(() =>
-                      toast.success(`Duplicated ${selectedCount} items`)
-                    )
+                  onClick: () => runBulkAction(
+                    () => Promise.all([
+                      selectedSpaces.length && bulkDuplicateSpaces.mutateAsync(selectedSpaces),
+                      selectedItems.length && bulkDuplicate.mutateAsync(selectedItems),
+                    ]),
+                    `Duplicated ${selectionLabel}`,
+                    "Couldn't duplicate the selection.",
                   ),
                 },
-                !readOnly && {
+                // Sub-spaces or items move, not both at once (a read-only
+                // space stays where it is).
+                !readOnly && hasSelectedItems && selectedSpaceIds.size === 0 && {
                   id: 'move',
                   label: 'Move',
                   icon: BULK_ICONS.move,
-                  onClick: () => board.openMoveItems(selectedItems.map(item => item.id), exitSelectMode),
+                  onClick: () => board.openMoveItems([...selectedItemIds], exitSelectMode),
+                },
+                !readOnly && !hasSelectedItems && selectedSpaces.length > 0 && !selectedSpaces.some(s => s.read_only) && {
+                  id: 'move',
+                  label: 'Move',
+                  icon: BULK_ICONS.move,
+                  onClick: () => setSpaceMoveRequest({ ids: [...selectedSpaceIds], onDone: exitSelectMode }),
                 },
                 !readOnly && {
                   id: 'archive',
                   label: 'Archive',
                   icon: BULK_ICONS.archive,
-                  onClick: () => runBulkAction(() =>
-                    bulkArchive.mutateAsync([...selectedIds]).then(() =>
-                      toast.success(`Archived ${selectedCount} items`)
-                    )
+                  onClick: () => runBulkAction(
+                    (spaceIds, itemIds) => Promise.all([
+                      spaceIds.length && bulkArchiveSpaces.mutateAsync(spaceIds),
+                      itemIds.length && bulkArchive.mutateAsync(itemIds),
+                    ]),
+                    `Archived ${selectionLabel}`,
+                    "Couldn't archive the selection.",
                   ),
                 },
                 !readOnly && {
@@ -842,7 +878,13 @@ export default function SpacePage() {
                   label: 'Delete',
                   icon: BULK_ICONS.trash,
                   variant: 'danger',
-                  onClick: () => board.requestBulkDelete([...selectedIds], exitSelectMode),
+                  onClick: () => {
+                    if (board.hasDirty([...selectedItemIds])) {
+                      toast.error('Save or discard unsaved changes first')
+                      return
+                    }
+                    setBulkDeleteConfirm({ spaceIds: [...selectedSpaceIds], itemIds: [...selectedItemIds] })
+                  },
                 },
               ]}
             />
@@ -891,12 +933,39 @@ export default function SpacePage() {
         />
       )}
 
-      {moveSpaceId && (
+      {bulkDeleteConfirm && (
+        <ConfirmDialog
+          title={`Move ${describeSelection(bulkDeleteConfirm.spaceIds.length, bulkDeleteConfirm.itemIds.length)} to recycle bin?`}
+          message={bulkDeleteConfirm.spaceIds.length > 0
+            ? 'All items inside these spaces go to the bin as well.'
+            : 'You can restore them later from the recycle bin.'}
+          confirmLabel="Move to recycle bin"
+          destructive
+          onConfirm={async () => {
+            const { spaceIds, itemIds } = bulkDeleteConfirm
+            setBulkDeleteConfirm(null)
+            try {
+              await Promise.all([
+                spaceIds.length && bulkRemoveSpaces.mutateAsync(spaceIds),
+                itemIds.length && board.api.bulkRemove.mutateAsync(itemIds),
+              ])
+              toast.success(`Moved ${describeSelection(spaceIds.length, itemIds.length)} to recycle bin`)
+              exitSelectMode()
+            } catch {
+              toast.error("Couldn't delete the selection.")
+            }
+          }}
+          onClose={() => setBulkDeleteConfirm(null)}
+        />
+      )}
+
+      {spaceMoveRequest && (
         <MoveSpacesDialog
-          ids={[moveSpaceId]}
+          ids={spaceMoveRequest.ids}
           spaces={spaces}
           move={moveSpace}
-          onClose={() => setMoveSpaceId(null)}
+          onDone={spaceMoveRequest.onDone}
+          onClose={() => setSpaceMoveRequest(null)}
         />
       )}
 

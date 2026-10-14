@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react'
 
 /**
- * Dual selection state for pages that select both spaces and items (archive, recycle bin).
+ * Dual selection state for pages that select both spaces and items (the
+ * dashboard, a space's page, the archive and the recycle bin).
  */
 export function useDualEntitySelection(spaces, items) {
   const [selectMode, setSelectMode] = useState(false)
