@@ -49,6 +49,7 @@ export function useSpaces() {
           .order('pinned', { ascending: false })
           .order('position', { ascending: true })
           .order('created_at', { ascending: false })
+          .order('id', { ascending: true }) // a stable last tie-break, as on mobile
 
         if (error) throw error
         const rows = data || []

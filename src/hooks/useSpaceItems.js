@@ -90,6 +90,10 @@ export function useSpaceItems(spaceId) {
           .is('archived_at', null)
           .order('pinned', { ascending: false })
           .order('position', { ascending: true })
+          // Items can share a position (one added after a delete), so ties
+          // break the same way here and on mobile.
+          .order('created_at', { ascending: true })
+          .order('id', { ascending: true })
         if (error) throw error
         const rows = data || []
         setReachable(true)
