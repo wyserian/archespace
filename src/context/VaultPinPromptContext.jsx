@@ -1,7 +1,8 @@
 /**
  * VaultPinPromptContext.jsx - Asks for the vault PIN before showing protected
- * content, or for the PIN of a backup made in another vault. This vault's PIN
- * is checked like an unlock: wrong entries count towards the same lockout.
+ * content or erasing the local vault, or for the PIN of a backup made in
+ * another vault. This vault's PIN is checked like an unlock: wrong entries
+ * count towards the same lockout.
  */
 import { useCallback, useRef, useState } from 'react'
 import { Lock } from 'lucide-react'
@@ -43,6 +44,8 @@ function VaultPinDialog({
   // Checks a PIN; defaults to this vault's PIN. A backup from another vault
   // passes its own check.
   verify,
+  // The confirm button in red, for an action that deletes something.
+  destructive = false,
   onDone,
 }) {
   const { verifyVaultPin: verifyThisVault } = useEncryption()
@@ -87,7 +90,7 @@ function VaultPinDialog({
           <button
             type="submit"
             disabled={busy || !pin}
-            className={buttonClass({ variant: 'primary' })}
+            className={buttonClass({ variant: destructive ? 'dangerSolid' : 'primary' })}
           >
             {busy ? 'Checking...' : confirmLabel}
           </button>

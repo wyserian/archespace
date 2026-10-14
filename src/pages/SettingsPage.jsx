@@ -85,6 +85,25 @@ export default function SettingsPage() {
   const { user, signIn, signOut, requestPasswordReset, reauthenticate, updateEmail, deleteAccount, updatePasswordAndSignOut } = useAuth()
   const { cryptoKey, unlock, updatePin, setupRecoveryCode, updatePinWithRecoveryCode, unlocking, lock, autoLockId, setAutoLock } = useEncryption()
   const askVaultPin = useVaultPinPrompt()
+
+  // Local mode: erasing deletes everything kept in this browser, so it asks
+  // for the vault PIN first (the prompt is also the confirmation).
+  const eraseLocalVault = async () => {
+    const ok = await askVaultPin({
+      title: 'Erase local data?',
+      message: 'Every space, item and your vault in this browser will be deleted permanently. Export a backup first if you might want them later. Enter your vault PIN to erase.',
+      confirmLabel: 'Erase everything',
+      destructive: true,
+    })
+    if (!ok) return
+    lock()
+    for (const passkey of await listPasskeys(LOCAL_USER.id).catch(() => [])) {
+      await removePasskey(passkey.id).catch(() => {})
+    }
+    await eraseLocalData().catch(() => {})
+    leaveLocalMode()
+  }
+
   const {
     themeMode,
     themeModes,
@@ -138,7 +157,6 @@ export default function SettingsPage() {
     ? 'appearance'
     : rawActiveSection
   const [confirmSignOutAll, setConfirmSignOutAll] = useState(false)
-  const [confirmErase, setConfirmErase] = useState(false)
   // The one row whose form is open: 'email' | 'password' | 'pin' |
   // 'pin-recovery' | 'recovery-code' | null.
   const [openRow, setOpenRow] = useState(null)
@@ -530,7 +548,7 @@ export default function SettingsPage() {
                     title="Erase local data"
                     description="Permanently deletes every space, item and your vault from this browser. This can't be undone."
                     action={
-                      <button type="button" onClick={() => setConfirmErase(true)} className={rowDangerButtonClass}>
+                      <button type="button" onClick={eraseLocalVault} className={rowDangerButtonClass}>
                         <Trash2 size={15} /> Erase
                       </button>
                     }
@@ -1079,25 +1097,6 @@ export default function SettingsPage() {
             />
           </div>
         </Modal>
-      )}
-
-      {confirmErase && (
-        <ConfirmDialog
-          title="Erase local data?"
-          message="Every space, item and your vault in this browser will be deleted permanently. Export a backup first if you might want them later."
-          confirmLabel="Erase everything"
-          destructive
-          onConfirm={async () => {
-            setConfirmErase(false)
-            lock()
-            for (const passkey of await listPasskeys(LOCAL_USER.id).catch(() => [])) {
-              await removePasskey(passkey.id).catch(() => {})
-            }
-            await eraseLocalData().catch(() => {})
-            leaveLocalMode()
-          }}
-          onClose={() => setConfirmErase(false)}
-        />
       )}
 
       {confirmSignOutAll && (
