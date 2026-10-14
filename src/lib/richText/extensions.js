@@ -21,7 +21,7 @@ import { LineHeight } from './lineHeight'
 export function richTextExtensions() {
   return [
     StarterKit.configure({
-      heading: { levels: [1, 2, 3] },
+      heading: { levels: [1, 2, 3, 4] },
       // Links open from the item's own toolbar, never on a plain click (a
       // click places the cursor). Only http(s) and mailto are kept.
       link: {

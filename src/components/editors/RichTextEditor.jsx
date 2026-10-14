@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useEditor, useEditorState, EditorContent } from '@tiptap/react'
 import {
-  Undo2, Redo2, Heading, Heading1, Heading2, Heading3, Pilcrow, ChevronDown,
+  Undo2, Redo2, Heading, Heading1, Heading2, Heading3, Heading4, Pilcrow, ChevronDown,
   List, ListOrdered, ListChecks, TextQuote, SquareCode, Bold, Italic,
   Strikethrough, Code, Underline, Highlighter, Link2, Unlink, Superscript,
   Subscript, AlignLeft, AlignCenter, AlignRight, AlignJustify, Table, Minus,
@@ -95,7 +95,7 @@ export function RichTextToolbar({ editor }) {
   return editor ? <ToolbarControls key={editor.instanceId} editor={editor} /> : null
 }
 
-const HEADING_ICONS = { 1: Heading1, 2: Heading2, 3: Heading3 }
+const HEADING_ICONS = { 1: Heading1, 2: Heading2, 3: Heading3, 4: Heading4 }
 const ALIGNMENTS = [
   { value: 'left', label: 'Align left', icon: AlignLeft },
   { value: 'center', label: 'Align centre', icon: AlignCenter },
@@ -109,7 +109,7 @@ function ToolbarControls({ editor }) {
     selector: ({ editor: e }) => ({
       canUndo: e.can().undo(),
       canRedo: e.can().redo(),
-      heading: [1, 2, 3].find(level => e.isActive('heading', { level })) || 0,
+      heading: [1, 2, 3, 4].find(level => e.isActive('heading', { level })) || 0,
       bulletList: e.isActive('bulletList'),
       orderedList: e.isActive('orderedList'),
       taskList: e.isActive('taskList'),
@@ -212,7 +212,7 @@ function ToolbarControls({ editor }) {
         active={state.heading > 0}
         items={[
           { id: 'p', label: 'Text', icon: Pilcrow, active: state.heading === 0, onClick: () => run(c => c.setParagraph()) },
-          ...[1, 2, 3].map(level => ({
+          ...[1, 2, 3, 4].map(level => ({
             id: `h${level}`,
             label: `Heading ${level}`,
             icon: HEADING_ICONS[level],

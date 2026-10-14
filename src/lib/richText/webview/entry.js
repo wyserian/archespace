@@ -54,7 +54,7 @@ function reportState() {
       subscript: editor.isActive('subscript'),
       align: ['center', 'right', 'justify'].find(a => editor.isActive({ textAlign: a })) || 'left',
       lineHeight: editor.getAttributes('paragraph').lineHeight || editor.getAttributes('heading').lineHeight || null,
-      heading: [1, 2, 3].find(level => editor.isActive('heading', { level })) || 0,
+      heading: [1, 2, 3, 4].find(level => editor.isActive('heading', { level })) || 0,
       bulletList: editor.isActive('bulletList'),
       orderedList: editor.isActive('orderedList'),
       taskList: editor.isActive('taskList'),

@@ -107,7 +107,7 @@ const tableLayout = {
 }
 
 // Rich text (Tiptap JSON)
-const HEADING_SIZES = { 1: 16, 2: 14, 3: 12.5 }
+const HEADING_SIZES = { 1: 16, 2: 14, 3: 12.5, 4: 11.5 }
 
 /** pdfmake text runs for a node's inline content (text + marks). */
 function richRuns(node) {
