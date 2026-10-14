@@ -17,11 +17,13 @@ export function useDragReorder({ disabled = false, onDrop }) {
     setDragIndex(index)
   }, [disabled])
 
+  // Only while one of this list's own entries is dragged, so dragging an item
+  // over a space card (or the other way) doesn't mark it as a drop place.
   const handleDragOver = useCallback((e, index) => {
-    if (disabled) return
+    if (disabled || dragIndex === null) return
     e.preventDefault()
     setDragOverIndex(index)
-  }, [disabled])
+  }, [disabled, dragIndex])
 
   const handleDrop = useCallback((index) => {
     if (disabled || dragIndex === null || dragIndex === index) {

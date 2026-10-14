@@ -187,7 +187,9 @@ export function SpaceCard({
         tabIndex={0}
         aria-pressed={selectMode ? selected : undefined}
         aria-label={ariaLabel}
-        className={`group relative flex items-center gap-3 sm:gap-4 rounded-xl pl-4 pr-3 py-3 cursor-pointer transition-all animate-fade-in-up bg-bg-card shadow-sm hover:shadow-md hover:bg-bg-elevated active:scale-[0.99] ${selectedRing} ${!selectMode && dragIndex === index ? 'opacity-40' : ''}`}
+        className={`group relative flex items-center gap-3 sm:gap-4 rounded-xl pl-4 pr-3 py-3 cursor-pointer transition-all animate-fade-in-up bg-bg-card shadow-sm hover:shadow-md hover:bg-bg-elevated active:scale-[0.99] ${selectedRing} ${
+          !selectMode && dragOverIndex === index && dragIndex !== index ? 'ring-2 ring-accent' : ''
+        } ${!selectMode && dragIndex === index ? 'opacity-40' : ''}`}
         style={{
           animationDelay: `${index * 30}ms`,
           borderLeftWidth: colorPreset ? '2px' : undefined,

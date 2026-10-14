@@ -100,6 +100,7 @@ export default function SpacePage() {
     archive: archiveSpace,
     duplicate: duplicateSpace,
     move: moveSpace,
+    reorder: reorderSpaces,
   } = useSpaces()
 
   // Items, their card callbacks, unsaved-edit guard and item dialogs.
@@ -292,6 +293,8 @@ export default function SpacePage() {
   // Manual drag order (in both list and grid views) only applies to the
   // default sort; other sorts and select mode disable it.
   const reorderDisabled = readOnly || selectMode || itemSort !== 'default' || activeTags.length > 0 || !!trimmedQuery
+  // Sub-spaces always show in their own order (the sort and filters are for items).
+  const subSpaceReorderDisabled = readOnly || selectMode
 
   const selectedCount = selectedIds.size
   const selectedItems = useMemo(
@@ -338,6 +341,23 @@ export default function SpacePage() {
       reordered.splice(toIndex, 0, moved)
       reorder.mutate(reordered, {
         onError: () => toast.error("Couldn't reorder items."),
+      })
+    },
+  })
+
+  // Sub-spaces reorder among themselves, by dragging their cards. The whole
+  // list is saved, so the other spaces keep their places.
+  const subSpaceDrag = useDragReorder({
+    disabled: subSpaceReorderDisabled,
+    onDrop: (fromIndex, toIndex) => {
+      const fromId = subSpaces[fromIndex]?.id
+      const toId = subSpaces[toIndex]?.id
+      if (!fromId || !toId) return
+      const reordered = [...spaces]
+      const [moved] = reordered.splice(reordered.findIndex(s => s.id === fromId), 1)
+      reordered.splice(reordered.findIndex(s => s.id === toId) + (fromIndex < toIndex ? 1 : 0), 0, moved)
+      reorderSpaces.mutate(reordered, {
+        onError: () => toast.error("Couldn't reorder spaces."),
       })
     },
   })
@@ -447,13 +467,13 @@ export default function SpacePage() {
       search=""
       layout={viewMode === 'grid' ? 'grid' : 'list'}
       stats={spaceStats}
-      reorderDisabled
-      dragIndex={-1}
-      dragOverIndex={-1}
-      handleDragStart={() => {}}
-      handleDragOver={() => {}}
-      handleDrop={() => {}}
-      handleDragEnd={() => {}}
+      reorderDisabled={subSpaceReorderDisabled}
+      dragIndex={subSpaceDrag.dragIndex}
+      dragOverIndex={subSpaceDrag.dragOverIndex}
+      handleDragStart={subSpaceDrag.handleDragStart}
+      handleDragOver={subSpaceDrag.handleDragOver}
+      handleDrop={subSpaceDrag.handleDrop}
+      handleDragEnd={subSpaceDrag.handleDragEnd}
       navigate={navigate}
       togglePin={toggleSpacePin}
       toggleStar={toggleSpaceStar}
