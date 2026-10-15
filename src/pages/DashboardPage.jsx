@@ -139,6 +139,9 @@ export default function DashboardPage() {
     return () => mq.removeEventListener('change', onChange)
   }, [])
   const denseItems = viewMode === 'grid' && isSmallScreen
+  // Space cards are mostly their name, which two phone-width columns would cut
+  // short, so on phones they take the full width (items keep two columns).
+  const spaceCols = isSmallScreen ? 1 : gridCols
 
   // "New item" on the dashboard too: command palette entry + the "I" shortcut.
   const { openAddItem } = board
@@ -449,11 +452,11 @@ export default function DashboardPage() {
   const firstSectionLabel = showSpacesSection || !showItemsSection ? 'Spaces' : 'Items'
 
   // One section's cards: round-robin masonry in grid view, one column in list.
-  const renderSection = (nodes) => (viewMode === 'grid' ? (
+  const renderSection = (nodes, cols = gridCols) => (viewMode === 'grid' ? (
     <div className="flex items-start gap-2 sm:gap-3">
-      {Array.from({ length: gridCols }, (_, col) => (
+      {Array.from({ length: cols }, (_, col) => (
         <div key={col} className="min-w-0 flex-1 flex flex-col gap-2 sm:gap-3">
-          {nodes.filter((_, i) => i % gridCols === col)}
+          {nodes.filter((_, i) => i % cols === col)}
         </div>
       ))}
     </div>
@@ -491,7 +494,11 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-bg-base">
       {/* Header (mobile only) */}
       <header ref={headerRef} className="sm:hidden sticky top-0 z-20 glass">
-        <div className="w-full px-4 h-14 flex items-center justify-end gap-3">
+        <div className="w-full px-4 h-14 flex items-center justify-between gap-3">
+          {/* The name, as in the sidebar (hidden on phones) and the emails. */}
+          <span className="text-base font-bold leading-none tracking-[0.03em] text-text-primary select-none" aria-hidden="true">
+            <span className="text-accent">ARCHE</span>SPACE
+          </span>
           {/* Actions - mobile: lock + ordered menu (search is the bar below) */}
           <div className="flex sm:hidden items-center gap-2">
             {isUnlocked && (
@@ -860,7 +867,7 @@ export default function DashboardPage() {
         ) : (
           <>
             <div className={`pb-32 ${viewMode === 'list' ? 'max-w-[52rem] mx-auto' : ''}`}>
-              {showSpacesSection && renderSection(sortedSpaces.map(renderSpaceCard))}
+              {showSpacesSection && renderSection(sortedSpaces.map(renderSpaceCard), spaceCols)}
               {showItemsSection && (
                 <>
                   {showSpacesSection && (

@@ -530,11 +530,13 @@ export default function SpacePage() {
   const sectionLabelClass = 'mb-3 px-1 text-base font-semibold text-text-primary'
 
   // One section's cards: round-robin masonry in grid view, one column in list.
-  const renderSection = (nodes) => (viewMode === 'grid' ? (
+  // Sub-space cards take the full width on phones, where two columns would
+  // cut their names short.
+  const renderSection = (nodes, cols = gridCols) => (viewMode === 'grid' ? (
     <div className="flex items-start gap-2 sm:gap-3">
-      {Array.from({ length: gridCols }, (_, col) => (
+      {Array.from({ length: cols }, (_, col) => (
         <div key={col} className="min-w-0 flex-1 flex flex-col gap-2 sm:gap-3">
-          {nodes.filter((_, i) => i % gridCols === col)}
+          {nodes.filter((_, i) => i % cols === col)}
         </div>
       ))}
     </div>
@@ -793,7 +795,7 @@ export default function SpacePage() {
                 and tags above stay where they are. */}
             <div className={viewMode === 'grid' ? '' : 'max-w-5xl mx-auto w-full'}>
               {labelSections && <h2 className={sectionLabelClass}>Spaces</h2>}
-              {subSpaceNodes.length > 0 && renderSection(subSpaceNodes)}
+              {subSpaceNodes.length > 0 && renderSection(subSpaceNodes, isSmallScreen ? 1 : gridCols)}
               {labelSections && <h2 className={`${sectionLabelClass} mt-6`}>Items</h2>}
               {itemNodes.length > 0 && renderSection(itemNodes)}
             </div>
