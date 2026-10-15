@@ -407,7 +407,7 @@ function SpaceItem({
         : 'relative rounded-2xl bg-bg-card shadow-sm hover:shadow-md transition-shadow duration-200'
     } ${denseView ? 'text-[13px]' : ''} ${
       isFullscreen ? '' : selected ? 'ring-[1.5px] ring-accent-border'
-        // Soft ring + lift while one of its text fields has the cursor
+        // Faint accent hairline while one of its text fields has the cursor
         // (index.css), marking the item being edited. Read-only never edits.
         : readOnly ? '' : 'item-card-editable'
     }`}
