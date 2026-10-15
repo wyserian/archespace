@@ -14,6 +14,7 @@ import { useOnlineStatus } from '../../hooks/useOnlineStatus'
 import { useToast } from '../../context/ToastCore'
 import { useVaultPinPrompt } from '../../context/VaultPinPromptCore'
 import { useItemRevealed, useSpaceHidden } from '../../lib/itemLock'
+import { REORDER_KEYSHORTCUTS, reorderKeyStep } from '../../lib/reorderKeys'
 
 /** A tag chip tinted by the tag's own stable colour; brighter when it's an
  * active filter. Consumes its own click so it filters instead of opening. */
@@ -66,6 +67,8 @@ export function SpaceCard({
   selected = false,
   onToggleSelect,
   reorderDisabled = false,
+  // (index, -1 | 1): move this card one place, from the keyboard.
+  onKeyMove,
 }) {
   const online = useOnlineStatus()
   const { toast } = useToast()
@@ -102,9 +105,18 @@ export function SpaceCard({
 
   const activate = () => (selectMode ? onToggleSelect?.() : navigate(`/space/${col.id}`))
 
+  // Alt+Up / Alt+Down move the card (on it or its menu button), where dragging
+  // would be allowed.
+  const canKeyMove = !!onKeyMove && !search && !selectMode && !reorderDisabled
   // Only act when the row/card itself is focused, so Enter/Space on a nested
   // control (the ActionMenu button) doesn't also navigate.
   const handleKeyDown = (e) => {
+    const step = canKeyMove ? reorderKeyStep(e) : 0
+    if (step) {
+      e.preventDefault()
+      onKeyMove(index, step)
+      return
+    }
     if (e.target !== e.currentTarget) return
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
@@ -171,6 +183,14 @@ export function SpaceCard({
   const ariaLabel = selectMode
     ? `${selected ? 'Deselect' : 'Select'} space: ${col.name}`
     : `Open space: ${col.name}`
+  const keyProps = {
+    'data-space-id': col.id,
+    'aria-keyshortcuts': canKeyMove ? REORDER_KEYSHORTCUTS : undefined,
+  }
+  // Where a dragged card would land: the same soft ring as a selected card.
+  const dropRing = !selectMode && dragOverIndex === index && dragIndex !== index
+    ? 'ring-[1.5px] ring-accent-border'
+    : ''
 
   // Borderless: the card is set off by its surface plus a soft shadow; only a
   // selected card in select mode gets a soft accent ring.
@@ -181,15 +201,16 @@ export function SpaceCard({
     return (
       <div
         {...dragProps}
+        {...keyProps}
         onClick={activate}
         onKeyDown={handleKeyDown}
         role="button"
         tabIndex={0}
         aria-pressed={selectMode ? selected : undefined}
         aria-label={ariaLabel}
-        className={`group relative flex items-center gap-3 sm:gap-4 rounded-xl pl-4 pr-3 py-3 cursor-pointer transition-all animate-fade-in-up bg-bg-card shadow-sm hover:shadow-md hover:bg-bg-elevated active:scale-[0.99] ${selectedRing} ${
-          !selectMode && dragOverIndex === index && dragIndex !== index ? 'ring-2 ring-accent' : ''
-        } ${!selectMode && dragIndex === index ? 'opacity-40' : ''}`}
+        className={`group relative flex items-center gap-3 sm:gap-4 rounded-xl pl-4 pr-3 py-3 cursor-pointer transition-all animate-fade-in-up bg-bg-card shadow-sm hover:shadow-md hover:bg-bg-elevated active:scale-[0.99] ${selectedRing} ${dropRing} ${
+          !selectMode && dragIndex === index ? 'opacity-40' : ''
+        }`}
         style={{
           animationDelay: `${index * 30}ms`,
           borderLeftWidth: colorPreset ? '2px' : undefined,
@@ -233,15 +254,16 @@ export function SpaceCard({
   return (
     <div
       {...dragProps}
+      {...keyProps}
       onClick={activate}
       onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
       aria-pressed={selectMode ? selected : undefined}
       aria-label={ariaLabel}
-      className={`group relative rounded-2xl p-3.5 cursor-pointer bg-bg-card shadow-sm hover:shadow-md hover:bg-bg-elevated active:scale-[0.99] transition-all duration-200 animate-fade-in-up ${selectedRing} ${
-        !selectMode && dragOverIndex === index && dragIndex !== index ? 'ring-2 ring-accent' : ''
-      } ${!selectMode && dragIndex === index ? 'opacity-40' : ''}`}
+      className={`group relative rounded-2xl p-3.5 cursor-pointer bg-bg-card shadow-sm hover:shadow-md hover:bg-bg-elevated active:scale-[0.99] transition-all duration-200 animate-fade-in-up ${selectedRing} ${dropRing} ${
+        !selectMode && dragIndex === index ? 'opacity-40' : ''
+      }`}
       style={{
         animationDelay: `${index * 50}ms`,
         borderTopWidth: colorPreset ? '2px' : undefined,

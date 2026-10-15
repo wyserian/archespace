@@ -8,6 +8,7 @@ import { Modal } from './ui/UI'
 
 const IS_MAC = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform || '')
 const MOD = IS_MAC ? '⌘' : 'Ctrl'
+const ALT = IS_MAC ? '⌥' : 'Alt'
 
 const SHORTCUTS = [
   { keys: [MOD, 'K'], label: 'Open the command palette' },
@@ -18,6 +19,8 @@ const SHORTCUTS = [
   { keys: [MOD, 'S'], label: 'Save all edited items on the page' },
   { keys: ['↑'],      label: 'Move the focused list row up' },
   { keys: ['↓'],      label: 'Move the focused list row down' },
+  { keys: [ALT, '↑'], label: 'Move the focused space or item up' },
+  { keys: [ALT, '↓'], label: 'Move the focused space or item down' },
   { keys: ['?'],      label: 'Show this shortcuts list' },
   { keys: ['Esc'],    label: 'Close menus, modals, or overlays' },
 ]

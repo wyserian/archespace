@@ -35,6 +35,7 @@ import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { useRouteMeta } from '../hooks/useRouteMeta'
 import { sortEntities } from '../lib/sortEntities'
 import { pathOf } from '../lib/spaceTree'
+import { refocusAfterMove, reorderKeyStep } from '../lib/reorderKeys'
 import { isItemRevealed, revealSpace, useSpaceHidden } from '../lib/itemLock'
 import { useVaultPinPrompt } from '../context/VaultPinPromptCore'
 
@@ -331,7 +332,7 @@ export default function SpacePage() {
 
   const {
     dragIndex, dragOverIndex,
-    handleDragStart: onDragStart, handleDragOver, handleDrop, handleDragEnd,
+    handleDragStart: onDragStart, handleDragOver, handleDrop, handleDragEnd, handleKeyMove,
   } = useDragReorder({
     disabled: reorderDisabled,
     onDrop: (fromIndex, toIndex) => {
@@ -441,11 +442,19 @@ export default function SpacePage() {
       data-item-id={item.id}
       onDragOver={reorderDisabled ? undefined : (e) => handleDragOver(e, index)}
       onDrop={reorderDisabled ? undefined : () => handleDrop(index)}
-      className={`transition-all duration-300 animate-fade-in-up ${
+      onKeyDown={reorderDisabled ? undefined : (e) => {
+        const step = reorderKeyStep(e)
+        if (step && handleKeyMove(index, step, sortedItems.length)) {
+          e.preventDefault()
+          refocusAfterMove(`[data-item-id="${item.id}"] button[aria-label="Item actions"]`)
+        }
+      }}
+      className={`rounded-2xl transition-all duration-300 animate-fade-in-up ${
+        // Where a dragged card would land: the soft ring of a selected card.
         !reorderDisabled && dragOverIndex === index && dragIndex !== index
-          ? 'border-t-2 border-accent pt-1'
+          ? 'ring-[1.5px] ring-accent-border'
           : ''
-      } ${!reorderDisabled && dragIndex === index ? 'opacity-40 scale-95' : ''} ${
+      } ${!reorderDisabled && dragIndex === index ? 'opacity-40' : ''} ${
         board.flashItemId === item.id ? 'rounded-2xl ring-2 ring-accent' : ''
       }`}
       style={{ animationDelay: `${index * 40}ms` }}
@@ -488,6 +497,11 @@ export default function SpacePage() {
       handleDragOver={subSpaceDrag.handleDragOver}
       handleDrop={subSpaceDrag.handleDrop}
       handleDragEnd={subSpaceDrag.handleDragEnd}
+      onKeyMove={(index, step) => {
+        if (subSpaceDrag.handleKeyMove(index, step, sortedSubSpaces.length)) {
+          refocusAfterMove(`[data-space-id="${sub.id}"]`)
+        }
+      }}
       navigate={navigate}
       togglePin={toggleSpacePin}
       toggleStar={toggleSpaceStar}

@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react'
 
 /**
- * Shared drag-and-drop reorder state for list reordering.
+ * Shared drag-and-drop reorder state for list reordering, plus moving an
+ * entry one place from the keyboard (Alt+Up / Alt+Down, see reorderKeys.js).
  */
 export function useDragReorder({ disabled = false, onDrop }) {
   const [dragIndex, setDragIndex] = useState(null)
@@ -38,6 +39,14 @@ export function useDragReorder({ disabled = false, onDrop }) {
     reset()
   }, [reset])
 
+  /** Move the entry at `index` one place (`step` -1 or 1) of `count`, from the keyboard. */
+  const handleKeyMove = useCallback((index, step, count) => {
+    const to = index + step
+    if (disabled || to < 0 || to >= count) return false
+    onDrop(index, to)
+    return true
+  }, [disabled, onDrop])
+
   return {
     dragIndex,
     dragOverIndex,
@@ -45,5 +54,6 @@ export function useDragReorder({ disabled = false, onDrop }) {
     handleDragOver,
     handleDrop,
     handleDragEnd,
+    handleKeyMove,
   }
 }

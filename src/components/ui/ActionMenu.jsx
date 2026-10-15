@@ -147,7 +147,8 @@ export function ActionMenu({
   }
 
   const handleTriggerKeyDown = (event) => {
-    if (!open && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+    // Alt+Arrow is left to the card around it (moving the card).
+    if (!open && !event.altKey && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
       event.preventDefault()
       openMenuFocused()
     }

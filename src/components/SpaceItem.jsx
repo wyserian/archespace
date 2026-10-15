@@ -42,6 +42,7 @@ import { useEncryption } from '../context/EncryptionCore'
 import { useVaultPinPrompt } from '../context/VaultPinPromptCore'
 import { encryptItem } from '../lib/dataProtection'
 import { hideItem, revealContent, useContentHidden } from '../lib/itemLock'
+import { REORDER_KEYSHORTCUTS } from '../lib/reorderKeys'
 import { itemToClipboardText } from '../lib/itemClipboard'
 import { exportItemToPdf } from '../lib/pdfExport'
 import { TypeBadge } from './ui/TypeBadge'
@@ -579,6 +580,8 @@ function SpaceItem({
                     bordered={false}
                     compact
                     icon={MoreVertical}
+                    // Alt+Up / Alt+Down here move the card (handled by the page).
+                    triggerProps={canDrag && !dragDisabled ? { 'aria-keyshortcuts': REORDER_KEYSHORTCUTS } : undefined}
                     actions={[
                       !readOnly && {
                         id: 'pin',

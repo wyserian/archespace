@@ -46,6 +46,7 @@ import { MoveSpacesDialog } from '../components/space/MoveSpacesDialog'
 import { usePersistedSort } from '../hooks/usePersistedSort'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { sortEntities } from '../lib/sortEntities'
+import { refocusAfterMove, reorderKeyStep } from '../lib/reorderKeys'
 import { buttonClass } from '../components/ui/buttonStyles'
 import { MENU_PANEL } from '../components/ui/menuStyles'
 
@@ -323,7 +324,7 @@ export default function DashboardPage() {
 
   const {
     dragIndex, dragOverIndex,
-    handleDragStart, handleDragOver, handleDrop, handleDragEnd,
+    handleDragStart, handleDragOver, handleDrop, handleDragEnd, handleKeyMove,
   } = useDragReorder({
     disabled: reorderDisabled,
     onDrop: (fromIndex, toIndex) => {
@@ -361,6 +362,11 @@ export default function DashboardPage() {
       handleDragOver={handleDragOver}
       handleDrop={handleDrop}
       handleDragEnd={handleDragEnd}
+      onKeyMove={(index, step) => {
+        if (handleKeyMove(index, step, sortedSpaces.length)) {
+          refocusAfterMove(`[data-space-id="${col.id}"]`)
+        }
+      }}
       navigate={navigate}
       activeTags={activeTags}
       onTagClick={toggleTagFilter}
@@ -401,12 +407,20 @@ export default function DashboardPage() {
       data-item-id={item.id}
       onDragOver={reorderDisabled ? undefined : (e) => itemDrag.handleDragOver(e, index)}
       onDrop={reorderDisabled ? undefined : () => itemDrag.handleDrop(index)}
-      className={`transition-all duration-300 animate-fade-in-up ${
-        // Only while an item (not a space) is being dragged.
+      onKeyDown={reorderDisabled ? undefined : (e) => {
+        const step = reorderKeyStep(e)
+        if (step && itemDrag.handleKeyMove(index, step, sortedItems.length)) {
+          e.preventDefault()
+          refocusAfterMove(`[data-item-id="${item.id}"] button[aria-label="Item actions"]`)
+        }
+      }}
+      className={`rounded-2xl transition-all duration-300 animate-fade-in-up ${
+        // Where a dragged item would land (only while an item, not a space, is
+        // dragged): the soft ring of a selected card.
         !reorderDisabled && itemDrag.dragIndex !== null && itemDrag.dragOverIndex === index && itemDrag.dragIndex !== index
-          ? 'border-t-2 border-accent pt-1'
+          ? 'ring-[1.5px] ring-accent-border'
           : ''
-      } ${!reorderDisabled && itemDrag.dragIndex === index ? 'opacity-40 scale-95' : ''} ${
+      } ${!reorderDisabled && itemDrag.dragIndex === index ? 'opacity-40' : ''} ${
         board.flashItemId === item.id ? 'rounded-2xl ring-2 ring-accent' : ''
       }`}
       style={{ animationDelay: `${index * 40}ms` }}
