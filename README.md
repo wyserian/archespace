@@ -58,7 +58,7 @@ A companion Mobile/Flutter app lives in a [separate repository](https://github.c
 | Whiteboard | An Excalidraw board: shapes, arrows, text and freehand drawing on a canvas you can pan and zoom. |
 | Code | Monospace snippet with automatic syntax highlighting. |
 
-All list-style types support add, remove, and drag-and-drop or `Arrow Up` / `Arrow Down` reordering. Older item types are converted automatically after unlock: Markdown notes and older rich text become Rich text, and Secrets become Notes (protect them to keep them behind your PIN).
+All list-style types support add, remove, and drag-and-drop or `Arrow Up` / `Arrow Down` reordering. Spaces and items reorder by drag-and-drop or `Alt` + `Arrow Up` / `Arrow Down`. Older item types are converted automatically after unlock: Markdown notes and older rich text become Rich text, and Secrets become Notes (protect them to keep them behind your PIN).
 
 ## Security
 
@@ -68,7 +68,7 @@ Two separate secrets: a **login password** for the account and a **vault PIN** (
 - **PIN never stored.** A random vault key is wrapped with a key derived from the PIN by Argon2id.
 - **Unlock.** The vault auto-locks when idle. Passkey / biometric unlock keeps its wrapped key on the device, never on the server.
 - **Server-side guards.** Row Level Security limits each user to their own data, repeated wrong PINs lock the vault, and optional two-factor sign-in is enforced by the database, not just the app.
-- **Protected items and spaces** need the PIN again inside an unlocked vault: a guard against someone using your unlocked device.
+- **Protected items and spaces** need the PIN again inside an unlocked vault, as does erasing a local-mode vault: a guard against someone using your unlocked device.
 - **Encrypted backups** open in the same vault, or anywhere with the PIN used when exporting.
 - **No backdoor.** A one-time recovery code resets a forgotten PIN. Lose both and the data can't be recovered.
 
@@ -117,6 +117,7 @@ Deploys are automatic on Cloudflare's Git-connected builds: pushing to `main` ru
 | Encryption | Web Crypto API (AES-GCM), Argon2id key derivation via `@noble/hashes` |
 | Rich text editor | Tiptap 3 (ProseMirror), shared with the mobile app as a bundled offline editor |
 | Icons | Lucide React |
+| Font | DM Sans, served by the app (no third-party font requests) |
 | Whiteboard | Excalidraw, run offline (its fonts are served by the app) and shared with the mobile app as a bundled offline editor |
 | Syntax highlighting | `highlight.js` (automatic language detection for the Code item type) |
 | PDF export | `pdfmake` (export time and site URL in the header, page numbers in the footer) |
