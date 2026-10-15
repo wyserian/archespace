@@ -179,7 +179,7 @@ export default function AppSidebar({
 
   return (
     <aside
-      className={`hidden sm:flex flex-col shrink-0 h-screen sticky top-0 z-30 border-r border-bg-border bg-bg-surface/40 transition-[width] duration-200 ${
+      className={`hidden sm:flex flex-col shrink-0 h-screen sticky top-0 z-30 bg-bg-surface/40 transition-[width] duration-200 ${
         collapsed ? 'w-16' : 'w-44'
       }`}
     >
