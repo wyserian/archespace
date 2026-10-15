@@ -226,7 +226,7 @@ export default function MfaSettings() {
               maxLength={TOTP_CODE_LENGTH}
               autoComplete="one-time-code"
               placeholder="123456"
-              className="w-full px-4 py-3 rounded-xl border border-bg-border bg-bg-base text-text-primary text-center tracking-[0.3em] font-mono focus:outline-none focus:border-accent"
+              className="w-full px-4 py-3 rounded-xl border border-bg-border/60 bg-bg-base text-text-primary text-center tracking-[0.3em] font-mono focus:outline-none focus:border-accent"
             />
             {error && <p className="text-danger text-xs bg-danger/10 border border-danger/20 rounded-lg px-3 py-2">{error}</p>}
             <div className="flex gap-2 justify-end">
@@ -244,7 +244,7 @@ export default function MfaSettings() {
             <p className="text-sm text-text-secondary">
               Keep this somewhere safe. It works once to sign in if you lose your authenticator, which turns off two-factor authentication so you can set it up again.
             </p>
-            <div className="rounded-xl border border-bg-border bg-bg-base p-3 text-center font-mono text-lg tracking-[0.2em] text-text-primary select-all">
+            <div className="rounded-xl border border-bg-border/60 bg-bg-base p-3 text-center font-mono text-lg tracking-[0.2em] text-text-primary select-all">
               {backupCodes[0]}
             </div>
             <div className="flex gap-2 justify-end">
@@ -269,7 +269,7 @@ export default function MfaSettings() {
               value={disablePassword}
               onChange={e => { setDisablePassword(e.target.value); setDisableError('') }}
               placeholder="Login password"
-              className="w-full px-4 py-3 rounded-xl border border-bg-border bg-bg-base text-text-primary focus:outline-none focus:border-accent"
+              className="w-full px-4 py-3 rounded-xl border border-bg-border/60 bg-bg-base text-text-primary focus:outline-none focus:border-accent"
             />
             {disableError && <p className="text-danger text-xs bg-danger/10 border border-danger/20 rounded-lg px-3 py-2">{disableError}</p>}
             <div className="flex gap-2 justify-end">

@@ -41,7 +41,7 @@ export function SettingGroup({ label, danger = false, children }) {
           {label}
         </h3>
       )}
-      <div className="divide-y divide-bg-border overflow-hidden rounded-xl border border-bg-border bg-bg-surface">
+      <div className="divide-y divide-bg-border/60 overflow-hidden rounded-xl border border-bg-border/60 bg-bg-surface">
         {children}
       </div>
     </div>

@@ -34,7 +34,7 @@ export function WhiteboardPreview({ content, onOpen, onUpgrade, readOnly = false
       type="button"
       onClick={onOpen}
       aria-label={readOnly ? 'View whiteboard' : 'Open whiteboard'}
-      className="group block w-full overflow-hidden rounded-xl border border-bg-border bg-white transition-colors hover:border-accent-border"
+      className="group block w-full overflow-hidden rounded-xl border border-bg-border/60 bg-white transition-colors hover:border-accent-border"
     >
       {preview ? (
         <img src={preview} alt="" draggable={false} className="mx-auto max-h-[360px] w-full object-contain" />

@@ -49,7 +49,7 @@ export default function RichTextEditor({ type = 'richtext', content, onChange, r
     shouldRerenderOnTransaction: false,
     editorProps: {
       attributes: {
-        class: 'rich-text-editor prose-custom w-full bg-bg-sunken border border-bg-border rounded-xl px-4 py-3 text-sm text-text-content leading-normal min-h-[80px] focus:outline-none break-words',
+        class: 'rich-text-editor prose-custom w-full bg-bg-sunken border border-bg-border/60 rounded-xl px-4 py-3 text-sm text-text-content leading-normal min-h-[80px] focus:outline-none break-words',
         'aria-label': 'Rich text content',
       },
       handlePaste: (_view, event) => {
