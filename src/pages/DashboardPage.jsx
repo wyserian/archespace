@@ -40,6 +40,7 @@ import { SortMenu } from '../components/ui/SortMenu'
 import { ActionMenu } from '../components/ui/ActionMenu'
 import { Button, IconButton } from '../components/ui/Button'
 import { ViewToggle } from '../components/ui/ViewToggle'
+import { SpaceCardSkeleton } from '../components/ui/CardSkeletons'
 import { SpaceModal } from '../components/space/SpaceModal'
 import { SpaceCard } from '../components/space/SpaceCard'
 import { MoveSpacesDialog } from '../components/space/MoveSpacesDialog'
@@ -800,39 +801,12 @@ export default function DashboardPage() {
 
         {/* Spaces, then dashboard items */}
         {isLoading || itemsLoading ? (
-          viewMode === 'list' ? (
-            <div className="grid grid-cols-1 gap-2 max-w-[52rem] mx-auto">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="flex items-center gap-4 border border-bg-border rounded-xl pl-4 pr-3 py-3 bg-bg-surface animate-pulse">
-                  <div className="h-4 bg-bg-elevated rounded w-32 sm:w-44 shrink-0"></div>
-                  <div className="h-3 bg-bg-elevated rounded flex-1"></div>
-                  <div className="h-3 bg-bg-elevated rounded w-12 shrink-0"></div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="border border-bg-border rounded-2xl p-4 bg-bg-surface animate-pulse">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <div className="h-5 bg-bg-elevated rounded w-2/3"></div>
-                      <div className="h-3 bg-bg-elevated rounded w-full"></div>
-                      <div className="h-3 bg-bg-elevated rounded w-4/5"></div>
-                    </div>
-                    <div className="w-4 h-4 bg-bg-elevated rounded shrink-0"></div>
-                  </div>
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-bg-border">
-                    <div className="w-16 h-3 bg-bg-elevated rounded"></div>
-                    <div className="flex gap-1">
-                      <div className="w-12 h-6 bg-bg-elevated rounded"></div>
-                      <div className="w-12 h-6 bg-bg-elevated rounded"></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )
+          <div className={viewMode === 'list' ? 'max-w-[52rem] mx-auto' : ''}>
+            {renderSection(
+              [...Array(6)].map((_, i) => <SpaceCardSkeleton key={i} list={viewMode === 'list'} />),
+              spaceCols,
+            )}
+          </div>
         ) : !hasEntries ? (
           <div className="text-center py-20">
             <div className="w-14 h-14 rounded-2xl bg-bg-surface border border-bg-border flex items-center justify-center mx-auto mb-4">

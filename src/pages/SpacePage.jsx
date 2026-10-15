@@ -29,6 +29,7 @@ import { SortMenu } from '../components/ui/SortMenu'
 import { ActionMenu } from '../components/ui/ActionMenu'
 import { Button, IconButton } from '../components/ui/Button'
 import { ViewToggle } from '../components/ui/ViewToggle'
+import { ItemCardSkeleton } from '../components/ui/CardSkeletons'
 import { usePersistedSort } from '../hooks/usePersistedSort'
 import { useSpaceStats } from '../hooks/useSpaceStats'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
@@ -637,17 +638,8 @@ export default function SpacePage() {
           </p>
         )}
         {isLoading ? (
-          <div className={`space-y-3 ${viewMode === 'grid' ? '' : 'max-w-5xl mx-auto w-full'}`}>
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="border border-bg-border rounded-2xl p-4 bg-bg-surface animate-pulse">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-16 h-6 bg-bg-elevated rounded"></div>
-                  <div className="w-1/3 h-4 bg-bg-elevated rounded"></div>
-                  <div className="ml-auto w-24 h-6 bg-bg-elevated rounded"></div>
-                </div>
-                <div className="h-16 bg-bg-elevated rounded w-full"></div>
-              </div>
-            ))}
+          <div className={viewMode === 'grid' ? '' : 'max-w-5xl mx-auto w-full'}>
+            {renderSection([...Array(viewMode === 'grid' ? gridCols * 2 : 3)].map((_, i) => <ItemCardSkeleton key={i} />))}
           </div>
         ) : !hasContent ? (
           /* Empty state */
