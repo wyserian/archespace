@@ -11,7 +11,7 @@ import { boardScene, toBoardContent } from './scene'
 const PREVIEW_MAX_SIZE = 800
 
 /** A PNG data URL of the board, on its own background; null when empty. */
-export async function boardPreview(elements, files, background) {
+async function boardPreview(elements, files, background) {
   const live = elements.filter(e => !e.isDeleted)
   if (!live.length) return null
   const blob = await exportToBlob({

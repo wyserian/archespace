@@ -53,8 +53,7 @@ const ogImage = () => `
 </svg>`
 
 // Favicon: the bare mint mark on a transparent background, so browser tabs and
-// search results draw it on their own background (a circle in search results)
-// instead of showing a square inside it.
+// search results draw it on their own background (a circle in search results).
 const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <svg x="2" y="3" width="28" height="28" viewBox="${GLYPH_VIEWBOX}">
     <path d="${A_PATH}" fill="${MINT}" fill-rule="evenodd"/>

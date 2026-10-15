@@ -11,7 +11,7 @@
  * type) convert when they open: each stroke becomes a freehand element.
  */
 
-export const DEFAULT_BACKGROUND = '#ffffff'
+const DEFAULT_BACKGROUND = '#ffffff'
 
 // An old stroke was a perfect-freehand outline `size` wide; Excalidraw draws a
 // freehand element 4.25 times its strokeWidth wide.
