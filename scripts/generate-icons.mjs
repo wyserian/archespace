@@ -1,7 +1,8 @@
 /**
  * generate-icons.mjs - One-off generator for the favicon, PWA icons and the
- * social share image, all rendered from the "A" mark with sharp. The app icon is the mint "A" on a dark
- * background (matching the mobile app).
+ * social share image, all rendered from the "A" mark with sharp. The app icon is
+ * the mint "A" on a dark background (matching the mobile app); the favicon is
+ * the bare mint "A".
  *
  * Run with: node scripts/generate-icons.mjs
  * Writes PNGs and SVGs into public/. Re-run only when the brand mark changes.
@@ -21,7 +22,7 @@ const DARK = '#0d1117' // icon background
 const mark = (x, y, size, fill) =>
   `<svg x="${x}" y="${y}" width="${size}" height="${size}" viewBox="${GLYPH_VIEWBOX}"><path d="${A_PATH}" fill="${fill}" fill-rule="evenodd"/></svg>`
 
-// Rounded-square icon: dark background, mint mark (matches favicon.svg).
+// Rounded-square icon: dark background, mint mark.
 const roundedMark = (size) => `
 <svg width="${size}" height="${size}" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
   <rect width="100" height="100" rx="25" fill="${DARK}"/>
@@ -51,30 +52,59 @@ const ogImage = () => `
   <text x="100" y="560" font-family="Arial, sans-serif" font-size="26" font-weight="600" fill="${MINT}">archespace.app</text>
 </svg>`
 
-// Favicon (rounded dark square + mint mark).
+// Favicon: the bare mint mark on a transparent background, so browser tabs and
+// search results draw it on their own background (a circle in search results)
+// instead of showing a square inside it.
 const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="8" fill="${DARK}"/>
-  <svg x="5" y="6" width="22" height="22" viewBox="${GLYPH_VIEWBOX}">
+  <svg x="2" y="3" width="28" height="28" viewBox="${GLYPH_VIEWBOX}">
     <path d="${A_PATH}" fill="${MINT}" fill-rule="evenodd"/>
   </svg>
 </svg>
 `
 
+const favicon = (size) => faviconSvg.replace('<svg ', `<svg width="${size}" height="${size}" `)
+
+const pngBuffer = (svg) => sharp(Buffer.from(svg)).png().toBuffer()
+
 const png = (svg, file) =>
   sharp(Buffer.from(svg)).png().toFile(join(publicDir, file))
 
+// favicon.ico for the crawlers and browsers that ask for it by name: 16, 32 and
+// 48px PNGs in one ICO container.
+const ico = async (sizes) => {
+  const images = await Promise.all(sizes.map(size => pngBuffer(favicon(size))))
+  const header = Buffer.alloc(6 + 16 * sizes.length)
+  header.writeUInt16LE(0, 0)
+  header.writeUInt16LE(1, 2)
+  header.writeUInt16LE(sizes.length, 4)
+  let offset = header.length
+  sizes.forEach((size, i) => {
+    const entry = 6 + 16 * i
+    header.writeUInt8(size, entry)
+    header.writeUInt8(size, entry + 1)
+    header.writeUInt16LE(1, entry + 4)
+    header.writeUInt16LE(32, entry + 6)
+    header.writeUInt32LE(images[i].length, entry + 8)
+    header.writeUInt32LE(offset, entry + 12)
+    offset += images[i].length
+  })
+  return Buffer.concat([header, ...images])
+}
+
 // Static SVGs.
 writeFileSync(join(publicDir, 'favicon.svg'), faviconSvg)
+writeFileSync(join(publicDir, 'favicon.ico'), await ico([16, 32, 48]))
 
 await Promise.all([
   png(roundedMark(192), 'icon-192.png'),
   png(roundedMark(512), 'icon-512.png'),
   png(solidMark(512), 'icon-maskable-512.png'),
   png(solidMark(180), 'apple-touch-icon.png'),
-  png(roundedMark(32), 'favicon-32.png'),
+  png(favicon(32), 'favicon-32.png'),
+  png(favicon(96), 'favicon-96.png'),
   png(ogImage(), 'og-image.png'),
 ])
 
 console.log(
-  'Generated favicon.svg, icon-192/512, icon-maskable-512, apple-touch-icon, favicon-32, og-image'
+  'Generated favicon.svg/.ico, favicon-32/96, icon-192/512, icon-maskable-512, apple-touch-icon, og-image'
 )
