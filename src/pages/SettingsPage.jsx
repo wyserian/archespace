@@ -8,7 +8,7 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Download, Upload, Eye, EyeOff, Check, AlertTriangle, User, Palette, KeyRound, Lock, LogOut, Trash2, HardDrive } from 'lucide-react'
+import { ArrowLeft, Download, Upload, Eye, EyeOff, Check, AlertTriangle, User, Palette, KeyRound, Lock, LogOut, Trash2, HardDrive, Info, ExternalLink } from 'lucide-react'
 import { useAuth } from '../context/AuthContextCore'
 import { useEncryption } from '../context/EncryptionCore'
 import { useVaultPinPrompt } from '../context/VaultPinPromptCore'
@@ -27,7 +27,7 @@ import WeakPinWarning from '../components/WeakPinWarning'
 import { VAULT_PIN_MIN_LENGTH, VAULT_AUTO_LOCK_OPTIONS } from '../lib/constants'
 import { validatePassword } from '../lib/passwordPolicy'
 import { logAudit } from '../lib/auditLog'
-import { APP_VERSION, COMMIT_URL } from '../lib/buildInfo'
+import { APP_VERSION, COMMIT_URL, REPO_URL } from '../lib/buildInfo'
 import { isLocalMode, leaveLocalMode, LOCAL_USER } from '../lib/localMode'
 import { eraseLocalData } from '../lib/local/localStore'
 import { listPasskeys, removePasskey } from '../lib/crypto/passkeyVault'
@@ -58,7 +58,11 @@ const SECTIONS = [
   },
   { id: 'appearance', title: 'Appearance', description: 'Theme and accent colour.', icon: Palette },
   { id: 'backup', title: 'Backup', description: 'Download a copy of your data, or restore one.', icon: Download },
+  { id: 'about', title: 'About', description: 'The terms, the privacy policy and the source code.', icon: Info },
 ]
+
+// Sections that work offline: they apply locally or only link to pages.
+const OFFLINE_SECTIONS = ['appearance', 'about']
 
 /** The active section: its icon, title and description, then its groups. */
 function SettingsSection({ id, active, children }) {
@@ -150,10 +154,10 @@ export default function SettingsPage() {
     () => (LOCAL ? 'local' : typeof navigator !== 'undefined' && !navigator.onLine ? 'appearance' : 'account')
   )
   const online = useOnlineStatus()
-  // Offline: only Appearance is safe to use (it applies locally). Account,
-  // Backup, and Security all need the server, so force Appearance while offline
-  // (derived, so a dropped connection snaps back without an extra render pass).
-  const activeSection = !online && rawActiveSection !== 'appearance'
+  // Offline: only Appearance and About are safe to use. Account, Vault and
+  // Backup all need the server, so force Appearance while offline (derived, so
+  // a dropped connection snaps back without an extra render pass).
+  const activeSection = !online && !OFFLINE_SECTIONS.includes(rawActiveSection)
     ? 'appearance'
     : rawActiveSection
   const [confirmSignOutAll, setConfirmSignOutAll] = useState(false)
@@ -495,7 +499,7 @@ export default function SettingsPage() {
             <div className="flex gap-1 overflow-x-auto rounded-xl bg-bg-elevated p-1 md:flex-col md:overflow-visible">
               {SECTIONS.map(({ id, title, icon: NavIcon }) => {
                 const on = activeSection === id
-                const disabled = !online && id !== 'appearance'
+                const disabled = !online && !OFFLINE_SECTIONS.includes(id)
                 return (
                   <button
                     key={id}
@@ -967,6 +971,36 @@ export default function SettingsPage() {
                   <Lock size={14} className="mt-0.5 shrink-0 text-accent" />
                   Backups are encrypted. They open in this vault as they are, and anywhere else with the vault PIN you had when exporting. After a PIN change, older backups still need the earlier PIN.
                 </p>
+              </SettingsSection>
+
+              {/* About */}
+              <SettingsSection id="about" active={activeSection}>
+                <SettingGroup>
+                  <SettingRow
+                    title="Terms of Service"
+                    action={
+                      <a href="/terms" target="_blank" rel="noreferrer" className={rowButtonClass}>
+                        <ExternalLink size={15} /> Open
+                      </a>
+                    }
+                  />
+                  <SettingRow
+                    title="Privacy Policy"
+                    action={
+                      <a href="/privacy" target="_blank" rel="noreferrer" className={rowButtonClass}>
+                        <ExternalLink size={15} /> Open
+                      </a>
+                    }
+                  />
+                  <SettingRow
+                    title="Open Source"
+                    action={
+                      <a href={REPO_URL} target="_blank" rel="noreferrer" className={rowButtonClass}>
+                        <ExternalLink size={15} /> Open
+                      </a>
+                    }
+                  />
+                </SettingGroup>
               </SettingsSection>
             </div>
 
