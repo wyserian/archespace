@@ -49,9 +49,9 @@ function GithubMark({ size = 16, className = '' }) {
 
 // One primary and one quiet style, reused for every call to action.
 const btnPrimary =
-  'inline-flex items-center justify-center gap-2 rounded-xl border border-transparent bg-emerald-300 px-5 py-2.5 text-sm font-semibold text-[#0c1a16] hover:bg-emerald-200 transition-colors'
+  'inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-300 px-5 py-2.5 text-sm font-semibold text-[#0c1a16] hover:bg-emerald-200 transition-colors'
 const btnGhost =
-  'inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors'
+  'inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/15 transition-colors'
 const navLink =
   'rounded-lg px-3 py-2 text-sm text-white/70 hover:text-white transition-colors'
 
@@ -268,7 +268,7 @@ export default function HomePage() {
               aria-label={menuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={menuOpen}
               aria-controls="home-mobile-menu"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-white transition-colors hover:bg-white/10"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-white transition-colors hover:bg-white/15"
             >
               {menuOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
@@ -378,7 +378,7 @@ export default function HomePage() {
 
           <ol className="reveal-stagger mt-10 grid gap-4 md:grid-cols-3">
             {steps.map(({ step, title, body }, i) => (
-              <li key={step} className="rounded-2xl border border-white/10 bg-white/[0.05] p-6">
+              <li key={step} className="rounded-2xl bg-white/[0.05] p-6">
                 <div className="flex items-center gap-3">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 font-mono text-xs font-bold text-white">
                     {i + 1}
@@ -399,7 +399,7 @@ export default function HomePage() {
 
             <div className="mt-8 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-xl border border-emerald-200/25 bg-emerald-200/[0.06] p-5">
+                <div className="rounded-xl bg-emerald-200/[0.08] p-5">
                   <p className="flex items-center gap-2 text-xs font-semibold text-emerald-200">
                     <CheckCircle2 size={14} />
                     What you see
@@ -416,7 +416,7 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
+                <div className="rounded-xl bg-white/[0.05] p-5">
                   <p className="flex items-center gap-2 text-xs font-semibold text-white/60">
                     <LockKeyhole size={14} />
                     What we store
@@ -432,7 +432,7 @@ export default function HomePage() {
 
               <ul className="space-y-3">
                 {serverFacts.map(fact => (
-                  <li key={fact} className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/[0.04] p-4">
+                  <li key={fact} className="flex items-start gap-3 rounded-lg bg-white/[0.05] p-4">
                     <ShieldCheck size={16} className="mt-0.5 shrink-0 text-emerald-200" />
                     <span className="text-sm leading-6 text-white/72">{fact}</span>
                   </li>
