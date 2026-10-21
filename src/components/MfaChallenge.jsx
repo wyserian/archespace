@@ -57,7 +57,7 @@ export default function MfaChallenge({ onVerified }) {
     <div className="min-h-[100svh] bg-bg-base flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-accent-muted flex items-center justify-center mx-auto mb-4">
             {useBackup ? <KeyRound size={24} className="text-accent" /> : <ShieldCheck size={24} className="text-accent" />}
           </div>
           <h1 className="text-xl font-semibold text-text-primary">Two-factor authentication</h1>

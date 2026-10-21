@@ -76,7 +76,7 @@ export default function PasswordResetPage() {
 
       <div className="w-full max-w-sm relative z-10 animate-fade-in-up">
         <div className="text-center mb-6 sm:mb-10">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-accent-muted flex items-center justify-center mx-auto mb-3 sm:mb-4">
             <KeyRound size={24} className="text-accent" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-semibold text-text-primary mb-1.5 sm:mb-2">Reset Password</h1>

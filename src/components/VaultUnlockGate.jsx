@@ -305,7 +305,7 @@ export default function VaultUnlockGate({ children }) {
       <div className="min-h-[100svh] bg-bg-base flex items-start sm:items-center justify-center px-4 pt-16 pb-6 sm:p-4 overflow-y-auto">
         <div className="w-full max-w-sm">
           <div className="bg-bg-card rounded-2xl shadow-sm p-6 space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto">
+            <div className="w-12 h-12 rounded-2xl bg-accent-muted flex items-center justify-center mx-auto">
               <Fingerprint size={24} className="text-accent" />
             </div>
             <div className="text-center">
@@ -480,7 +480,7 @@ export default function VaultUnlockGate({ children }) {
     <div className="min-h-[100svh] bg-bg-base flex items-start sm:items-center justify-center px-4 pt-16 pb-6 sm:p-4 overflow-y-auto">
       <div className="w-full max-w-sm">
         <div className="text-center mb-6 sm:mb-8">
-          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-accent-muted flex items-center justify-center mx-auto mb-3 sm:mb-4">
             <Lock size={24} className="text-accent sm:w-[26px] sm:h-[26px]" />
           </div>
           <h1 className="text-xl font-semibold text-text-primary">
