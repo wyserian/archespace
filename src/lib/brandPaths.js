@@ -3,8 +3,9 @@
  * (scripts/generate-icons.mjs). The icons are the only place it appears.
  */
 
-// viewBox for the standalone "A" mark.
-export const GLYPH_VIEWBOX = '110 194 886 728'
+// viewBox for the standalone "A" mark: the glyph's exact edges, so a box of any
+// size centres it.
+export const GLYPH_VIEWBOX = '119 204 856 705'
 
 // The standalone "A" mark.
 export const A_PATH =

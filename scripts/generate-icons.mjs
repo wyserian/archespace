@@ -5,12 +5,13 @@
  * the bare mint "A".
  *
  * Run with: node scripts/generate-icons.mjs
- * Writes PNGs and SVGs into public/. Re-run only when the brand mark changes.
+ * Writes PNGs and SVGs into public/, and the mobile launcher icon sources when
+ * the mobile repo sits next to this one. Re-run only when the brand mark changes.
  */
 import sharp from 'sharp'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { writeFileSync } from 'node:fs'
+import { existsSync, writeFileSync } from 'node:fs'
 import { A_PATH, GLYPH_VIEWBOX } from '../src/lib/brandPaths.js'
 
 const publicDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'public')
@@ -18,25 +19,26 @@ const publicDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'public')
 const MINT = '#32d3aa' // brand accent (the app's default theme colour)
 const DARK = '#0d1117' // icon background
 
-// The "A" mark placed at (x,y) with the given size in a 100-unit parent canvas.
-const mark = (x, y, size, fill) =>
-  `<svg x="${x}" y="${y}" width="${size}" height="${size}" viewBox="${GLYPH_VIEWBOX}"><path d="${A_PATH}" fill="${fill}" fill-rule="evenodd"/></svg>`
+// The mint "A", `width` units wide, centred in a `canvas`-unit square.
+const mark = (width, canvas = 100) => {
+  const at = (canvas - width) / 2
+  return `<svg x="${at}" y="${at}" width="${width}" height="${width}" viewBox="${GLYPH_VIEWBOX}"><path d="${A_PATH}" fill="${MINT}" fill-rule="evenodd"/></svg>`
+}
 
-// Rounded-square icon: dark background, mint mark.
-const roundedMark = (size) => `
-<svg width="${size}" height="${size}" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <rect width="100" height="100" rx="25" fill="${DARK}"/>
-  ${mark(16, 18, 68, MINT)}
+// A square icon `px` wide: the mark `width`% of it, on a dark square with
+// corner radius `rx`%, or on nothing when `background` is null.
+const icon = (px, width, { rx = 0, background = DARK } = {}) => `
+<svg width="${px}" height="${px}" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  ${background ? `<rect width="100" height="100" rx="${rx}" fill="${background}"/>` : ''}
+  ${mark(width)}
 </svg>`
+
+// Rounded-square app icon.
+const roundedMark = (px) => icon(px, 65.7, { rx: 25 })
 
 // Full-bleed icon for maskable / apple-touch: no transparent corners; the mark
 // sits inside the safe zone so platform masking never clips it.
-const solidMark = (size) => `
-<svg width="${size}" height="${size}" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <rect width="100" height="100" fill="${DARK}"/>
-  ${mark(24, 26, 52, MINT)}
-</svg>`
-
+const solidMark = (px) => icon(px, 50.2)
 
 // 1200x630 Open Graph / Twitter share card.
 const ogImage = () => `
@@ -45,7 +47,7 @@ const ogImage = () => `
   <rect width="1200" height="6" fill="${MINT}"/>
   <g transform="translate(100,210)">
     <rect width="200" height="200" rx="48" fill="#151a23" stroke="${MINT}" stroke-width="2"/>
-    <svg x="30" y="34" width="140" height="140" viewBox="${GLYPH_VIEWBOX}"><path d="${A_PATH}" fill="${MINT}" fill-rule="evenodd"/></svg>
+    ${mark(135.3, 200)}
   </g>
   <text x="360" y="300" font-family="Arial, sans-serif" font-size="76" font-weight="700" fill="#ffffff">ArcheSpace</text>
   <text x="362" y="360" font-family="Arial, sans-serif" font-size="30" fill="#aeb4c2">Everything in One Encrypted Space</text>
@@ -54,17 +56,9 @@ const ogImage = () => `
 
 // Favicon: the bare mint mark on a transparent background, so browser tabs and
 // search results draw it on their own background (a circle in search results).
-// The glyph's exact edges (GLYPH_VIEWBOX has uneven padding), so it fills the
-// favicon and sits dead centre.
-const GLYPH_BOUNDS = '119 204 856 705'
-const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <svg x="0.5" y="0.5" width="31" height="31" viewBox="${GLYPH_BOUNDS}">
-    <path d="${A_PATH}" fill="${MINT}" fill-rule="evenodd"/>
-  </svg>
-</svg>
-`
+const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${mark(96.9)}</svg>\n`
 
-const favicon = (size) => faviconSvg.replace('<svg ', `<svg width="${size}" height="${size}" `)
+const favicon = (px) => icon(px, 96.9, { background: null })
 
 const pngBuffer = (svg) => sharp(Buffer.from(svg)).png().toBuffer()
 
@@ -107,6 +101,18 @@ await Promise.all([
   png(ogImage(), 'og-image.png'),
 ])
 
+// The mobile app's launcher icon sources, when its repo sits next to this one:
+// the full icon, and the foreground of Android's adaptive icon (whose dark
+// background is set in its pubspec.yaml).
+const mobileIcons = join(publicDir, '../../archespace-mobile/assets/icon')
+if (existsSync(mobileIcons)) {
+  await Promise.all([
+    sharp(Buffer.from(icon(1024, 82.7))).png().toFile(join(mobileIcons, 'app_icon.png')),
+    sharp(Buffer.from(icon(1024, 62.4, { background: null }))).png().toFile(join(mobileIcons, 'app_icon_foreground.png')),
+  ])
+}
+
 console.log(
   'Generated favicon.svg/.ico, favicon-32/96, icon-192/512, icon-maskable-512, apple-touch-icon, og-image'
+  + (existsSync(mobileIcons) ? ', and the mobile app_icon/app_icon_foreground' : '')
 )
