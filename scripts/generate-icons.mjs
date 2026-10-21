@@ -54,8 +54,11 @@ const ogImage = () => `
 
 // Favicon: the bare mint mark on a transparent background, so browser tabs and
 // search results draw it on their own background (a circle in search results).
+// The glyph's exact edges (GLYPH_VIEWBOX has uneven padding), so it fills the
+// favicon and sits dead centre.
+const GLYPH_BOUNDS = '119 204 856 705'
 const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <svg x="2" y="3" width="28" height="28" viewBox="${GLYPH_VIEWBOX}">
+  <svg x="0.5" y="0.5" width="31" height="31" viewBox="${GLYPH_BOUNDS}">
     <path d="${A_PATH}" fill="${MINT}" fill-rule="evenodd"/>
   </svg>
 </svg>
