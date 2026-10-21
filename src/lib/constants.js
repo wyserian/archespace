@@ -37,7 +37,7 @@ export const VAULT_AUTO_LOCK_OPTIONS = [
 ]
 
 /** Default auto-lock option id. */
-export const VAULT_AUTO_LOCK_DEFAULT_ID = '24h'
+export const VAULT_AUTO_LOCK_DEFAULT_ID = '5m'
 
 // Import / Export
 /** Maximum import file size in bytes (10 MB) */
