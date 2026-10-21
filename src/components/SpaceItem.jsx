@@ -764,10 +764,10 @@ function SpaceItem({
         style={clamped ? { maxHeight: COLLAPSED_MAX_PX } : undefined}
         className={`${
           isFullscreen
-            // Sides lined up with the header and tags. A Whiteboard's canvas
-            // or a Kanban's columns fill the space and scroll themselves; a
-            // Kanban sits closer under the tags.
-            ? `flex-1 px-4 ${item.type === 'kanban' ? 'pt-1 pb-4' : 'py-5'} ${item.type === 'whiteboard' || item.type === 'kanban' ? 'min-h-0' : 'overflow-y-auto'}`
+            // Sides lined up with the header and tags, and close under the
+            // tags as on the card. A Whiteboard's canvas or a Kanban's
+            // columns fill the space and scroll themselves.
+            ? `flex-1 px-4 ${showRichToolbar ? 'pt-3' : showTags || item.type === 'kanban' ? 'pt-1' : 'pt-5'} ${item.type === 'kanban' ? 'pb-4' : 'pb-5'} ${item.type === 'whiteboard' || item.type === 'kanban' ? 'min-h-0' : 'overflow-y-auto'}`
             : denseView
               ? `px-2.5 ${showTags && !showRichToolbar ? 'pt-0' : 'pt-3'} pb-3 cursor-pointer`
               : `px-4 ${showRichToolbar ? 'pt-3' : showTags ? 'pt-0' : 'pt-4'} pb-4`
