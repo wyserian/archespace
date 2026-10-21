@@ -1,8 +1,8 @@
 /**
  * ReminderDialog.jsx - Set, change or remove an item's reminder (see
- * lib/reminder.js): its name, when it first goes off, and whether it goes off
- * once, repeats until a day, or repeats until turned off. Asks to show
- * browser notifications the first time one is saved.
+ * lib/reminder.js): its name, when it first goes off, whether it goes off
+ * once, repeats until a day, or repeats until turned off, and whether it plays
+ * a sound. Asks to show browser notifications the first time one is saved.
  */
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -12,7 +12,7 @@ import {
   MAX_REMINDER_NAME, REMINDER_EVERY, REMINDER_MODES, addDays, dayString, defaultReminder, formatDate,
   formatDay, formatTime, nextOccurrence, normalizeReminder,
 } from '../lib/reminder'
-import { notificationPermission, requestNotificationPermission } from '../lib/reminderNotifications'
+import { notificationPermission, playChime, requestNotificationPermission } from '../lib/reminderNotifications'
 
 const FIELD =
   'w-full bg-bg-elevated border border-bg-border rounded-xl px-3 py-2.5 text-sm text-text-primary ' +
@@ -43,6 +43,7 @@ export function ReminderDialog({ initial, onSave, onRemove, onClose }) {
   const [mode, setMode] = useState(start.mode)
   const [every, setEvery] = useState(start.every || 'day')
   const [until, setUntil] = useState(start.until || addDays(start.date, 30))
+  const [sound, setSound] = useState(start.sound !== false)
   const [saving, setSaving] = useState(false)
 
   const quickPicks = [
@@ -50,7 +51,7 @@ export function ReminderDialog({ initial, onSave, onRemove, onClose }) {
     { label: 'Tomorrow', date: addDays(today, 1) },
     { label: 'Next week', date: addDays(today, 7) },
   ]
-  const reminder = time ? normalizeReminder({ name, date, time, mode, every, until }) : null
+  const reminder = time ? normalizeReminder({ name, date, time, mode, every, until, sound }) : null
   const over = reminder && !nextOccurrence(reminder)
   const permission = notificationPermission()
 
@@ -207,6 +208,19 @@ export function ReminderDialog({ initial, onSave, onRemove, onClose }) {
             )}
           </div>
         )}
+
+        <label className="flex items-center gap-2.5 text-sm text-text-primary cursor-pointer">
+          <input
+            type="checkbox"
+            checked={sound}
+            onChange={e => {
+              setSound(e.target.checked)
+              if (e.target.checked) playChime()
+            }}
+            className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
+          />
+          Play a sound when it goes off
+        </label>
 
         {reminder && (
           <p className="text-xs leading-5 text-text-muted">

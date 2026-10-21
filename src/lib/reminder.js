@@ -3,9 +3,9 @@
  *
  * Stored encrypted with the item (like its tags), so the server never learns
  * what or when it is:
- *   { name, date: 'YYYY-MM-DD', time: 'HH:MM', mode, every, until }
+ *   { name, date: 'YYYY-MM-DD', time: 'HH:MM', mode, every, until, sound }
  * The date and time are the first time it goes off, in the user's local
- * (wall-clock) time. `mode` is
+ * (wall-clock) time. `sound` is false when it should go off silently. `mode` is
  *   'once'       goes off once
  *   'repeat'     goes off `every` day / week / month / year until `until`
  *   'permanent'  goes off `every` day / week / month / year until removed
@@ -70,6 +70,8 @@ export function normalizeReminder(value) {
     mode,
     every: mode === 'once' ? null : EVERY_IDS.includes(value.every) ? value.every : 'day',
     until: null,
+    // Plays a sound when it goes off, unless turned off.
+    sound: value.sound !== false,
   }
   // A repeat ends on its until day (never before it starts).
   if (mode === 'repeat') {
@@ -90,7 +92,7 @@ export function defaultReminder(now = new Date()) {
     if (now.getHours() < 23) time = `${pad(now.getHours() + 1)}:00`
     else date = addDays(today, 1)
   }
-  return { name: '', date, time, mode: 'once', every: null, until: null }
+  return { name: '', date, time, mode: 'once', every: null, until: null, sound: true }
 }
 
 /** The `index`th time it goes off (0 = the first), ignoring its end. */

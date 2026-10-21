@@ -5,6 +5,7 @@
  * timer for each one's next time and shows it while ArcheSpace is open (a
  * repeating one then waits for its next time). When the page isn't in focus
  * it's a browser notification with the reminder's name; in focus, a toast.
+ * Either way a short chime plays, unless that reminder has its sound off.
  */
 import { nextOccurrence } from './reminder'
 
@@ -39,6 +40,32 @@ function claim(key) {
   return true
 }
 
+let audio = null
+
+/** A short two-note chime. Browsers block it until the page has had a click
+ *  or key press, which unlocking the vault always gives. */
+export function playChime() {
+  try {
+    audio ??= new AudioContext()
+    audio.resume()
+    const start = audio.currentTime
+    ;[880, 1320].forEach((freq, i) => {
+      const at = start + i * 0.18
+      const tone = audio.createOscillator()
+      const gain = audio.createGain()
+      tone.frequency.value = freq
+      gain.gain.setValueAtTime(0.0001, at)
+      gain.gain.exponentialRampToValueAtTime(0.2, at + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.35)
+      tone.connect(gain).connect(audio.destination)
+      tone.start(at)
+      tone.stop(at + 0.4)
+    })
+  } catch {
+    // No Web Audio: the reminder still shows, without sound.
+  }
+}
+
 /** Whether this browser can show notifications at all. */
 const notificationsSupported =() => typeof window !== 'undefined' && 'Notification' in window
 
@@ -68,10 +95,13 @@ export function scheduleReminders(reminders, { onRemind, onOpen }) {
   const timers = new Set()
 
   const show = (reminder, key) => {
+    // Our own chime, for the toast and the notification alike; the
+    // notification itself stays silent so it never sounds twice.
+    if (reminder.sound !== false) playChime()
     const notify = !document.hasFocus() && notificationPermission() === 'granted'
     if (notify) {
       try {
-        const n = new Notification('ArcheSpace', { body: reminderText(reminder), tag: key, icon: '/icon-192.png' })
+        const n = new Notification('ArcheSpace', { body: reminderText(reminder), tag: key, icon: '/icon-192.png', silent: true })
         n.onclick = () => { window.focus(); n.close(); onOpen?.() }
       } catch {
         // Some browsers only allow notifications from a service worker.

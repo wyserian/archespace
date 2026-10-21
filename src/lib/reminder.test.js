@@ -13,8 +13,13 @@ const permanent = (date, every, time = '09:00') => normalizeReminder({ date, tim
 describe('normalizeReminder', () => {
   it('keeps a valid reminder, its name trimmed', () => {
     expect(normalizeReminder({ name: ' Pay rent ', date: '2026-10-07', time: '14:00' })).toEqual({
-      name: 'Pay rent', date: '2026-10-07', time: '14:00', mode: 'once', every: null, until: null,
+      name: 'Pay rent', date: '2026-10-07', time: '14:00', mode: 'once', every: null, until: null, sound: true,
     })
+  })
+
+  it('keeps the sound on unless turned off', () => {
+    expect(normalizeReminder({ date: '2026-10-07' }).sound).toBe(true)
+    expect(normalizeReminder({ date: '2026-10-07', sound: false }).sound).toBe(false)
   })
 
   it('drops anything malformed', () => {
