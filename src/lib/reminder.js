@@ -13,7 +13,7 @@
  * goes off on that month's last day.
  */
 
-/** A new reminder's time, unless that's already past today. */
+/** The time a reminder saved without a valid one gets. */
 const DEFAULT_REMINDER_TIME = '09:00'
 export const MAX_REMINDER_NAME = 100
 
@@ -81,18 +81,13 @@ export function normalizeReminder(value) {
 }
 
 /**
- * A new reminder: once, today at 9:00, or at the next full hour once that's
- * past (tomorrow at 9:00 late in the evening).
+ * A new reminder: once, now, rounded up to the next minute so it isn't
+ * already past.
  */
 export function defaultReminder(now = new Date()) {
-  const today = dayString(now)
-  let date = today
-  let time = DEFAULT_REMINDER_TIME
-  if (localDate(today, DEFAULT_REMINDER_TIME) <= now) {
-    if (now.getHours() < 23) time = `${pad(now.getHours() + 1)}:00`
-    else date = addDays(today, 1)
-  }
-  return { name: '', date, time, mode: 'once', every: null, until: null, sound: true }
+  const at = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes() + 1)
+  const time = `${pad(at.getHours())}:${pad(at.getMinutes())}`
+  return { name: '', date: dayString(at), time, mode: 'once', every: null, until: null, sound: true }
 }
 
 /** The `index`th time it goes off (0 = the first), ignoring its end. */

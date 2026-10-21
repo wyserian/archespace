@@ -42,10 +42,9 @@ describe('normalizeReminder', () => {
 })
 
 describe('defaultReminder', () => {
-  it('is 9:00 today, or the next full hour once that has passed', () => {
-    expect(defaultReminder(new Date(2026, 9, 6, 7, 0))).toMatchObject({ date: '2026-10-06', time: '09:00', mode: 'once' })
-    expect(defaultReminder(NOW)).toMatchObject({ date: '2026-10-06', time: '11:00' })
-    expect(defaultReminder(new Date(2026, 9, 6, 23, 10))).toMatchObject({ date: '2026-10-07', time: '09:00' })
+  it('is now, rounded up to the next minute', () => {
+    expect(defaultReminder(new Date(2026, 9, 6, 10, 30, 20))).toMatchObject({ date: '2026-10-06', time: '10:31', mode: 'once' })
+    expect(defaultReminder(new Date(2026, 9, 6, 23, 59, 5))).toMatchObject({ date: '2026-10-07', time: '00:00' })
   })
 })
 
