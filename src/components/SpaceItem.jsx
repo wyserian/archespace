@@ -151,8 +151,12 @@ function SpaceItem({
   ) {
     setSyncedItem({ id: item.id, title: item.title, content: item.content })
     setTitleVal(item.title)
-    setLocalContent(item.content)
-    setEditorVersion(version => version + 1)
+    // Our own save comes back as a new but equal copy: keep the editor (and
+    // its cursor) as it is unless the content really changed.
+    if (syncedItem.id !== item.id || JSON.stringify(item.content) !== JSON.stringify(localContent)) {
+      setLocalContent(item.content)
+      setEditorVersion(version => version + 1)
+    }
     // Reset the tap-to-reveal state when the card is reused for a new item.
     if (syncedItem.id !== item.id) setExpanded(false)
   }
@@ -227,6 +231,16 @@ function SpaceItem({
       content: overrideContent ?? latestState.current.content,
     }
 
+    // Edits typed while this save ran stay dirty, with their own save still
+    // scheduled.
+    const markSaved = () => {
+      const latest = latestState.current
+      if (latest.title !== payload.title || latest.content !== payload.content) return
+      setIsDirty(false)
+      setCollapseGuard(false)
+      clearTimeout(autoSaveTimer.current)
+    }
+
     const queueEdit = async () => {
       const encrypted = await encryptItem(
         { title: payload.title, content: payload.content },
@@ -240,10 +254,8 @@ function SpaceItem({
           content: encrypted.content,
         },
       })
-      setIsDirty(false)
       setPendingSync(true)
-      setCollapseGuard(false)
-      clearTimeout(autoSaveTimer.current)
+      markSaved()
     }
 
     // Queue when offline/unreachable. Use the reachability signal, not just
@@ -257,9 +269,7 @@ function SpaceItem({
     setPendingSync(false)
     try {
       await onUpdate(payload)
-      setIsDirty(false)
-      setCollapseGuard(false)
-      clearTimeout(autoSaveTimer.current)
+      markSaved()
       setSavedFlash(true)
       setTimeout(() => setSavedFlash(false), 2000)
     } catch (err) {
