@@ -833,7 +833,7 @@ export default function SettingsPage() {
                         submitLabel="Create code"
                         busy={recoverySetupLoading || unlocking}
                         busyLabel="Creating..."
-                        disabled={recoverySetupPin.length < VAULT_PIN_MIN_LENGTH}
+                        disabled={!recoverySetupPin}
                       />
                     </form>
                   </SettingRow>

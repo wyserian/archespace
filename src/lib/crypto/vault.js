@@ -19,9 +19,16 @@ import {
 
 const VAULT_CHECK_PLAINTEXT = 'ARCHE_VAULT_V1_OK'
 
+/** A new PIN meets the rules. */
 function assertValidPin(pin) {
   const err = validateVaultPin(pin)
   if (err) throw new Error(err)
+}
+
+/** An existing PIN only needs to be there: one set under an older, shorter
+ *  minimum still unlocks, and a wrong one fails to decrypt anyway. */
+function assertPinEntered(pin) {
+  if (!pin) throw new Error('Enter your vault PIN.')
 }
 
 // Cache the vault meta so a PIN unlock works offline. The stored fields are
@@ -240,7 +247,7 @@ export async function resetUserVault(userId, pin) {
  * @param {string} pin
  */
 export async function unlockUserVault(userId, pin) {
-  assertValidPin(pin)
+  assertPinEntered(pin)
   await assertVaultUnlockAllowed()
   const meta = await fetchVaultMeta(userId)
   if (!meta) {
@@ -284,7 +291,7 @@ export async function changeVaultPinWithVerification(userId, currentPin, newPin)
  * Add or replace the one-time recovery code after verifying the current PIN.
  */
 export async function createVaultRecoveryCode(userId, currentPin) {
-  assertValidPin(currentPin)
+  assertPinEntered(currentPin)
   await assertVaultUnlockAllowed()
   try {
     const meta = await fetchVaultMeta(userId)

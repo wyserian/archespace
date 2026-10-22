@@ -21,8 +21,9 @@ export const VAULT_PIN_LOCKOUT_MS = 5 * 60 * 1000
 /** Absolute maximum session lifetime (ms) - 1 week; no inactivity logout */
 export const SESSION_ABSOLUTE_MAX_MS = 7 * 24 * 60 * 60 * 1000
 
-// Vault PIN
-export const VAULT_PIN_MIN_LENGTH = 4
+// Vault PIN. The minimum applies to a new PIN; one set when it was 4 still
+// unlocks.
+export const VAULT_PIN_MIN_LENGTH = 6
 // Long enough for passphrases, not just PINs.
 export const VAULT_PIN_MAX_LENGTH = 64
 

@@ -9,7 +9,6 @@ import { useEncryption } from '../context/EncryptionCore'
 import { useToast } from '../context/ToastCore'
 import PinInput from './PinInput'
 import { ConfirmDialog } from './ui/UI'
-import { VAULT_PIN_MIN_LENGTH } from '../lib/constants'
 import { SettingRow, FormActions } from './settings/SettingRow'
 import { rowButtonClass, rowDangerButtonClass } from './settings/settingStyles'
 
@@ -47,7 +46,7 @@ export default function PasskeyManager() {
 
   const handleEnable = async (e) => {
     e.preventDefault()
-    if (pin.length < VAULT_PIN_MIN_LENGTH) {
+    if (!pin) {
       toast.error('Enter your current vault PIN to enable biometric unlock.')
       return
     }
@@ -123,7 +122,7 @@ export default function PasskeyManager() {
             submitLabel="Turn on"
             busy={adding}
             busyLabel="Waiting for device..."
-            disabled={unlocking || pin.length < VAULT_PIN_MIN_LENGTH}
+            disabled={unlocking || !pin}
           />
         </form>
       </SettingRow>

@@ -33,8 +33,5 @@ export function getWeakPinWarning(pin) {
   if (DIGITS_ONLY.test(value) && value.length < 8) {
     return `A ${value.length}-digit PIN is easy to guess. Use 8+ digits, or add letters and symbols for much stronger protection.`
   }
-  if (value.length < 6) {
-    return 'This is short. A longer PIN or passphrase (letters, numbers, symbols) is much harder to guess.'
-  }
   return null
 }
