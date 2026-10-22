@@ -125,8 +125,7 @@ const btnGhost =
 const navLink =
   'rounded-lg px-3 py-2 text-sm text-white/70 hover:text-white transition-colors'
 
-// The Android app, linked under the hero's buttons: the latest APK release for
-// now (swap in the Play Store listing once it's live).
+// The Android app, linked under the hero's buttons: its latest release (APK).
 const ANDROID_APP_URL = `${MOBILE_REPO_URL}/releases/latest`
 
 // Section links shown in the header (desktop) and the mobile menu.

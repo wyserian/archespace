@@ -51,12 +51,6 @@ export function isContentHidden(item) {
   return (!!item.locked && !revealed.has(item.id)) || isSpaceHidden(item.space_id)
 }
 
-export function revealItem(id) {
-  if (revealed.has(id)) return
-  revealed.add(id)
-  emit()
-}
-
 /** Open a space and any protected space above it. */
 export function revealSpace(spaceId) {
   let changed = false

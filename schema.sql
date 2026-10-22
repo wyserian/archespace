@@ -141,7 +141,8 @@ ALTER TABLE user_settings DROP CONSTRAINT IF EXISTS user_settings_accent_color_c
 ALTER TABLE user_settings ADD CONSTRAINT user_settings_accent_color_check
   CHECK (accent_color IN ('mint', 'lavender', 'amber', 'sky', 'rose'));
 
--- The vault format marker is no longer used (every vault is PIN-wrapped).
+-- Vaults have no format marker (every vault is PIN-wrapped): drop the column
+-- where an older database still has it.
 ALTER TABLE user_encryption DROP COLUMN IF EXISTS vault_format;
 
 -- Item reminders (encrypted; the server only sees that one is set).
@@ -313,8 +314,8 @@ CREATE TRIGGER trg_spaces_parent
   FOR EACH ROW EXECUTE FUNCTION guard_space_parent();
 
 -- The recycle bin is never emptied automatically: only a permanent delete by
--- the user removes anything. Drop the old 30-day purge, and its pg_cron job
--- if one was set up.
+-- the user removes anything. Drop any 30-day purge function, and its pg_cron
+-- job if one is set up.
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN

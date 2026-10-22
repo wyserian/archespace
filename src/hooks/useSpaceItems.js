@@ -222,8 +222,8 @@ export function useSpaceItems(spaceId) {
     invalidate: () => invalidateSpaceItems(qc, itemsKey),
   }))
 
-  // Protect / remove protection: a flag only (the content stays encrypted with
-  // the vault key as before); a protected item's content shows after the PIN.
+  // Protect / remove protection: a flag only (the content is encrypted with the
+  // vault key either way); a protected item's content shows after the PIN.
   const toggleLock = useMutation(makeToggleFlag({
     table: 'space_items',
     field: 'locked',

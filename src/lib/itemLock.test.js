@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import {
-  hideAllItems, hideItem, isContentHidden, isSpaceHidden, revealContent, revealItem, revealSpace,
+  hideAllItems, hideItem, isContentHidden, isSpaceHidden, revealContent, revealSpace,
   setSpaceLocked, setSpaceLocks,
 } from './itemLock'
 import { filterGlobalSearch } from './search'
@@ -15,11 +15,11 @@ describe('locked items', () => {
   it('hides a locked item until it is opened, and again after', () => {
     const item = note('a', 'bank details', true)
     expect(isContentHidden(item)).toBe(true)
-    revealItem('a')
+    revealContent(item)
     expect(isContentHidden(item)).toBe(false)
     hideItem('a')
     expect(isContentHidden(item)).toBe(true)
-    revealItem('a')
+    revealContent(item)
     hideAllItems()
     expect(isContentHidden(item)).toBe(true)
     expect(isContentHidden(note('b', 'x'))).toBe(false)
@@ -73,7 +73,7 @@ describe('locked items', () => {
     expect(find('bank')).toEqual(['b'])
     expect(find('Note a')).toEqual(['a'])
     expect(find('home')).toEqual(['a', 'b'])
-    revealItem('a')
+    revealContent(items[0])
     expect(find('bank')).toEqual(['a', 'b'])
   })
 })

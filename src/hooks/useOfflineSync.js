@@ -60,8 +60,8 @@ export function useOfflineSync() {
         }
         if (error) return false
         if (data.length > 0) return true
-        // Changed elsewhere, or gone. Edits queued before copies existed
-        // can't be copied and are dropped, as before.
+        // Changed elsewhere, or gone: save the edit as a copy beside it. An
+        // entry without a copy title can't be copied, so it's dropped.
         if (!copyTitle) return true
         const result = await saveCopy({ ...entry.payload, content })
         if (result === 'retry') return false
