@@ -54,7 +54,7 @@ jobs:
           echo "Built ${TAG}:"
           cat checksums.txt
 
-      - uses: sigstore/cosign-installer@v3
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3.9.1
 
       - name: Sign checksums (keyless)
         run: |
