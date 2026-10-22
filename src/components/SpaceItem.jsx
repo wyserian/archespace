@@ -246,12 +246,21 @@ function SpaceItem({
         { title: payload.title, content: payload.content },
         cryptoKey
       )
+      // The title of a copy, should the item change elsewhere before this
+      // edit reaches the server (encrypted now, while the vault is open).
+      const copy = await encryptItem({ title: `${payload.title || 'Untitled'} (offline copy)` }, cryptoKey)
       enqueueOffline({
         type: 'item-update',
+        userId: item.user_id,
         payload: {
           id: payload.id,
           title: encrypted.title,
           content: encrypted.content,
+          // The version this edit was made on, the item's place, and the copy's title.
+          base: item.updated_at,
+          spaceId: item.space_id ?? null,
+          itemType: item.type,
+          copyTitle: copy.title,
         },
       })
       setPendingSync(true)
@@ -282,7 +291,7 @@ function SpaceItem({
     } finally {
       setSaving(false)
     }
-  }, [item.id, onUpdate, cryptoKey])
+  }, [item.id, item.user_id, item.updated_at, item.space_id, item.type, onUpdate, cryptoKey])
 
   useEffect(() => {
     const onFlush = () => { if (isDirty) performSave() }

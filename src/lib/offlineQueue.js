@@ -19,10 +19,22 @@ function writeQueue(queue) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(queue))
 }
 
-/** @param {{ type: string, payload: object }} entry */
+/**
+ * @param {{ type: string, userId?: string, payload: object }} entry
+ * A later edit of an item already queued replaces it, keeping the version
+ * (`payload.base`) the first edit was made on.
+ */
 export function enqueueOffline(entry) {
   const queue = readQueue()
-  queue.push({ ...entry, id: crypto.randomUUID(), createdAt: Date.now() })
+  const same = queue.findIndex(e =>
+    e.type === entry.type && e.userId === entry.userId && e.payload?.id === entry.payload?.id
+  )
+  if (same >= 0) {
+    const base = queue[same].payload?.base
+    queue[same] = { ...queue[same], payload: { ...entry.payload, base } }
+  } else {
+    queue.push({ ...entry, id: crypto.randomUUID(), createdAt: Date.now() })
+  }
   writeQueue(queue)
   return queue.length
 }
