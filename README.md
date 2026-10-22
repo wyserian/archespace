@@ -157,6 +157,7 @@ archespace/
     index.css
     main.jsx
   schema.sql
+  schema.test.sql
   eslint.config.js
   index.html
   package.json
@@ -176,6 +177,7 @@ Key areas:
 - `src/lib/crypto/` contains AES-GCM encryption, Argon2id key derivation, vault setup and unlock, non-extractable session key storage, PIN recovery code, and WebAuthn PRF passkey wrapping/unlock with a local (IndexedDB) passkey store.
 - `src/lib/` contains the Supabase client, data protection helpers, item type definitions, protected-content state, clipboard serialization, encrypted backup import/export, offline queue and encrypted cache, connectivity detection, rate limiting, audit logging, two-factor (TOTP) and backup-code helpers, PDF export, password policy, and build info.
 - `schema.sql` contains tables, indexes, RLS policies, triggers (including read-only spaces), RPC functions, realtime setup, vault recovery and PIN lockout, the `mfa_backup_codes` table with AAL2 enforcement for two-factor auth, the account-deletion email trigger, and the auth audit log. (Passkey unlock stores its wrapped key on each client, so there is no passkey table.)
+- `schema.test.sql` checks the two-factor rules: run it on a test project after `schema.sql`; it rolls back everything it does.
 - `email-templates/` contains ready-to-paste Supabase auth email templates; `scripts/generate-icons.mjs` renders the PWA icons and social image; `public/_headers` holds deployment headers for hosts such as Cloudflare Pages.
 
 ## Releases
