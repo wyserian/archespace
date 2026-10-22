@@ -61,6 +61,22 @@ const SECTIONS = [
   { id: 'about', title: 'About', description: 'The terms, the privacy policy and the source code.', icon: Info },
 ]
 
+// The confirm dialog for each sign-out scope.
+const SIGN_OUT_CONFIRM = {
+  local: {
+    title: 'Sign out?',
+    message: "You'll need your login password and vault PIN to sign back in.",
+    confirmLabel: 'Sign out',
+    done: 'Signed out',
+  },
+  global: {
+    title: 'Sign out of all devices?',
+    message: "This ends your session on every device, including this one. You'll need your login password and vault PIN to sign back in.",
+    confirmLabel: 'Sign out everywhere',
+    done: 'Signed out of all devices',
+  },
+}
+
 // Sections that work offline: they apply locally or only link to pages.
 const OFFLINE_SECTIONS = ['appearance', 'about']
 
@@ -160,7 +176,8 @@ export default function SettingsPage() {
   const activeSection = !online && !OFFLINE_SECTIONS.includes(rawActiveSection)
     ? 'appearance'
     : rawActiveSection
-  const [confirmSignOutAll, setConfirmSignOutAll] = useState(false)
+  // The sign-out being confirmed: 'local' (this device) or 'global' (all).
+  const [confirmSignOut, setConfirmSignOut] = useState(null)
   // The one row whose form is open: 'email' | 'password' | 'pin' |
   // 'pin-recovery' | 'recovery-code' | null.
   const [openRow, setOpenRow] = useState(null)
@@ -691,10 +708,19 @@ export default function SettingsPage() {
 
                 <SettingGroup label="Sessions">
                   <SettingRow
+                    title="Sign out"
+                    description="Ends your session on this device. Your data stays in your account."
+                    action={
+                      <button type="button" onClick={() => setConfirmSignOut('local')} className={rowButtonClass}>
+                        <LogOut size={15} /> Sign out
+                      </button>
+                    }
+                  />
+                  <SettingRow
                     title="Sign out of all devices"
                     description="Ends your session everywhere, including here. Use it if you've lost a device you were signed in on."
                     action={
-                      <button type="button" onClick={() => setConfirmSignOutAll(true)} className={rowButtonClass}>
+                      <button type="button" onClick={() => setConfirmSignOut('global')} className={rowButtonClass}>
                         <LogOut size={15} /> Sign out everywhere
                       </button>
                     }
@@ -1133,18 +1159,18 @@ export default function SettingsPage() {
         </Modal>
       )}
 
-      {confirmSignOutAll && (
+      {confirmSignOut && (
         <ConfirmDialog
-          title="Sign out of all devices?"
-          message="This ends your session on every device, including this one. You'll need your login password and vault PIN to sign back in."
-          confirmLabel="Sign out everywhere"
+          title={SIGN_OUT_CONFIRM[confirmSignOut].title}
+          message={SIGN_OUT_CONFIRM[confirmSignOut].message}
+          confirmLabel={SIGN_OUT_CONFIRM[confirmSignOut].confirmLabel}
           destructive
           onConfirm={() => {
-            setConfirmSignOutAll(false)
-            signOut({ scope: 'global' })
-            toast.info('Signed out of all devices')
+            setConfirmSignOut(null)
+            signOut({ scope: confirmSignOut })
+            toast.info(SIGN_OUT_CONFIRM[confirmSignOut].done)
           }}
-          onClose={() => setConfirmSignOutAll(false)}
+          onClose={() => setConfirmSignOut(null)}
         />
       )}
     </div>

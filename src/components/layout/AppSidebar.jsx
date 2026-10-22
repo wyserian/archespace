@@ -4,21 +4,16 @@
  * Collapsible (icon-only or icon+label), with the name and the collapse toggle
  * at the top. Shown on sm+ screens only; the mobile top bars remain the
  * navigation on phones. The space list folds under its
- * heading; Lock vault sits at the bottom, above a Settings menu (Commands,
- * Shortcuts, Settings, Sign out). `active` marks the current section
- * ('spaces' | 'space' | 'reminders' | 'starred' | 'archive' | 'bin' |
- * 'settings'); `activeSpaceId` the open top-level space.
+ * heading; Lock vault and Settings sit at the bottom. `active` marks the
+ * current section ('spaces' | 'space' | 'reminders' | 'starred' | 'archive' |
+ * 'bin' | 'settings'); `activeSpaceId` the open top-level space.
  */
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import {
-  LayoutGrid, Star, Archive, Trash2, Keyboard, Command, Lock, Settings, LogOut,
+  LayoutGrid, Star, Archive, Trash2, Lock, Settings,
   ChevronsLeft, ChevronsRight, ChevronRight, Bell,
 } from 'lucide-react'
-import { SIGN_OUT_TEXT } from '../../lib/localMode'
-import { MENU_PANEL, MENU_DIVIDER, MENU_HINT, menuItemClass } from '../ui/menuStyles'
 
-const IS_MAC = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform || '')
-const MOD = IS_MAC ? '⌘' : 'Ctrl '
 const SPACES_OPEN_KEY = 'arche:sidebar-spaces-open'
 
 function SectionLabel({ children, collapsed }) {
@@ -87,84 +82,10 @@ function NavItem({ icon: Icon, label, active, count, badge, collapsed, onClick }
   )
 }
 
-function MenuItem({ icon: Icon, label, hint, danger, onClick }) {
-  return (
-    <button
-      type="button"
-      role="menuitem"
-      onClick={onClick}
-      className={menuItemClass({ danger })}
-    >
-      <Icon size={14} className="shrink-0" />
-      <span className="truncate">{label}</span>
-      {hint && <kbd className={MENU_HINT}>{hint}</kbd>}
-    </button>
-  )
-}
-
-/** The Settings row at the bottom, opening a menu of the account and app
- *  actions. Opens upward, or to the right when collapsed. */
-function SettingsMenu({ collapsed, settingsActive, onSettings, onShortcuts, onCommands, onSignOut }) {
-  const [open, setOpen] = useState(false)
-  const rootRef = useRef(null)
-
-  useEffect(() => {
-    if (!open) return
-    const onPointerDown = (e) => {
-      if (!rootRef.current?.contains(e.target)) setOpen(false)
-    }
-    const onKeyDown = (e) => { if (e.key === 'Escape') setOpen(false) }
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open])
-
-  const run = (fn) => () => { setOpen(false); fn?.() }
-
-  return (
-    <div ref={rootRef} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label="Settings and more"
-        title={collapsed ? 'Settings and more' : undefined}
-        className={`w-full flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-left transition-colors ${
-          open || settingsActive
-            ? 'bg-bg-elevated text-text-primary'
-            : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated/60'
-        } ${collapsed ? 'justify-center py-2' : ''}`}
-      >
-        <Settings size={17} className={`shrink-0 ${settingsActive ? 'text-accent' : ''}`} />
-        {!collapsed && <span className="flex-1 truncate">Settings</span>}
-      </button>
-
-      {open && (
-        <div
-          role="menu"
-          className={`absolute z-50 w-44 ${MENU_PANEL} animate-fade-in ${
-            collapsed ? 'left-full bottom-0 ml-2' : 'left-0 bottom-full mb-2'
-          }`}
-        >
-          <MenuItem icon={Command} label="Commands" hint={`${MOD}K`} onClick={run(onCommands)} />
-          <MenuItem icon={Keyboard} label="Keyboard shortcuts" hint="?" onClick={run(onShortcuts)} />
-          <div className={MENU_DIVIDER} />
-          <MenuItem icon={Settings} label="Open settings" onClick={run(onSettings)} />
-          {onSignOut && <MenuItem icon={LogOut} label={SIGN_OUT_TEXT.label} danger onClick={run(onSignOut)} />}
-        </div>
-      )}
-    </div>
-  )
-}
-
 export default function AppSidebar({
   collapsed, onToggleCollapsed, active, activeSpaceId,
   isUnlocked, spaces, remindersNowTotal, starredTotal, archiveTotal, binTotal,
-  onLock, onSignOut, onCommands, onShortcuts, navigate,
+  onLock, navigate,
 }) {
   const [spacesOpen, setSpacesOpen] = useState(() => {
     try { return localStorage.getItem(SPACES_OPEN_KEY) !== '0' } catch { return true }
@@ -242,19 +163,12 @@ export default function AppSidebar({
         <NavItem icon={Trash2} label="Bin" active={active === 'bin'} count={binTotal} collapsed={collapsed} onClick={() => navigate('/recycle-bin')} />
       </nav>
 
-      {/* Footer: Lock vault, then the Settings menu */}
+      {/* Footer: Lock vault, then Settings */}
       <div className="shrink-0 px-2 pt-4 pb-3 space-y-0.5">
         {isUnlocked && (
           <NavItem icon={Lock} label="Lock vault" collapsed={collapsed} onClick={onLock} />
         )}
-        <SettingsMenu
-          collapsed={collapsed}
-          settingsActive={active === 'settings'}
-          onSettings={() => navigate('/settings')}
-          onShortcuts={onShortcuts}
-          onCommands={onCommands}
-          onSignOut={onSignOut}
-        />
+        <NavItem icon={Settings} label="Settings" active={active === 'settings'} collapsed={collapsed} onClick={() => navigate('/settings')} />
       </div>
     </aside>
   )

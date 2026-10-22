@@ -5,8 +5,8 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft, Plus, CheckSquare, ListChecks, FileDown, FolderPlus, Search, SearchX, X, PencilOff, Shield, ShieldCheck,
-  ChevronRight, MoreHorizontal, Folder,
+  ArrowLeft, Plus, CheckSquare, ListChecks, FileDown, FolderPlus, Search, SearchX, X, PencilOff, PencilLine, Shield, ShieldCheck, ShieldOff,
+  ChevronRight, MoreHorizontal, MoreVertical, Folder,
 } from 'lucide-react'
 import { useDragReorder } from '../hooks/useDragReorder'
 import { useDualEntitySelection } from '../hooks/useDualEntitySelection'
@@ -547,6 +547,7 @@ export default function SpacePage() {
             <div className="flex items-center gap-1 min-w-0">
               <SpaceBreadcrumbs ancestors={ancestors} navigate={navigate} />
               <h1 className="min-w-0 text-sm font-semibold text-text-primary truncate">{space?.name}</h1>
+              {locked && <ShieldCheck size={13} className="shrink-0 text-text-muted" aria-label="Protected" />}
             </div>
             {space?.description && (
               <p className="text-xs text-text-muted truncate mt-0.5">{space.description}</p>
@@ -560,37 +561,10 @@ export default function SpacePage() {
             </span>
           )}
 
-          {/* Header actions: things done to the space itself, as quiet icon
-              toggles (tinted while on), then the one main action. The view,
-              sort and select controls live in the search row above the items. */}
+          {/* Header actions: the one main action, then a menu of things done
+              to the space itself. The view, sort and select controls live in
+              the search row above the items. */}
           <div className="flex items-center gap-1 shrink-0 relative">
-            {space && !selectMode && (
-              <IconButton
-                icon={Shield}
-                label={!online ? 'Unavailable offline' : locked ? 'Protected - click to remove protection' : 'Protect'}
-                aria-label={locked ? 'Protected, remove protection' : 'Protect'}
-                active={locked}
-                disabled={!online}
-                onClick={handleToggleLock}
-              />
-            )}
-            {space && !selectMode && (
-              <IconButton
-                icon={PencilOff}
-                label={!online ? 'Unavailable offline' : readOnly ? 'Read-only - click to allow editing' : 'Read-only'}
-                aria-label={readOnly ? 'Read-only, allow editing' : 'Read-only'}
-                active={readOnly}
-                disabled={!online}
-                onClick={handleToggleReadOnly}
-              />
-            )}
-            {items.length > 0 && !selectMode && (
-              <IconButton
-                icon={FileDown}
-                label="Export space as PDF"
-                onClick={() => exportSpaceToPdf(space, items, subSpaces)}
-              />
-            )}
             {/* New: a menu of New item / New space (a sub-space of this one,
                 at any depth). */}
             {!readOnly && !selectMode && (
@@ -602,6 +576,35 @@ export default function SpacePage() {
                 actions={[
                   { id: 'item', label: 'New item', icon: Plus, onClick: openAddItem },
                   { id: 'space', label: 'New space', icon: FolderPlus, onClick: () => setSpaceModal({ type: 'create' }) },
+                ]}
+              />
+            )}
+            {space && !selectMode && (
+              <ActionMenu
+                label="Space actions"
+                bordered={false}
+                icon={MoreVertical}
+                actions={[
+                  {
+                    id: 'read-only',
+                    label: readOnly ? 'Allow editing' : 'Read-only',
+                    icon: readOnly ? PencilLine : PencilOff,
+                    disabled: !online,
+                    onClick: handleToggleReadOnly,
+                  },
+                  {
+                    id: 'lock',
+                    label: locked ? 'Remove protection' : 'Protect',
+                    icon: locked ? ShieldOff : Shield,
+                    disabled: !online,
+                    onClick: handleToggleLock,
+                  },
+                  items.length > 0 && {
+                    id: 'export-pdf',
+                    label: 'Export PDF',
+                    icon: FileDown,
+                    onClick: () => exportSpaceToPdf(space, items, subSpaces),
+                  },
                 ]}
               />
             )}

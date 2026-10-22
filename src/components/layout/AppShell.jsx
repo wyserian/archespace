@@ -10,20 +10,17 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContextCore'
 import { useEncryption } from '../../context/EncryptionCore'
-import { useCommandPalette } from '../../context/CommandPaletteCore'
 import { useToast } from '../../context/ToastCore'
 import { useSpaces } from '../../hooks/useSpaces'
 import { useArchive } from '../../hooks/useArchive'
 import { useRecycleBin } from '../../hooks/useRecycleBin'
 import { useStarredItemCount } from '../../hooks/useStarredItemCount'
 import { useReminders, useRemindersNowCount } from '../../hooks/useReminders'
-import { ConfirmDialog } from '../ui/UI'
 import { scheduleReminders } from '../../lib/reminderNotifications'
 import { convertSecretsToNotes } from '../../lib/secretMigration'
 import { convertLegacyRichText } from '../../lib/richText/richTextMigration'
 import { queryKeys } from '../../lib/queryKeys'
 import { pathOf } from '../../lib/spaceTree'
-import { SIGN_OUT_TEXT } from '../../lib/localMode'
 import AppSidebar from './AppSidebar'
 
 const NO_REMINDERS = []
@@ -42,14 +39,12 @@ function activeFromPath(pathname) {
 }
 
 export default function AppShell() {
-  const { user, signOut } = useAuth()
+  const { user } = useAuth()
   const { isUnlocked, lock, cryptoKey } = useEncryption()
   const qc = useQueryClient()
-  const { openPalette } = useCommandPalette()
   const { toast } = useToast()
   const navigate = useNavigate()
   const location = useLocation()
-  const [confirmSignOut, setConfirmSignOut] = useState(false)
 
   // One-time conversions after unlock (only an unlocked device can read the
   // content): secrets become Notes (secretMigration.js), and older Rich text
@@ -126,29 +121,11 @@ export default function AppShell() {
         archiveTotal={archiveTotal}
         binTotal={binTotal}
         onLock={() => { lock(); toast.info('Vault locked') }}
-        onSignOut={() => setConfirmSignOut(true)}
-        onCommands={() => openPalette()}
-        onShortcuts={() => window.dispatchEvent(new CustomEvent('arche:open-shortcuts'))}
         navigate={navigate}
       />
       <div className="flex-1 min-w-0">
         <Outlet />
       </div>
-
-      {confirmSignOut && (
-        <ConfirmDialog
-          title={SIGN_OUT_TEXT.title}
-          message={SIGN_OUT_TEXT.message}
-          confirmLabel={SIGN_OUT_TEXT.label}
-          destructive
-          onConfirm={() => {
-            setConfirmSignOut(false)
-            signOut()
-            toast.info(SIGN_OUT_TEXT.done)
-          }}
-          onClose={() => setConfirmSignOut(false)}
-        />
-      )}
     </div>
   )
 }
