@@ -41,6 +41,8 @@ import { ActionMenu } from '../components/ui/ActionMenu'
 import { Button, IconButton } from '../components/ui/Button'
 import { ViewToggle } from '../components/ui/ViewToggle'
 import { SpaceCardSkeleton } from '../components/ui/CardSkeletons'
+import { CardColumns } from '../components/ui/CardColumns'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 import { SpaceModal } from '../components/space/SpaceModal'
 import { SpaceCard } from '../components/space/SpaceCard'
 import { MoveSpacesDialog } from '../components/space/MoveSpacesDialog'
@@ -113,32 +115,15 @@ export default function DashboardPage() {
     try { localStorage.setItem('arche:spaces-view', mode) } catch { /* storage unavailable */ }
   }, [])
 
-  // Grid is a round-robin masonry (2 columns, 3 on lg) so the sort order reads
-  // left-to-right across the top row - pinned/newest spaces stay at the top.
-  const [gridCols, setGridCols] = useState(
-    () => (typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches ? 3 : 2),
-  )
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 1024px)')
-    const onChange = (e) => setGridCols(e.matches ? 3 : 2)
-    mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
-  }, [])
+  // Grid is a masonry of 2 columns, 3 on lg.
+  const gridCols = useMediaQuery('(min-width: 1024px)') ? 3 : 2
 
   // One sort for the whole dashboard: spaces by name, items by title.
   const [spaceSort, setSpaceSort] = usePersistedSort('arche-sort-spaces')
 
   // On small screens grid cards are narrow (two columns), so dashboard items
   // render denser, as they do inside a space.
-  const [isSmallScreen, setIsSmallScreen] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches,
-  )
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 639px)')
-    const onChange = (e) => setIsSmallScreen(e.matches)
-    mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
-  }, [])
+  const isSmallScreen = useMediaQuery('(max-width: 639px)')
   const denseItems = viewMode === 'grid' && isSmallScreen
   // Space cards are mostly their name, which two phone-width columns would cut
   // short, so on phones they take the full width (items keep two columns).
@@ -452,15 +437,9 @@ export default function DashboardPage() {
   const showItemsSection = sortedItems.length > 0
   const firstSectionLabel = showSpacesSection || !showItemsSection ? 'Spaces' : 'Items'
 
-  // One section's cards: round-robin masonry in grid view, one column in list.
+  // One section's cards: masonry in grid view, one column in list.
   const renderSection = (nodes, cols = gridCols) => (viewMode === 'grid' ? (
-    <div className="flex items-start gap-2 sm:gap-3">
-      {Array.from({ length: cols }, (_, col) => (
-        <div key={col} className="min-w-0 flex-1 flex flex-col gap-2 sm:gap-3">
-          {nodes.filter((_, i) => i % cols === col)}
-        </div>
-      ))}
-    </div>
+    <CardColumns cols={cols}>{nodes}</CardColumns>
   ) : (
     <div className="grid grid-cols-1 gap-2">
       {nodes}

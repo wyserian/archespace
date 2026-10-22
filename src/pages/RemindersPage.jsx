@@ -12,6 +12,7 @@ import { ArrowLeft, Bell } from 'lucide-react'
 import { useSpaces } from '../hooks/useSpaces'
 import { useItemBoard } from '../hooks/useItemBoard'
 import { useColumnCount } from '../hooks/useColumnCount'
+import { CardColumns } from '../components/ui/CardColumns'
 import { useNow } from '../hooks/useReminders'
 import { REMINDER_ITEMS } from '../hooks/useSpaceItems'
 import { useRegisterPageActions } from '../context/PageActionsCore'
@@ -83,17 +84,8 @@ export default function RemindersPage() {
     </div>
   )
 
-  // One group's cards: round-robin masonry across the columns, so the
-  // earliest read first across the top.
-  const renderGroup = (groupItems) => (
-    <div className="flex items-start gap-2 sm:gap-3">
-      {Array.from({ length: cols }, (_, col) => (
-        <div key={col} className="min-w-0 flex-1 flex flex-col gap-2 sm:gap-3">
-          {groupItems.map(renderItemCard).filter((_, i) => i % cols === col)}
-        </div>
-      ))}
-    </div>
-  )
+  // One group's cards, the earliest first across the top.
+  const renderGroup = (groupItems) => <CardColumns cols={cols}>{groupItems.map(renderItemCard)}</CardColumns>
 
   return (
     <div className="min-h-screen bg-bg-base pb-24">

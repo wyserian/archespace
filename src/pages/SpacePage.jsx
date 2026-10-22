@@ -30,6 +30,8 @@ import { ActionMenu } from '../components/ui/ActionMenu'
 import { Button, IconButton } from '../components/ui/Button'
 import { ViewToggle } from '../components/ui/ViewToggle'
 import { ItemCardSkeleton } from '../components/ui/CardSkeletons'
+import { CardColumns } from '../components/ui/CardColumns'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 import { usePersistedSort } from '../hooks/usePersistedSort'
 import { useSpaceStats } from '../hooks/useSpaceStats'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
@@ -288,28 +290,11 @@ export default function SpacePage() {
 
   // On small screens grid cards are narrow (two columns), so render them denser
   // (smaller text and padding) while still showing the full item content.
-  const [isSmallScreen, setIsSmallScreen] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches,
-  )
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 639px)')
-    const onChange = (e) => setIsSmallScreen(e.matches)
-    mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
-  }, [])
+  const isSmallScreen = useMediaQuery('(max-width: 639px)')
   const denseItems = viewMode === 'grid' && isSmallScreen
 
-  // Grid is a round-robin masonry (2 columns, 3 on xl) so the sort order reads
-  // left-to-right across the top row - pinned/newest items stay at the top.
-  const [gridCols, setGridCols] = useState(
-    () => (typeof window !== 'undefined' && window.matchMedia('(min-width: 1280px)').matches ? 3 : 2),
-  )
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 1280px)')
-    const onChange = (e) => setGridCols(e.matches ? 3 : 2)
-    mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
-  }, [])
+  // Grid is a masonry of 2 columns, 3 on xl.
+  const gridCols = useMediaQuery('(min-width: 1280px)') ? 3 : 2
 
   // Manual drag order (in both list and grid views) only applies to the
   // default sort; other sorts and select mode disable it.
@@ -530,17 +515,11 @@ export default function SpacePage() {
   const labelSections = subSpaceNodes.length > 0 && itemNodes.length > 0
   const sectionLabelClass = 'mb-3 px-1 text-base font-semibold text-text-primary'
 
-  // One section's cards: round-robin masonry in grid view, one column in list.
+  // One section's cards: masonry in grid view, one column in list.
   // Sub-space cards take the full width on phones, where two columns would
   // cut their names short.
   const renderSection = (nodes, cols = gridCols) => (viewMode === 'grid' ? (
-    <div className="flex items-start gap-2 sm:gap-3">
-      {Array.from({ length: cols }, (_, col) => (
-        <div key={col} className="min-w-0 flex-1 flex flex-col gap-2 sm:gap-3">
-          {nodes.filter((_, i) => i % cols === col)}
-        </div>
-      ))}
-    </div>
+    <CardColumns cols={cols}>{nodes}</CardColumns>
   ) : (
     <div className="space-y-3">
       {nodes}

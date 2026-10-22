@@ -13,6 +13,7 @@ import { useSpaces } from '../hooks/useSpaces'
 import { useSpaceStats } from '../hooks/useSpaceStats'
 import { useItemBoard } from '../hooks/useItemBoard'
 import { useColumnCount } from '../hooks/useColumnCount'
+import { CardColumns } from '../components/ui/CardColumns'
 import { spacePathLabel } from '../lib/spaceTree'
 import { STARRED_ITEMS } from '../hooks/useSpaceItems'
 import { useToast } from '../context/ToastCore'
@@ -123,16 +124,7 @@ export default function StarredPage() {
     </div>
   )
 
-  // One section's cards: round-robin masonry across the columns.
-  const renderSection = (nodes) => (
-    <div className="flex items-start gap-2 sm:gap-3">
-      {Array.from({ length: cols }, (_, col) => (
-        <div key={col} className="min-w-0 flex-1 flex flex-col gap-2 sm:gap-3">
-          {nodes.filter((_, i) => i % cols === col)}
-        </div>
-      ))}
-    </div>
-  )
+  const renderSection = (nodes) => <CardColumns cols={cols}>{nodes}</CardColumns>
 
   const showSpaces = starredSpaces.length > 0
   const showItems = items.length > 0
