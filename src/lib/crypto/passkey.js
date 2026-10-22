@@ -10,7 +10,7 @@
  * This module is pure WebAuthn + Web Crypto (no Supabase). Persistence and
  * orchestration live in passkeyVault.js.
  */
-import { encryptString, decryptString } from './cipher'
+import { encryptString, decryptString, importRawAesKey, exportRawAesKey } from './cipher'
 import { bytesFromBase64, bytesToBase64 } from './encoding'
 
 const RP_NAME = 'ArcheSpace'
@@ -25,20 +25,6 @@ function bytesToB64url(bytes) {
 function b64urlToBytes(str) {
   const pad = str.length % 4 ? '='.repeat(4 - (str.length % 4)) : ''
   return bytesFromBase64(str.replace(/-/g, '+').replace(/_/g, '/') + pad)
-}
-
-async function importRawAesKey(rawBytes) {
-  return crypto.subtle.importKey(
-    'raw',
-    rawBytes,
-    { name: 'AES-GCM', length: 256 },
-    true,
-    ['encrypt', 'decrypt']
-  )
-}
-
-async function exportRawAesKey(key) {
-  return new Uint8Array(await crypto.subtle.exportKey('raw', key))
 }
 
 /**

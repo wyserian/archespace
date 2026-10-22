@@ -7,7 +7,7 @@
 import { supabase } from '../supabase'
 import { isOnline } from '../offlineQueue'
 import { isNetworkError, setReachable } from '../connectivity'
-import { encryptString, decryptString } from './cipher'
+import { encryptString, decryptString, importRawAesKey, exportRawAesKey } from './cipher'
 import { deriveVaultKey, isLegacySaltDescriptor, newSaltDescriptor } from './keyDerivation'
 import { validateVaultPin } from './vaultPin'
 import { bytesFromBase64, bytesToBase64 } from './encoding'
@@ -61,21 +61,6 @@ function clearCachedVaultMeta(userId) {
   } catch {
     // Storage unavailable - nothing to clear.
   }
-}
-
-export async function importRawAesKey(rawBytes) {
-  return crypto.subtle.importKey(
-    'raw',
-    rawBytes,
-    { name: 'AES-GCM', length: 256 },
-    true,
-    ['encrypt', 'decrypt']
-  )
-}
-
-export async function exportRawAesKey(key) {
-  const buf = await crypto.subtle.exportKey('raw', key)
-  return new Uint8Array(buf)
 }
 
 async function generateMasterKey() {

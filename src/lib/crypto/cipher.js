@@ -9,6 +9,15 @@ function isEncrypted(value) {
   return typeof value === 'string' && value.startsWith(CIPHER_PREFIX)
 }
 
+/** A vault master key from its raw bytes (exportable, to wrap it again). */
+export async function importRawAesKey(rawBytes) {
+  return crypto.subtle.importKey('raw', rawBytes, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
+}
+
+export async function exportRawAesKey(key) {
+  return new Uint8Array(await crypto.subtle.exportKey('raw', key))
+}
+
 /**
  * @param {string} plaintext
  * @param {CryptoKey} key

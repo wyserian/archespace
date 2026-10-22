@@ -6,7 +6,7 @@ vi.mock('./supabase', () => ({ supabase: {} }))
 import { encryptString } from './crypto/cipher'
 import { bytesToBase64 } from './crypto/encoding'
 import { deriveVaultKey, newSaltDescriptor } from './crypto/keyDerivation'
-import { exportRawAesKey } from './crypto/vault'
+import { exportRawAesKey } from './crypto/cipher'
 import { isEncryptedBackup, openBackupWithKey, openBackupWithPin, sealBackup } from './backupCrypto'
 
 const newKey = () =>
