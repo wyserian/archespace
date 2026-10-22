@@ -4,17 +4,21 @@
  * Collapsible (icon-only or icon+label), with the name and the collapse toggle
  * at the top. Shown on sm+ screens only; the mobile top bars remain the
  * navigation on phones. The space list folds under its
- * heading; Lock vault and Settings sit at the bottom. `active` marks the
- * current section ('spaces' | 'space' | 'reminders' | 'starred' | 'archive' |
- * 'bin' | 'settings'); `activeSpaceId` the open top-level space.
+ * heading; Commands, Shortcuts (each with its key), Lock vault and
+ * Settings sit at the bottom. `active` marks the current section ('spaces' |
+ * 'space' | 'reminders' | 'starred' | 'archive' | 'bin' | 'settings');
+ * `activeSpaceId` the open top-level space.
  */
 import { useState } from 'react'
 import {
-  LayoutGrid, Star, Archive, Trash2, Lock, Settings,
+  LayoutGrid, Star, Archive, Trash2, Lock, Settings, Command, Keyboard,
   ChevronsLeft, ChevronsRight, ChevronRight, Bell,
 } from 'lucide-react'
+import { MENU_HINT } from '../ui/menuStyles'
 
 const SPACES_OPEN_KEY = 'arche:sidebar-spaces-open'
+const IS_MAC = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform || '')
+const MOD = IS_MAC ? '⌘' : 'Ctrl '
 
 function SectionLabel({ children, collapsed }) {
   if (collapsed) return <div className="h-4" />
@@ -45,16 +49,16 @@ function SpaceRow({ label, active, trailing, onClick }) {
   )
 }
 
-function NavItem({ icon: Icon, label, active, count, badge, collapsed, onClick }) {
+function NavItem({ icon: Icon, label, active, count, badge, hint, collapsed, onClick }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      title={collapsed ? label : undefined}
+      title={collapsed ? (hint ? `${label} (${hint})` : label) : undefined}
       aria-label={badge ? `${label}, ${badge} for today or past` : label}
       aria-current={active ? 'page' : undefined}
       className={`relative w-full flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors ${
-        collapsed ? 'justify-center py-2' : ''
+        collapsed ? 'justify-center py-2' : hint ? 'pr-2' : ''
       } ${
         active
           ? 'bg-bg-elevated text-text-primary font-medium'
@@ -69,7 +73,15 @@ function NavItem({ icon: Icon, label, active, count, badge, collapsed, onClick }
       {badge > 0 && collapsed && (
         <span className="absolute top-1.5 right-4 h-2 w-2 rounded-full bg-accent" aria-hidden="true" />
       )}
-      {!collapsed && <span className="flex-1 text-left truncate">{label}</span>}
+      {/* With a key hint, label and hint sit closer, so both fit the rail. */}
+      {!collapsed && (hint ? (
+        <span className="flex-1 min-w-0 flex items-center gap-1.5">
+          <span className="flex-1 text-left truncate">{label}</span>
+          <kbd className={MENU_HINT}>{hint}</kbd>
+        </span>
+      ) : (
+        <span className="flex-1 text-left truncate">{label}</span>
+      ))}
       {!collapsed && badge > 0 && (
         <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-accent text-accent-fg text-[10px] font-bold px-1 tabular-nums">
           {badge > 99 ? '99+' : badge}
@@ -86,7 +98,7 @@ function NavItem({ icon: Icon, label, active, count, badge, collapsed, onClick }
 export default function AppSidebar({
   collapsed, onToggleCollapsed, active, activeSpaceId,
   isUnlocked, spaces, remindersNowTotal, starredTotal, archiveTotal, binTotal,
-  onLock, navigate,
+  onLock, onCommands, onShortcuts, navigate,
 }) {
   const [spacesOpen, setSpacesOpen] = useState(() => {
     try { return localStorage.getItem(SPACES_OPEN_KEY) !== '0' } catch { return true }
@@ -164,8 +176,10 @@ export default function AppSidebar({
         <NavItem icon={Trash2} label="Bin" active={active === 'bin'} count={binTotal} collapsed={collapsed} onClick={() => navigate('/recycle-bin')} />
       </nav>
 
-      {/* Footer: Lock vault, then Settings */}
+      {/* Footer: Commands and Keyboard shortcuts, Lock vault, then Settings */}
       <div className="shrink-0 px-2 pt-4 pb-3 space-y-0.5">
+        <NavItem icon={Command} label="Commands" hint={`${MOD}K`} collapsed={collapsed} onClick={onCommands} />
+        <NavItem icon={Keyboard} label="Shortcuts" hint="?" collapsed={collapsed} onClick={onShortcuts} />
         {isUnlocked && (
           <NavItem icon={Lock} label="Lock vault" collapsed={collapsed} onClick={onLock} />
         )}

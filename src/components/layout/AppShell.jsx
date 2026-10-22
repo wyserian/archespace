@@ -10,6 +10,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContextCore'
 import { useEncryption } from '../../context/EncryptionCore'
+import { useCommandPalette } from '../../context/CommandPaletteCore'
 import { useToast } from '../../context/ToastCore'
 import { useSpaces } from '../../hooks/useSpaces'
 import { useArchive } from '../../hooks/useArchive'
@@ -42,6 +43,7 @@ export default function AppShell() {
   const { user } = useAuth()
   const { isUnlocked, lock, cryptoKey } = useEncryption()
   const qc = useQueryClient()
+  const { openPalette } = useCommandPalette()
   const { toast } = useToast()
   const navigate = useNavigate()
   const location = useLocation()
@@ -121,6 +123,8 @@ export default function AppShell() {
         archiveTotal={archiveTotal}
         binTotal={binTotal}
         onLock={() => { lock(); toast.info('Vault locked') }}
+        onCommands={() => openPalette()}
+        onShortcuts={() => window.dispatchEvent(new CustomEvent('arche:open-shortcuts'))}
         navigate={navigate}
       />
       <div className="flex-1 min-w-0">
