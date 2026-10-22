@@ -14,7 +14,7 @@ import {
   Pin, PinOff, Save, AlertTriangle, Copy, Archive,
   Maximize2, Minimize2, MoveRight, MoreVertical,
   ClipboardCopy, ClipboardCheck, FileDown, PencilOff, Shield, ShieldCheck, ShieldOff, EyeOff, Loader2,
-  Bell,
+  Bell, Tag,
 } from 'lucide-react'
 import { TextboxEditor, MarkdownEditor, ChecklistEditor, ListItemsEditor, CardListEditor } from './editors/ItemEditors'
 // The Rich text editor (Tiptap) loads only when a Rich text item is shown.
@@ -117,6 +117,7 @@ function SpaceItem({
   // The Rich text editor instance, for its toolbar on the tags row.
   const [richEditor, setRichEditor] = useState(null)
   const [reminderOpen, setReminderOpen] = useState(false)
+  const [addingTag, setAddingTag] = useState(false)
   const online = useOnlineStatus()
 
   const latestState = useRef({ title: item.title, content: item.content })
@@ -395,7 +396,7 @@ function SpaceItem({
   const showCollapseToggle = !isFullscreen
   // Whether the tags row (with the reminder) is shown (drives content top
   // padding so the two don't stack into a large gap).
-  const showTags = !selectMode && ((item.tags?.length ?? 0) > 0 || !!item.reminder || (online && !readOnly))
+  const showTags = !selectMode && ((item.tags?.length ?? 0) > 0 || !!item.reminder || addingTag)
   const canSetReminder = !!onSetReminder && online
   // The Rich text toolbar: a bar across the top of the note, always shown
   // (it scrolls sideways when narrow) - except read-only, collapsed or select
@@ -583,19 +584,16 @@ function SpaceItem({
                     {headerCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
                   </button>
                   )}
-                  {!hidden && (
+                  {/* Full screen opens from the menu; leaving it is a button. */}
+                  {isFullscreen && (
                   <button
                     type="button"
                     onClick={handleFullscreenClick}
-                    className={`p-1.5 rounded-full transition-colors ${
-                      isFullscreen
-                        ? 'bg-accent-muted text-accent'
-                        : 'text-text-muted hover:text-text-primary hover:bg-bg-hover'
-                    }`}
-                    aria-label={isFullscreen ? 'Exit full screen' : 'Full screen'}
-                    title={isFullscreen ? 'Exit full screen' : 'Full screen'}
+                    className="p-1.5 rounded-full transition-colors bg-accent-muted text-accent"
+                    aria-label="Exit full screen"
+                    title="Exit full screen"
                   >
-                    {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                    <Minimize2 size={14} />
                   </button>
                   )}
                   <ActionMenu
@@ -606,6 +604,7 @@ function SpaceItem({
                     // Alt+Up / Alt+Down here move the card (handled by the page).
                     triggerProps={canDrag && !dragDisabled ? { 'aria-keyshortcuts': REORDER_KEYSHORTCUTS } : undefined}
                     actions={[
+                      !hidden && !isFullscreen && { id: 'fullscreen', label: 'Full screen', icon: Maximize2, onClick: handleFullscreenClick },
                       !readOnly && {
                         id: 'pin',
                         label: item.pinned ? 'Unpin' : 'Pin',
@@ -629,6 +628,7 @@ function SpaceItem({
                         disabled: !online,
                         onClick: () => setReminderOpen(true),
                       },
+                      !readOnly && onSetTags && { id: 'tag', label: 'Add tag', icon: Tag, disabled: !online, onClick: () => setAddingTag(true) },
                       canCopy && {
                         id: 'copy',
                         label: copied ? 'Copied' : 'Copy',
@@ -693,6 +693,8 @@ function SpaceItem({
             tags={item.tags || []}
             onChange={(tags) => onSetTags?.(item.id, tags)}
             disabled={!online || readOnly}
+            adding={addingTag}
+            onAddingChange={setAddingTag}
           />
         </div>
       )}

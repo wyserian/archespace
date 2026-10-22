@@ -1,14 +1,15 @@
 /**
  * ItemTags.jsx - Inline tag chips + add input for an item. Tags are encrypted
  * with the rest of the item, so they stay zero-knowledge. onChange receives the
- * full next array; callers persist it.
+ * full next array; callers persist it. The add input shows while `adding` (the
+ * card's menu opens it) and `onAddingChange(false)` closes it.
  */
 import { useState } from 'react'
-import { X, Plus } from 'lucide-react'
+import { X } from 'lucide-react'
 
-export function ItemTags({ tags = [], onChange, disabled = false }) {
-  const [adding, setAdding] = useState(false)
+export function ItemTags({ tags = [], onChange, disabled = false, adding = false, onAddingChange }) {
   const [value, setValue] = useState('')
+  const setAdding = (next) => onAddingChange?.(next)
 
   const commit = () => {
     const next = value.split(',').map(t => t.trim()).filter(Boolean)
@@ -45,7 +46,7 @@ export function ItemTags({ tags = [], onChange, disabled = false }) {
         </span>
       ))}
 
-      {!disabled && (adding ? (
+      {!disabled && adding && (
         <input
           autoFocus
           value={value}
@@ -56,18 +57,11 @@ export function ItemTags({ tags = [], onChange, disabled = false }) {
             else if (e.key === 'Escape') { setValue(''); setAdding(false) }
           }}
           placeholder="tag"
+          aria-label="New tag"
           maxLength={32}
           className="w-20 text-[11px] px-2 py-0.5 rounded-md bg-bg-elevated border border-accent/40 text-text-primary placeholder-text-muted focus:outline-none"
         />
-      ) : (
-        <button
-          type="button"
-          onClick={() => setAdding(true)}
-          className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md border border-dashed border-bg-border text-text-muted hover:text-accent hover:border-accent/40 transition-colors"
-        >
-          <Plus size={11} /> Tag
-        </button>
-      ))}
+      )}
     </div>
   )
 }
