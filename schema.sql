@@ -390,12 +390,12 @@ REVOKE ALL ON TABLE audit_log FROM anon, authenticated;
 -- challenge after the password, and the policies below require AAL2 at the
 -- database once a verified factor exists.
 --
--- IMPORTANT: user_encryption is deliberately NOT gated. Gating it made an
--- RLS-filtered read look like "no vault", which could send a signed-in user to
--- vault setup and overwrite their key. The row is only wrapped ciphertext and
--- public salts (useless without the vault PIN), so leaving it readable at AAL1
--- costs nothing and keeps the vault-exists check reliable. Only the actual
--- content tables (spaces, space_items) are gated.
+-- IMPORTANT: reading user_encryption is deliberately NOT gated. Gating it made
+-- an RLS-filtered read look like "no vault", which could send a signed-in user
+-- to vault setup and overwrite their key. The row is only wrapped ciphertext
+-- and public salts (useless without the vault PIN), so leaving it readable at
+-- AAL1 costs nothing and keeps the vault-exists check reliable. Writing it is
+-- gated below, as are the content tables (spaces, space_items).
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 
@@ -483,11 +483,10 @@ GRANT EXECUTE ON FUNCTION public.has_verified_mfa() TO authenticated;
 
 -- Require AAL2 for the encrypted content once a verified MFA factor exists.
 -- Users with no factor are unaffected (aal1 allowed). Restrictive => ANDs with
--- the ownership policies above. Only spaces + space_items are gated - that is
--- the actual content. user_encryption is only wrapped ciphertext and
--- user_settings is trivial prefs; gating those risked the vault-exists trap or
--- breaking early appearance loads, for no real gain (all content is E2E
--- encrypted). Re-runnable: drops then recreates.
+-- the ownership policies above. spaces + space_items are gated in full - that
+-- is the actual content. user_settings is trivial prefs and stays open, as do
+-- reads of user_encryption (the vault-exists trap above); its writes are gated
+-- after this block. Re-runnable: drops then recreates.
 DO $$
 DECLARE t text;
 BEGIN
@@ -518,6 +517,22 @@ CREATE POLICY "Require aal2 to add backup codes" ON mfa_backup_codes
   WITH CHECK ((SELECT auth.jwt()->>'aal') = 'aal2' OR NOT public.has_verified_mfa());
 DROP POLICY IF EXISTS "Require aal2 to remove backup codes" ON mfa_backup_codes;
 CREATE POLICY "Require aal2 to remove backup codes" ON mfa_backup_codes
+  AS RESTRICTIVE FOR DELETE TO authenticated
+  USING ((SELECT auth.jwt()->>'aal') = 'aal2' OR NOT public.has_verified_mfa());
+
+-- And for changing the vault row: reading it stays open (see above), but a
+-- password alone must not replace or delete the wrapped key, which would leave
+-- every item unreadable for good.
+DROP POLICY IF EXISTS "Require aal2 to add the vault" ON user_encryption;
+CREATE POLICY "Require aal2 to add the vault" ON user_encryption
+  AS RESTRICTIVE FOR INSERT TO authenticated
+  WITH CHECK ((SELECT auth.jwt()->>'aal') = 'aal2' OR NOT public.has_verified_mfa());
+DROP POLICY IF EXISTS "Require aal2 to change the vault" ON user_encryption;
+CREATE POLICY "Require aal2 to change the vault" ON user_encryption
+  AS RESTRICTIVE FOR UPDATE TO authenticated
+  USING ((SELECT auth.jwt()->>'aal') = 'aal2' OR NOT public.has_verified_mfa());
+DROP POLICY IF EXISTS "Require aal2 to delete the vault" ON user_encryption;
+CREATE POLICY "Require aal2 to delete the vault" ON user_encryption
   AS RESTRICTIVE FOR DELETE TO authenticated
   USING ((SELECT auth.jwt()->>'aal') = 'aal2' OR NOT public.has_verified_mfa());
 
@@ -624,6 +639,10 @@ DECLARE v_user_id uuid := auth.uid();
 BEGIN
   IF v_user_id IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  -- With two-factor on, a password alone can't delete the account.
+  IF public.has_verified_mfa() AND (SELECT auth.jwt()->>'aal') IS DISTINCT FROM 'aal2' THEN
+    RAISE EXCEPTION 'Complete two-factor sign-in before deleting your account.';
   END IF;
   DELETE FROM auth.users WHERE id = v_user_id;
 END;
