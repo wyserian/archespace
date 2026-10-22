@@ -10,6 +10,9 @@ export const MENU_PANEL = 'rounded-xl border border-bg-border bg-bg-surface p-1 
 /** A small heading above a group of rows. */
 export const MENU_HEADING = 'px-2 pt-1.5 pb-1 text-[10px] font-medium uppercase tracking-wider text-text-muted'
 
+/** A thin rule between groups of rows. */
+export const MENU_DIVIDER = 'my-1 h-px bg-bg-border-soft'
+
 /** A shortcut hint at the end of a row. */
 export const MENU_HINT = 'ml-auto shrink-0 font-sans text-[10px] text-text-muted'
 

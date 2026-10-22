@@ -585,8 +585,16 @@ export default function SpacePage() {
                 bordered={false}
                 icon={MoreVertical}
                 actions={[
+                  items.length > 0 && {
+                    id: 'export-pdf',
+                    group: 'content',
+                    label: 'Export PDF',
+                    icon: FileDown,
+                    onClick: () => exportSpaceToPdf(space, items, subSpaces),
+                  },
                   {
                     id: 'read-only',
+                    group: 'keep',
                     label: readOnly ? 'Allow editing' : 'Read-only',
                     icon: readOnly ? PencilLine : PencilOff,
                     disabled: !online,
@@ -594,16 +602,11 @@ export default function SpacePage() {
                   },
                   {
                     id: 'lock',
+                    group: 'keep',
                     label: locked ? 'Remove protection' : 'Protect',
                     icon: locked ? ShieldOff : Shield,
                     disabled: !online,
                     onClick: handleToggleLock,
-                  },
-                  items.length > 0 && {
-                    id: 'export-pdf',
-                    label: 'Export PDF',
-                    icon: FileDown,
-                    onClick: () => exportSpaceToPdf(space, items, subSpaces),
                   },
                 ]}
               />

@@ -125,9 +125,12 @@ export function SpaceCard({
   }
 
   // Every space action writes to the server, so all are disabled offline.
+  // Grouped as in an item's menu: mark it, its content, where and how it's
+  // kept, then delete on its own.
   const menuActions = [
     {
       id: 'pin',
+      group: 'mark',
       label: col.pinned ? 'Unpin' : 'Pin',
       icon: col.pinned ? PinOff : Pin,
       active: col.pinned,
@@ -137,16 +140,24 @@ export function SpaceCard({
     // Starring never moves the space; it adds it to the Starred view.
     toggleStar && {
       id: 'star',
+      group: 'mark',
       label: col.starred ? 'Unstar' : 'Star',
       icon: col.starred ? StarOff : Star,
       active: col.starred,
       disabled: !online,
       onClick: () => toggleStar.mutate({ id: col.id, starred: col.starred }),
     },
+    // Editing shows the description, so a hidden protected space opens first.
+    !col.read_only && !hidden && { id: 'edit', group: 'content', label: 'Edit', icon: Pencil, disabled: !online, onClick: () => setModal({ type: 'edit', col }) },
+    { id: 'duplicate', group: 'content', label: 'Duplicate', icon: Copy, disabled: !online, onClick: () => onDuplicate?.(col.id) },
+    // A read-only space stays where it is; a hidden one opens first (moving it
+    // out of a protected space would show it without the PIN).
+    onMove && !col.read_only && !hidden && { id: 'move', group: 'keep', label: 'Move', icon: MoveRight, disabled: !online, onClick: () => onMove(col.id) },
     // Read-only locks the space's content (its details and items); managing
     // the space itself (pin, duplicate, archive, delete) stays available.
     toggleReadOnly && {
       id: 'read-only',
+      group: 'keep',
       label: col.read_only ? 'Allow editing' : 'Read-only',
       icon: col.read_only ? PencilLine : PencilOff,
       disabled: !online,
@@ -157,19 +168,14 @@ export function SpaceCard({
     },
     toggleLock && {
       id: 'lock',
+      group: 'keep',
       label: col.locked ? 'Remove protection' : 'Protect',
       icon: col.locked ? ShieldOff : Shield,
       disabled: !online,
       onClick: handleToggleLock,
     },
-    // Editing shows the description, so a hidden protected space opens first.
-    !col.read_only && !hidden && { id: 'edit', label: 'Edit', icon: Pencil, disabled: !online, onClick: () => setModal({ type: 'edit', col }) },
-    { id: 'duplicate', label: 'Duplicate', icon: Copy, disabled: !online, onClick: () => onDuplicate?.(col.id) },
-    // A read-only space stays where it is; a hidden one opens first (moving it
-    // out of a protected space would show it without the PIN).
-    onMove && !col.read_only && !hidden && { id: 'move', label: 'Move', icon: MoveRight, disabled: !online, onClick: () => onMove(col.id) },
-    { id: 'archive', label: 'Archive', icon: Archive, disabled: !online, onClick: () => onArchive?.(col.id) },
-    { id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', disabled: !online, onClick: () => setDeleteConfirm(col.id) },
+    { id: 'archive', group: 'keep', label: 'Archive', icon: Archive, disabled: !online, onClick: () => onArchive?.(col.id) },
+    { id: 'delete', group: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', disabled: !online, onClick: () => setDeleteConfirm(col.id) },
   ]
 
   const dragProps = {

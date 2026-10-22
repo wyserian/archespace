@@ -603,10 +603,13 @@ function SpaceItem({
                     icon={MoreVertical}
                     // Alt+Up / Alt+Down here move the card (handled by the page).
                     triggerProps={canDrag && !dragDisabled ? { 'aria-keyshortcuts': REORDER_KEYSHORTCUTS } : undefined}
+                    // Grouped: open it, mark it, work with its content, where
+                    // and how it's kept, then delete on its own at the end.
                     actions={[
-                      !hidden && !isFullscreen && { id: 'fullscreen', label: 'Full screen', icon: Maximize2, onClick: handleFullscreenClick },
+                      !hidden && !isFullscreen && { id: 'fullscreen', group: 'view', label: 'Full screen', icon: Maximize2, onClick: handleFullscreenClick },
                       !readOnly && {
                         id: 'pin',
+                        group: 'mark',
                         label: item.pinned ? 'Unpin' : 'Pin',
                         icon: item.pinned ? PinOff : Pin,
                         active: item.pinned,
@@ -615,38 +618,34 @@ function SpaceItem({
                       },
                       onToggleStar && {
                         id: 'star',
+                        group: 'mark',
                         label: item.starred ? 'Unstar' : 'Star',
                         icon: item.starred ? StarOff : Star,
                         active: item.starred,
                         disabled: !online,
                         onClick: () => onToggleStar(item.id, item.starred),
                       },
+                      !readOnly && onSetTags && { id: 'tag', group: 'mark', label: 'Add tag', icon: Tag, disabled: !online, onClick: () => setAddingTag(true) },
                       onSetReminder && {
                         id: 'reminder',
+                        group: 'mark',
                         label: item.reminder ? 'Change reminder' : 'Add reminder',
                         icon: Bell,
                         disabled: !online,
                         onClick: () => setReminderOpen(true),
                       },
-                      !readOnly && onSetTags && { id: 'tag', label: 'Add tag', icon: Tag, disabled: !online, onClick: () => setAddingTag(true) },
+                      !readOnly && { id: 'rename', group: 'content', label: 'Rename', icon: Pencil, onClick: () => setEditingTitle(true) },
                       canCopy && {
                         id: 'copy',
+                        group: 'content',
                         label: copied ? 'Copied' : 'Copy',
                         icon: copied ? ClipboardCheck : ClipboardCopy,
                         onClick: handleCopy,
                       },
-                      onToggleLock && {
-                        id: 'lock',
-                        label: item.locked ? 'Remove protection' : 'Protect',
-                        icon: item.locked ? ShieldOff : Shield,
-                        disabled: !online,
-                        onClick: () => onToggleLock(item.id, !!item.locked),
-                      },
-                      !readOnly && { id: 'rename', label: 'Rename', icon: Pencil, onClick: () => setEditingTitle(true) },
-                      !readOnly && onDuplicate && { id: 'duplicate', label: 'Duplicate', icon: Copy, disabled: !online, onClick: () => onDuplicate(item) },
-                      !readOnly && onMove && { id: 'move', label: 'Move', icon: MoveRight, disabled: !online, onClick: () => onMove(item.id) },
+                      !readOnly && onDuplicate && { id: 'duplicate', group: 'content', label: 'Duplicate', icon: Copy, disabled: !online, onClick: () => onDuplicate(item) },
                       !hidden && {
                         id: 'export-pdf',
+                        group: 'content',
                         label: 'Export PDF',
                         icon: FileDown,
                         onClick: () => exportItemToPdf({
@@ -655,8 +654,17 @@ function SpaceItem({
                           content: latestState.current.content,
                         }),
                       },
-                      !readOnly && onArchive && { id: 'archive', label: 'Archive', icon: Archive, disabled: !online, onClick: () => onArchive(item.id) },
-                      !readOnly && { id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', disabled: !online, onClick: () => onDelete(item.id) },
+                      !readOnly && onMove && { id: 'move', group: 'keep', label: 'Move', icon: MoveRight, disabled: !online, onClick: () => onMove(item.id) },
+                      onToggleLock && {
+                        id: 'lock',
+                        group: 'keep',
+                        label: item.locked ? 'Remove protection' : 'Protect',
+                        icon: item.locked ? ShieldOff : Shield,
+                        disabled: !online,
+                        onClick: () => onToggleLock(item.id, !!item.locked),
+                      },
+                      !readOnly && onArchive && { id: 'archive', group: 'keep', label: 'Archive', icon: Archive, disabled: !online, onClick: () => onArchive(item.id) },
+                      !readOnly && { id: 'delete', group: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', disabled: !online, onClick: () => onDelete(item.id) },
                     ]}
                   />
                 </>

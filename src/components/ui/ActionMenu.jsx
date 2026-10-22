@@ -1,11 +1,11 @@
 /**
  * ActionMenu.jsx - Compact hover/click menu for row and card actions.
  */
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { MoreHorizontal } from 'lucide-react'
 import { buttonClass } from './buttonStyles'
-import { MENU_PANEL, menuItemClass } from './menuStyles'
+import { MENU_PANEL, MENU_DIVIDER, menuItemClass } from './menuStyles'
 
 const MENU_WIDTH = 160
 const VIEWPORT_PADDING = 8
@@ -16,6 +16,8 @@ const MENU_GAP = 8
  * "+ New" menu); otherwise it's a round icon button (`icon`, dots by default).
  * `openOnHover` (default true) opens it on pointer hover as well as click.
  * `triggerProps` go on the trigger button (a table grip makes it draggable).
+ * An action's optional `group` names its section: a divider goes above each
+ * action whose group differs from the one before it.
  */
 export function ActionMenu({
   actions,
@@ -231,23 +233,27 @@ export function ActionMenu({
         }`}
         style={{ top: position.top, left: position.left }}
       >
-        {visibleActions.map(({ id, label: itemLabel, icon: Icon, onClick, variant, active, disabled }) => (
-          <button
-            key={id}
-            type="button"
-            role="menuitem"
-            disabled={disabled}
-            onClick={(event) => {
-              event.stopPropagation()
-              onClick?.()
-              closeMenu()
-              buttonRef.current?.focus()
-            }}
-            className={menuItemClass({ active, danger: variant === 'danger' })}
-          >
-            {Icon && <Icon size={14} className="shrink-0" />}
-            <span className="truncate">{itemLabel}</span>
-          </button>
+        {visibleActions.map(({ id, group, label: itemLabel, icon: Icon, onClick, variant, active, disabled }, index) => (
+          <Fragment key={id}>
+            {index > 0 && group !== visibleActions[index - 1].group && (
+              <div role="separator" className={MENU_DIVIDER} />
+            )}
+            <button
+              type="button"
+              role="menuitem"
+              disabled={disabled}
+              onClick={(event) => {
+                event.stopPropagation()
+                onClick?.()
+                closeMenu()
+                buttonRef.current?.focus()
+              }}
+              className={menuItemClass({ active, danger: variant === 'danger' })}
+            >
+              {Icon && <Icon size={14} className="shrink-0" />}
+              <span className="truncate">{itemLabel}</span>
+            </button>
+          </Fragment>
         ))}
       </div>
       , document.body)}
