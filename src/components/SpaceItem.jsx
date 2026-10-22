@@ -75,6 +75,8 @@ function SpaceItem({
   onDragEnd,
   dragDisabled = false,
   forcedCollapsed = false,
+  // A card for an item just added opens with its title ready to type.
+  editTitleOnMount = false,
   onCollapsedChange,
   selectMode = false,
   selected = false,
@@ -94,7 +96,7 @@ function SpaceItem({
   const hidden = useContentHidden(item)
 
   // Local state
-  const [editingTitle, setEditingTitle]   = useState(false)
+  const [editingTitle, setEditingTitle]   = useState(editTitleOnMount && !readOnly)
   const [titleVal, setTitleVal]           = useState(item.title)
   const [localContent, setLocalContent]   = useState(item.content)
   const [isDirty, setIsDirty]             = useState(false)
@@ -451,7 +453,9 @@ function SpaceItem({
 
         {/* Title (inline editable), plus where the item lives when shown
             outside its space (the Starred view). */}
-        <div className="flex-1 min-w-0 flex items-baseline gap-1.5">
+        {/* While renaming it keeps room to type: on a narrow card Save and
+            Cancel wrap to the next line instead. */}
+        <div className={`flex-1 flex items-baseline gap-1.5 ${editingTitle ? 'min-w-[10rem]' : 'min-w-0'}`}>
           {editingTitle ? (
             <input
               autoFocus

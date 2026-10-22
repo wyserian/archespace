@@ -452,6 +452,7 @@ export default function SpacePage() {
         selected={selectedItemIds.has(item.id)}
         onSelectedChange={toggleItem}
         forcedCollapsed={board.collapsedIds.has(item.id)}
+        editTitleOnMount={board.addedItemId === item.id}
         {...board.cardProps}
         onDragStart={handleItemDragStart}
         onDragEnd={handleDragEnd}

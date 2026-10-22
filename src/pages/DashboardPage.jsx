@@ -421,6 +421,7 @@ export default function DashboardPage() {
         selected={selectedItemIds.has(item.id)}
         onSelectedChange={toggleItem}
         forcedCollapsed={board.collapsedIds.has(item.id)}
+        editTitleOnMount={board.addedItemId === item.id}
         {...board.cardProps}
         onDragStart={itemDrag.handleDragStart}
         onDragEnd={itemDrag.handleDragEnd}

@@ -5,7 +5,8 @@
  * null`) with everything a page of item cards needs: stable, memo-friendly card
  * callbacks, unsaved-edit tracking (with the leave-page guard), per-card
  * collapse, the add / delete / move dialogs' state, and the brief highlight of
- * an item opened from global search. Render the dialogs with ItemBoardModals.
+ * an item opened from global search or just added. Render the dialogs with
+ * ItemBoardModals.
  *
  * Selection stays with the page, since the dashboard selects spaces and items
  * together while a space page selects items only.
@@ -217,15 +218,37 @@ export function useItemBoard(spaceId) {
       .querySelector(`[data-item-id="${target}"]`)
       ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     const raf = requestAnimationFrame(() => setFlashItemId(target))
-    const timer = setTimeout(() => setFlashItemId(null), 2200)
-    return () => { cancelAnimationFrame(raf); clearTimeout(timer) }
+    return () => cancelAnimationFrame(raf)
   }, [location.state, isLoading])
+
+  // An item just added: shown the same way once its card is on the page (it
+  // lands at the end of the list), and its card opens with the title to type.
+  const [addedItemId, setAddedItemId] = useState(null)
+  useEffect(() => {
+    if (!addedItemId || flashItemId === addedItemId) return
+    const card = document.querySelector(`[data-item-id="${addedItemId}"]`)
+    if (!card) return
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const raf = requestAnimationFrame(() => setFlashItemId(addedItemId))
+    return () => cancelAnimationFrame(raf)
+  }, [addedItemId, items, flashItemId])
+
+  // The highlight fades after a moment.
+  useEffect(() => {
+    if (!flashItemId) return
+    const timer = setTimeout(() => {
+      setFlashItemId(null)
+      setAddedItemId(null)
+    }, 2200)
+    return () => clearTimeout(timer)
+  }, [flashItemId])
 
   // Add item
   const handleAddItem = useCallback(async (type) => {
     setAddModal(false)
     try {
-      await create.mutateAsync({ type, title: '' })
+      const added = await create.mutateAsync({ type, title: '' })
+      setAddedItemId(added.id)
       toastRef.current.success(`${ITEM_TYPE_OPTIONS.find(t => t.type === type)?.label || 'Item'} added`)
     } catch {
       toastRef.current.error("Couldn't add item.")
@@ -256,6 +279,7 @@ export function useItemBoard(spaceId) {
     collapsedIds,
     setManyCollapsed,
     flashItemId,
+    addedItemId,
     cardProps,
     openAddItem,
     openMoveItems,
