@@ -15,7 +15,8 @@ import {
 } from 'lucide-react'
 import { ActionMenu } from '../ui/ActionMenu'
 
-const MIN_COLUMN_WIDTH = 96
+// Narrow enough that a new two-column table fits a two-column grid card.
+const MIN_COLUMN_WIDTH = 80
 // The column after the grid: add-column in the header, row grips below it.
 const END_COLUMN_WIDTH = 28
 
@@ -168,7 +169,7 @@ export function TableEditor({ content, onChange, readOnly = false }) {
 
   return (
     <div className="space-y-1">
-      <div className="overflow-x-auto rounded-lg border border-bg-border-soft">
+      <div className="overflow-x-auto scrollbar-slim rounded-lg border border-bg-border-soft">
         <table className="w-full table-fixed border-collapse" style={{ minWidth }}>
           <colgroup>
             {columns.map((_, c) => <col key={c} />)}
@@ -185,7 +186,7 @@ export function TableEditor({ content, onChange, readOnly = false }) {
                   {!readOnly && c > 0 && (
                     <InsertButton side="left" label="Insert column here" onClick={() => insertColumn(c)} />
                   )}
-                  <div className="flex items-center">
+                  <div className="relative flex items-center">
                     <input
                       value={col}
                       onChange={e => setHeader(c, e.target.value)}
@@ -194,8 +195,10 @@ export function TableEditor({ content, onChange, readOnly = false }) {
                       aria-label={`Column ${c + 1} header`}
                       className={`${cellClass} font-semibold`}
                     />
+                    {/* Over the cell's end, so the hidden grip takes no width
+                        from the header text. */}
                     {!readOnly && (
-                      <span className={`shrink-0 ${gripClass}`}>
+                      <span className={`absolute right-0 top-1/2 -translate-y-1/2 rounded-full bg-bg-elevated ${gripClass}`}>
                         <ActionMenu
                           label={`Column ${c + 1}: drag to move, or click for options`}
                           icon={GripHorizontal}
