@@ -121,7 +121,7 @@ export default function ItemBoardModals({ board, spaces }) {
           }
         >
           <p className="text-text-secondary text-sm leading-relaxed">
-            Selected items will be moved to the recycle bin. You can restore them later.
+            Selected items will be moved to the bin. You can restore them later.
           </p>
         </Modal>
       )}
@@ -159,7 +159,7 @@ export default function ItemBoardModals({ board, spaces }) {
       {/* Delete item confirmation modal */}
       {deleteConfirm && (
         <Modal
-          title="Move to recycle bin?"
+          title="Move to the bin?"
           onClose={() => setDeleteConfirm(null)}
           footer={
             <div className="flex gap-2 justify-end">
@@ -172,7 +172,7 @@ export default function ItemBoardModals({ board, spaces }) {
               <button
                 onClick={() => {
                   remove.mutate(deleteConfirm, {
-                    onSuccess: () => toast.success('Item moved to recycle bin'),
+                    onSuccess: () => toast.success('Item moved to the bin'),
                     onError: () => toast.error("Couldn't delete item."),
                   })
                   setDeleteConfirm(null)
@@ -185,7 +185,7 @@ export default function ItemBoardModals({ board, spaces }) {
           }
         >
           <p className="text-text-secondary text-sm leading-relaxed">
-            This item will be moved to the recycle bin. You can restore it later or permanently delete it from there.
+            This item will be moved to the bin. You can restore it later or permanently delete it from there.
           </p>
         </Modal>
       )}

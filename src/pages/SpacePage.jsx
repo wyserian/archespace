@@ -630,7 +630,7 @@ export default function SpacePage() {
         ) : !hasContent ? (
           /* Empty state */
           <div className="text-center py-20">
-            <div className="w-14 h-14 rounded-2xl bg-bg-surface border border-bg-border flex items-center justify-center mx-auto mb-4">
+            <div className="w-14 h-14 rounded-2xl bg-bg-elevated flex items-center justify-center mx-auto mb-4">
               <Plus size={20} className="text-text-muted" />
             </div>
             <p className="text-text-secondary font-medium">Nothing here yet</p>
@@ -711,7 +711,6 @@ export default function SpacePage() {
                     variant={selectMode ? 'secondary' : 'ghost'}
                     size="sm"
                     icon={CheckSquare}
-                    iconOnlyOnMobile
                     aria-label={selectMode ? 'Done selecting' : 'Select'}
                     onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}
                   >
@@ -912,13 +911,13 @@ export default function SpacePage() {
       )}
       {spaceDeleteConfirm && (
         <ConfirmDialog
-          title="Move space to recycle bin?"
-          message="This space and all its items will be moved to the recycle bin."
-          confirmLabel="Move to recycle bin"
+          title="Move space to the bin?"
+          message="This space and all its items will be moved to the bin."
+          confirmLabel="Move to the bin"
           destructive
           onConfirm={() => {
             removeSpace.mutate(spaceDeleteConfirm, {
-              onSuccess: () => toast.success('Space moved to recycle bin'),
+              onSuccess: () => toast.success('Space moved to the bin'),
               onError: () => toast.error("Couldn't delete space."),
             })
             setSpaceDeleteConfirm(null)
@@ -929,11 +928,11 @@ export default function SpacePage() {
 
       {bulkDeleteConfirm && (
         <ConfirmDialog
-          title={`Move ${describeSelection(bulkDeleteConfirm.spaceIds.length, bulkDeleteConfirm.itemIds.length)} to recycle bin?`}
+          title={`Move ${describeSelection(bulkDeleteConfirm.spaceIds.length, bulkDeleteConfirm.itemIds.length)} to the bin?`}
           message={bulkDeleteConfirm.spaceIds.length > 0
             ? 'All items inside these spaces go to the bin as well.'
-            : 'You can restore them later from the recycle bin.'}
-          confirmLabel="Move to recycle bin"
+            : 'You can restore them later from the bin.'}
+          confirmLabel="Move to the bin"
           destructive
           onConfirm={async () => {
             const { spaceIds, itemIds } = bulkDeleteConfirm
@@ -943,7 +942,7 @@ export default function SpacePage() {
                 spaceIds.length && bulkRemoveSpaces.mutateAsync(spaceIds),
                 itemIds.length && board.api.bulkRemove.mutateAsync(itemIds),
               ])
-              toast.success(`Moved ${describeSelection(spaceIds.length, itemIds.length)} to recycle bin`)
+              toast.success(`Moved ${describeSelection(spaceIds.length, itemIds.length)} to the bin`)
               exitSelectMode()
             } catch {
               toast.error("Couldn't delete the selection.")

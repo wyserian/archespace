@@ -88,11 +88,11 @@ export default function RecycleBinPage() {
   const handleEmptyBin = async () => {
     try {
       await emptyBin.mutateAsync()
-      toast.success('Recycle bin emptied')
+      toast.success('Bin emptied')
       setConfirmEmpty(false)
       exitSelectMode()
     } catch {
-      toast.error("Couldn't empty recycle bin.")
+      toast.error("Couldn't empty the bin.")
     }
   }
 
@@ -115,10 +115,11 @@ export default function RecycleBinPage() {
     <div className="min-h-screen bg-bg-base pb-32">
       <header className="sticky top-0 z-20 glass">
         <div className="w-full px-4 sm:px-6 h-14 flex items-center gap-3">
-          <IconButton icon={ArrowLeft} label="Back" size="md" className="-ml-1.5" onClick={() => navigate('/app')} />
+          {/* Phones only: from sm up the sidebar is the way around. */}
+          <IconButton icon={ArrowLeft} label="Back" size="md" className="-ml-1.5 sm:hidden" onClick={() => navigate('/app')} />
 
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-semibold text-text-primary">Recycle Bin</h1>
+            <h1 className="text-sm font-semibold text-text-primary">Bin</h1>
             <p className="text-xs text-text-muted mt-0.5">
               {total} {total === 1 ? 'item' : 'items'} - deleted items are kept here until permanently removed
             </p>
@@ -135,7 +136,6 @@ export default function RecycleBinPage() {
                 variant={selectMode ? 'secondary' : 'ghost'}
                 size="sm"
                 icon={CheckSquare}
-                iconOnlyOnMobile
                 aria-label={selectMode ? 'Done selecting' : 'Select'}
                 onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}
               >
@@ -156,10 +156,10 @@ export default function RecycleBinPage() {
           <div className="flex justify-center py-20"><Spinner size={24} /></div>
         ) : total === 0 ? (
           <div className="text-center py-20">
-            <div className="w-14 h-14 rounded-2xl bg-bg-surface border border-bg-border flex items-center justify-center mx-auto mb-4">
+            <div className="w-14 h-14 rounded-2xl bg-bg-elevated flex items-center justify-center mx-auto mb-4">
               <Trash2 size={20} className="text-text-muted" />
             </div>
-            <p className="text-text-secondary font-medium">Recycle bin is empty</p>
+            <p className="text-text-secondary font-medium">Bin is empty</p>
             <p className="text-text-muted text-sm mt-1">Deleted spaces and items will appear here</p>
           </div>
         ) : (
@@ -271,7 +271,7 @@ export default function RecycleBinPage() {
 
       {confirmEmpty && (
         <Modal
-          title="Empty recycle bin?"
+          title="Empty the bin?"
           onClose={() => setConfirmEmpty(false)}
           footer={
             <div className="flex gap-2 justify-end">

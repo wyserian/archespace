@@ -5,7 +5,7 @@
  */
 
 export const SORT_OPTIONS = [
-  { id: 'default', label: 'Default' },
+  { id: 'default', label: 'Custom' },
   { id: 'name', label: 'Name' },
   { id: 'recent', label: 'Newest' },
 ]

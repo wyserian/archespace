@@ -208,7 +208,7 @@ const router = createBrowserRouter([
         children: [
           { path: '/app', element: <ProtectedRoute title="Your spaces"><DashboardPage /></ProtectedRoute> },
           { path: '/space/:id', element: <ProtectedRoute><SpacePage /></ProtectedRoute> },
-          { path: '/recycle-bin', element: <ProtectedRoute title="Recycle bin"><RecycleBinPage /></ProtectedRoute> },
+          { path: '/recycle-bin', element: <ProtectedRoute title="Bin"><RecycleBinPage /></ProtectedRoute> },
           { path: '/starred', element: <ProtectedRoute title="Starred"><StarredPage /></ProtectedRoute> },
           { path: '/reminders', element: <ProtectedRoute title="Reminders"><RemindersPage /></ProtectedRoute> },
           { path: '/archive', element: <ProtectedRoute title="Archive"><ArchivePage /></ProtectedRoute> },

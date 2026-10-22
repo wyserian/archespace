@@ -4,7 +4,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { buttonClass } from '../components/ui/buttonStyles'
-import { ArrowLeft, Eye, EyeOff, KeyRound, Sparkles } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, KeyRound, SunMoon } from 'lucide-react'
 import { useAuth } from '../context/AuthContextCore'
 import { useTheme } from '../context/ThemeCore'
 import { validatePassword } from '../lib/passwordPolicy'
@@ -70,9 +70,9 @@ export default function PasswordResetPage() {
         onClick={toggleThemeMode}
         className="absolute top-4 right-4 z-50 flex h-9 w-9 items-center justify-center rounded-full text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
         title={`Current theme: ${currentThemeName}`}
-        aria-label="Switch app theme"
+        aria-label="Change theme"
       >
-        <Sparkles size={16} />
+        <SunMoon size={16} />
       </button>
 
       <div className="w-full max-w-sm relative z-10 animate-fade-in-up">

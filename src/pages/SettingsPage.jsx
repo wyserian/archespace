@@ -505,16 +505,18 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-bg-base">
       <header className="sticky top-0 z-20 glass">
         <div className="w-full px-4 sm:px-6 h-14 flex items-center gap-3">
-          <IconButton icon={ArrowLeft} label="Back" size="md" className="-ml-1.5" onClick={() => navigate('/app')} />
+          {/* Phones only: from sm up the sidebar is the way around. */}
+          <IconButton icon={ArrowLeft} label="Back" size="md" className="-ml-1.5 sm:hidden" onClick={() => navigate('/app')} />
           <h1 className="text-sm font-semibold text-text-primary">Settings</h1>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6 sm:py-8 md:flex md:h-[calc(100dvh-3.5rem)] md:flex-col md:overflow-hidden">
         <div className="flex flex-col gap-6 md:min-h-0 md:flex-1 md:flex-row md:items-stretch">
-          {/* Section nav: tabs on phones, a rail on wider screens */}
+          {/* Section nav: tabs that wrap (never hide a section) on narrow
+              screens, a rail with icons on wider ones */}
           <nav className="w-full shrink-0 md:w-52 md:self-start" aria-label="Settings sections">
-            <div className="flex gap-1 overflow-x-auto rounded-xl bg-bg-elevated p-1 md:flex-col md:overflow-visible">
+            <div className="flex flex-wrap gap-1 rounded-xl bg-bg-elevated p-1 md:flex-col md:flex-nowrap">
               {SECTIONS.map(({ id, title, icon: NavIcon }) => {
                 const on = activeSection === id
                 const disabled = !online && !OFFLINE_SECTIONS.includes(id)
@@ -526,9 +528,9 @@ export default function SettingsPage() {
                     disabled={disabled}
                     aria-current={on ? 'page' : undefined}
                     title={disabled ? 'Unavailable offline' : undefined}
-                    className={`flex min-w-fit items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition-colors md:w-full ${on ? 'bg-bg-surface text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'} ${disabled ? 'cursor-not-allowed opacity-40 hover:text-text-secondary' : ''}`}
+                    className={`flex min-w-fit flex-1 items-center justify-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition-colors md:w-full md:flex-none md:justify-start ${on ? 'bg-bg-surface text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'} ${disabled ? 'cursor-not-allowed opacity-40 hover:text-text-secondary' : ''}`}
                   >
-                    <NavIcon size={16} />
+                    <NavIcon size={16} className="hidden md:block" />
                     {title}
                   </button>
                 )

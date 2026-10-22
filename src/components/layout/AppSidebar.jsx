@@ -75,7 +75,8 @@ function NavItem({ icon: Icon, label, active, count, badge, collapsed, onClick }
           {badge > 99 ? '99+' : badge}
         </span>
       )}
-      {!collapsed && count != null && (
+      {/* A zero says nothing, so only real counts show. */}
+      {!collapsed && count > 0 && (
         <span className="text-xs tabular-nums text-text-muted">{count}</span>
       )}
     </button>

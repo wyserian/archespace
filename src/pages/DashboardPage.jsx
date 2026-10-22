@@ -545,7 +545,7 @@ export default function DashboardPage() {
               className="relative flex items-center gap-2.5 px-3 h-10 rounded-lg hover:bg-bg-hover text-text-secondary hover:text-text-primary transition-colors text-sm font-medium"
             >
               <Trash2 size={16} />
-              Recycle bin
+              Bin
               {binTotal > 0 && (
                 <span className="ml-auto min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger text-white text-[10px] font-bold px-1">
                   {binTotal > 99 ? '99+' : binTotal}
@@ -711,7 +711,6 @@ export default function DashboardPage() {
                 variant={selectMode ? 'secondary' : 'ghost'}
                 size="sm"
                 icon={CheckSquare}
-                iconOnlyOnMobile
                 aria-label={selectMode ? 'Done selecting' : 'Select'}
                 onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}
               >
@@ -783,7 +782,7 @@ export default function DashboardPage() {
           </div>
         ) : !hasEntries ? (
           <div className="text-center py-20">
-            <div className="w-14 h-14 rounded-2xl bg-bg-surface border border-bg-border flex items-center justify-center mx-auto mb-4">
+            <div className="w-14 h-14 rounded-2xl bg-bg-elevated flex items-center justify-center mx-auto mb-4">
               <Folder size={24} className="text-text-muted" />
             </div>
             <p className="text-text-secondary font-medium">{search ? 'Nothing matches your search' : 'Nothing here yet'}</p>
@@ -959,7 +958,7 @@ export default function DashboardPage() {
       )}
       {bulkDeleteConfirm && (
         <Modal
-          title={`Move ${describeSelection(bulkDeleteConfirm.spaceIds.length, bulkDeleteConfirm.itemIds.length)} to recycle bin?`}
+          title={`Move ${describeSelection(bulkDeleteConfirm.spaceIds.length, bulkDeleteConfirm.itemIds.length)} to the bin?`}
           onClose={() => setBulkDeleteConfirm(null)}
           footer={
             <div className="flex gap-2 justify-end">
@@ -979,7 +978,7 @@ export default function DashboardPage() {
                       spaceIds.length && bulkRemove.mutateAsync(spaceIds),
                       itemIds.length && itemsApi.bulkRemove.mutateAsync(itemIds),
                     ])
-                    toast.success(`Moved ${describeSelection(spaceIds.length, itemIds.length)} to recycle bin`)
+                    toast.success(`Moved ${describeSelection(spaceIds.length, itemIds.length)} to the bin`)
                     setBulkDeleteConfirm(null)
                     exitSelectMode()
                   } catch {
@@ -988,7 +987,7 @@ export default function DashboardPage() {
                 }}
                 className={buttonClass({ variant: 'dangerSolid' })}
               >
-                Move to recycle bin
+                Move to the bin
               </button>
             </div>
           }
@@ -996,7 +995,7 @@ export default function DashboardPage() {
           <p className="text-text-secondary text-sm">
             {bulkDeleteConfirm.spaceIds.length > 0
               ? 'All items inside these spaces go to the bin as well.'
-              : 'You can restore them later from the recycle bin.'}
+              : 'You can restore them later from the bin.'}
           </p>
         </Modal>
       )}
@@ -1016,7 +1015,7 @@ export default function DashboardPage() {
 
       {deleteConfirm && (
         <Modal
-          title="Move space to recycle bin?"
+          title="Move space to the bin?"
           onClose={() => setDeleteConfirm(null)}
           footer={
             <div className="flex gap-2 justify-end">
@@ -1029,20 +1028,20 @@ export default function DashboardPage() {
               <button
                 onClick={() => {
                   remove.mutate(deleteConfirm, {
-                    onSuccess: () => toast.success('Space moved to recycle bin'),
+                    onSuccess: () => toast.success('Space moved to the bin'),
                     onError: () => toast.error("Couldn't delete space.")
                   })
                   setDeleteConfirm(null)
                 }}
                 className={buttonClass({ variant: 'dangerSolid' })}
               >
-                Move to recycle bin
+                Move to the bin
               </button>
             </div>
           }
         >
           <p className="text-text-secondary text-sm leading-relaxed">
-            This space and all its items will be moved to the recycle bin.
+            This space and all its items will be moved to the bin.
             You can restore them later or permanently delete them from there.
           </p>
         </Modal>

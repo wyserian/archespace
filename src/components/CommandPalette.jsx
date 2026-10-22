@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Plus, Home, Archive, Trash2, Search, Settings, Sparkles, Keyboard, Lock,
+  Plus, Home, Archive, Trash2, Search, Settings, SunMoon, Keyboard, Lock, Bell, Star,
 } from 'lucide-react'
 import { useCommandPalette } from '../context/CommandPaletteCore'
 import { useTheme } from '../context/ThemeCore'
@@ -28,15 +28,18 @@ export default function CommandPalette({ onNewSpace, onOpenSearch }) {
   const baseCommands = useMemo(() => [
     { id: 'new', label: 'New space', hint: 'N', icon: Plus, run: () => { closePalette(); onNewSpace?.() } },
     { id: 'search', label: 'Search', hint: '/', icon: Search, run: () => { closePalette(); onOpenSearch?.() } },
-    { id: 'home', label: 'Go to dashboard', icon: Home, run: () => { closePalette(); navigate('/app') } },
-    { id: 'archive', label: 'Open archive', icon: Archive, run: () => { closePalette(); navigate('/archive') } },
-    { id: 'bin', label: 'Open recycle bin', icon: Trash2, run: () => { closePalette(); navigate('/recycle-bin') } },
-    { id: 'settings', label: 'Settings', icon: Settings, run: () => { closePalette(); navigate('/settings') } },
+    // Places, named as in the sidebar.
+    { id: 'home', label: 'Go to all spaces', icon: Home, run: () => { closePalette(); navigate('/app') } },
+    { id: 'reminders', label: 'Go to Reminders', icon: Bell, run: () => { closePalette(); navigate('/reminders') } },
+    { id: 'starred', label: 'Go to Starred', icon: Star, run: () => { closePalette(); navigate('/starred') } },
+    { id: 'archive', label: 'Go to Archive', icon: Archive, run: () => { closePalette(); navigate('/archive') } },
+    { id: 'bin', label: 'Go to Bin', icon: Trash2, run: () => { closePalette(); navigate('/recycle-bin') } },
+    { id: 'settings', label: 'Go to Settings', icon: Settings, run: () => { closePalette(); navigate('/settings') } },
     { id: 'shortcuts', label: 'Keyboard shortcuts', hint: '?', icon: Keyboard, run: () => { closePalette(); window.dispatchEvent(new CustomEvent('arche:open-shortcuts')) } },
     {
       id: 'theme',
-      label: 'Switch app theme',
-      icon: Sparkles,
+      label: 'Change theme',
+      icon: SunMoon,
       run: () => { toggleThemeMode(); closePalette() },
     },
     ...(isUnlocked
