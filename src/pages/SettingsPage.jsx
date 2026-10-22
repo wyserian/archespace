@@ -856,7 +856,7 @@ export default function SettingsPage() {
                         value={autoLockId}
                         onChange={(e) => { setAutoLock(e.target.value); toast.success('Auto-lock updated.') }}
                         aria-label="Auto-lock after"
-                        className="rounded-xl border border-bg-border/60 bg-bg-surface px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
+                        className="rounded-xl border border-bg-border-soft bg-bg-surface px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
                       >
                         {VAULT_AUTO_LOCK_OPTIONS.map(o => (
                           <option key={o.id} value={o.id}>{o.label}</option>
@@ -1095,7 +1095,7 @@ export default function SettingsPage() {
                 onChange={e => setDeleteConfirmText(e.target.value)}
                 required
                 autoComplete="off"
-                className="w-full bg-bg-elevated border border-bg-border/60 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
+                className="w-full bg-bg-elevated border border-bg-border-soft rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
               />
             </div>
             <div>
@@ -1110,7 +1110,7 @@ export default function SettingsPage() {
                   onChange={e => setDeletePassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  className="password-field w-full bg-bg-elevated border border-bg-border/60 rounded-xl px-4 py-3 pr-11 text-sm focus:outline-none focus:border-accent"
+                  className="password-field w-full bg-bg-elevated border border-bg-border-soft rounded-xl px-4 py-3 pr-11 text-sm focus:outline-none focus:border-accent"
                 />
                 <button
                   type="button"

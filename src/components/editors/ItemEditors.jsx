@@ -75,7 +75,7 @@ export function TextboxEditor({ content, onChange, readOnly = false }) {
         readOnly={readOnly}
         placeholder={readOnly ? 'Empty' : 'Start writing anything...'}
         rows={3}
-        className="w-full bg-bg-sunken border border-bg-border/60 rounded-xl px-4 py-3 text-text-content placeholder-text-muted focus:outline-none transition-colors text-sm resize-none overflow-hidden leading-relaxed min-h-[80px]"
+        className="w-full bg-bg-sunken border border-bg-border-soft rounded-xl px-4 py-3 text-text-content placeholder-text-muted focus:outline-none transition-colors text-sm resize-none overflow-hidden leading-relaxed min-h-[80px]"
       />
     </div>
   )
@@ -130,7 +130,7 @@ export function MarkdownEditor({ content, onChange, readOnly = false }) {
           onBlur={exitEditMode}
           placeholder="Write markdown here..."
           rows={3}
-          className="w-full bg-bg-sunken border border-bg-border/60 rounded-xl px-4 pt-3 pb-8 text-text-content placeholder-text-muted focus:outline-none transition-colors text-sm resize-none overflow-hidden leading-relaxed min-h-[80px] font-mono"
+          className="w-full bg-bg-sunken border border-bg-border-soft rounded-xl px-4 pt-3 pb-8 text-text-content placeholder-text-muted focus:outline-none transition-colors text-sm resize-none overflow-hidden leading-relaxed min-h-[80px] font-mono"
         />
         {/* Same corner + style as the preview "Click to edit" hint - inside the
             card at bottom-right, only the text and icon change between modes. */}
@@ -147,7 +147,7 @@ export function MarkdownEditor({ content, onChange, readOnly = false }) {
   // Read-only: the rendered preview only, with no way into edit mode.
   if (readOnly) {
     return (
-      <div className="w-full bg-bg-sunken border border-bg-border/60 rounded-xl px-4 py-3 text-sm text-text-content leading-relaxed min-h-[80px] prose-custom">
+      <div className="w-full bg-bg-sunken border border-bg-border-soft rounded-xl px-4 py-3 text-sm text-text-content leading-relaxed min-h-[80px] prose-custom">
         {text ? <MarkdownPreview text={text} /> : <span className="text-text-muted italic">Empty</span>}
       </div>
     )
@@ -157,7 +157,7 @@ export function MarkdownEditor({ content, onChange, readOnly = false }) {
   return (
     <div
       onClick={enterEditMode}
-      className="w-full bg-bg-sunken border border-bg-border/60 rounded-xl px-4 py-3 text-sm text-text-content leading-relaxed min-h-[80px] prose-custom cursor-text hover:border-accent/30 transition-colors group/md"
+      className="w-full bg-bg-sunken border border-bg-border-soft rounded-xl px-4 py-3 text-sm text-text-content leading-relaxed min-h-[80px] prose-custom cursor-text hover:border-accent/30 transition-colors group/md"
       title="Click to edit"
     >
       {text ? (
@@ -426,7 +426,7 @@ export function CardListEditor({ content, onChange, readOnly = false }) {
       {items.map((item, idx) => (
         <div
           key={item.id}
-          className="group bg-bg-sunken border border-bg-border/60 rounded-xl p-3 space-y-2"
+          className="group bg-bg-sunken border border-bg-border-soft rounded-xl p-3 space-y-2"
           onDragOver={readOnly ? undefined : e => e.preventDefault()}
           onDrop={readOnly ? undefined : e => handleDrop(e, idx)}
         >

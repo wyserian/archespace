@@ -441,7 +441,7 @@ function SpaceItem({
         } ${
           isFullscreen ? 'sticky top-0 z-10 bg-bg-surface/95 backdrop-blur-md' : ''
         } ${
-          !headerCollapsed || collapseGuard ? 'border-b border-bg-border/60' : ''
+          !headerCollapsed || collapseGuard ? 'border-b border-bg-border-soft' : ''
         } ${canDrag ? 'cursor-grab active:cursor-grabbing' : ''}`}
       >
         {/* Pin indicator */}
@@ -710,7 +710,7 @@ function SpaceItem({
             if (clamped) setExpanded(true)
             else if (denseView) setIsFullscreen(true)
           }}
-          className={`${denseView ? 'mx-2.5' : 'mx-4'} border-y border-bg-border/60 py-1 ${showTags ? '' : 'mt-3'}`}
+          className={`${denseView ? 'mx-2.5' : 'mx-4'} border-y border-bg-border-soft py-1 ${showTags ? '' : 'mt-3'}`}
         >
           <Suspense fallback={<div className="h-8" />}>
             <RichTextToolbar editor={richEditor} />
@@ -799,7 +799,7 @@ function SpaceItem({
         {item.type === 'textbox'       && <TextboxEditor    key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} />}
         {item.type === 'markdown'      && <MarkdownEditor   key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} />}
         {item.type === 'richtext' && (
-          <Suspense fallback={<div className="min-h-[80px] rounded-xl border border-bg-border/60 bg-bg-sunken" />}>
+          <Suspense fallback={<div className="min-h-[80px] rounded-xl border border-bg-border-soft bg-bg-sunken" />}>
             <RichTextEditor
               key={`${item.id}:${editorVersion}`}
               content={localContent}

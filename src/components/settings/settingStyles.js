@@ -15,6 +15,6 @@ export const primaryButtonClass = buttonClass({ variant: 'primary' })
 
 /** Text input inside a row form. */
 export const inputClass =
-  'w-full rounded-xl border border-bg-border/60 bg-bg-elevated px-4 py-3 text-sm text-text-primary focus:border-accent focus:outline-none'
+  'w-full rounded-xl border border-bg-border-soft bg-bg-elevated px-4 py-3 text-sm text-text-primary focus:border-accent focus:outline-none'
 
 export const labelClass = 'mb-1.5 block text-xs font-medium text-text-secondary'

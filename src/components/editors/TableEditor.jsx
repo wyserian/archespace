@@ -168,7 +168,7 @@ export function TableEditor({ content, onChange, readOnly = false }) {
 
   return (
     <div className="space-y-1">
-      <div className="overflow-x-auto rounded-lg border border-bg-border/60">
+      <div className="overflow-x-auto rounded-lg border border-bg-border-soft">
         <table className="w-full table-fixed border-collapse" style={{ minWidth }}>
           <colgroup>
             {columns.map((_, c) => <col key={c} />)}
@@ -180,7 +180,7 @@ export function TableEditor({ content, onChange, readOnly = false }) {
                 <th
                   key={c}
                   {...(readOnly ? {} : dropProps('column', c))}
-                  className={`group relative border-b border-r last:border-r-0 border-bg-border/60 bg-bg-elevated p-0 align-middle ${dragTint('column', c)}`}
+                  className={`group relative border-b border-r last:border-r-0 border-bg-border-soft bg-bg-elevated p-0 align-middle ${dragTint('column', c)}`}
                 >
                   {!readOnly && c > 0 && (
                     <InsertButton side="left" label="Insert column here" onClick={() => insertColumn(c)} />
@@ -211,7 +211,7 @@ export function TableEditor({ content, onChange, readOnly = false }) {
                 </th>
               ))}
               {!readOnly && (
-                <th className="border-b border-l border-bg-border/60 bg-bg-elevated p-0">
+                <th className="border-b border-l border-bg-border-soft bg-bg-elevated p-0">
                   <button
                     type="button"
                     onClick={() => insertColumn(columns.length)}
@@ -236,7 +236,7 @@ export function TableEditor({ content, onChange, readOnly = false }) {
                   <td
                     key={c}
                     {...(readOnly ? {} : dropProps('column', c))}
-                    className={`border-b border-r last:border-r-0 border-bg-border/60 p-0 align-top ${dragTint('column', c)}`}
+                    className={`border-b border-r last:border-r-0 border-bg-border-soft p-0 align-top ${dragTint('column', c)}`}
                   >
                     <input
                       value={cell}
@@ -248,7 +248,7 @@ export function TableEditor({ content, onChange, readOnly = false }) {
                   </td>
                 ))}
                 {!readOnly && (
-                  <td className="relative border-b border-l border-bg-border/60 p-0 align-middle">
+                  <td className="relative border-b border-l border-bg-border-soft p-0 align-middle">
                     <InsertButton side="top" label="Insert row here" onClick={() => insertRow(r)} />
                     <span className={`flex justify-center ${gripClass}`}>
                       <ActionMenu

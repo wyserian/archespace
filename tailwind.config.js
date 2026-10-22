@@ -26,6 +26,8 @@ export default {
           elevated: color('--bg-elevated'),
           hover: color('--bg-hover'),
           border: color('--bg-border'),
+          // The lighter border inside cards and settings groups.
+          'border-soft': 'color-mix(in srgb, var(--bg-border) 60%, transparent)',
         },
         accent: {
           DEFAULT: color('--accent'),
