@@ -1,7 +1,29 @@
 import { describe, it, expect, vi } from 'vitest'
 
-vi.mock('./supabase', () => ({ supabase: {} }))
-const { nestingOrder } = await import('./exportImport')
+const { from } = vi.hoisted(() => ({ from: vi.fn() }))
+vi.mock('./supabase', () => ({ supabase: { from } }))
+const { nestingOrder, importSpaces } = await import('./exportImport')
+const { sealBackup } = await import('./backupCrypto')
+const { MAX_IMPORT_ITEMS_PER_SPACE } = await import('./constants')
+
+describe('importSpaces', () => {
+  it('saves nothing when any space is over the item limit', async () => {
+    const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
+    const note = { type: 'textbox', content: { text: 'x' } }
+    const contents = {
+      spaces: [
+        { name: 'Fine', items: [note] },
+        { name: 'Too full', items: Array(MAX_IMPORT_ITEMS_PER_SPACE + 1).fill(note) },
+      ],
+      items: [],
+    }
+    const sealed = await sealBackup(contents, key, { salt: 's', wrapped_key: 'w', key_check: 'k' })
+    const text = JSON.stringify(sealed)
+    const file = { size: text.length, text: async () => text }
+    await expect(importSpaces(file, 'user', key)).rejects.toThrow('Too many items in space "Too full"')
+    expect(from).not.toHaveBeenCalled()
+  })
+})
 
 describe('nestingOrder', () => {
   it('imports parents before their sub-spaces, at every level', () => {

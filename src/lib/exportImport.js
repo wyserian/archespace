@@ -280,6 +280,16 @@ export async function importSpaces(file, userId, cryptoKey, { askBackupPin } = {
   if (spacesList.some(col => !col || typeof col !== 'object')) {
     throw new Error('Invalid backup: each space must be an object.')
   }
+  // Every limit is checked before anything is saved, so a refused backup
+  // never leaves part of itself behind.
+  const tooFull = spacesList.find(col => Array.isArray(col.items) && col.items.length > MAX_IMPORT_ITEMS_PER_SPACE)
+  if (tooFull) {
+    const name = typeof tooFull.name === 'string' && tooFull.name.trim() ? tooFull.name.trim() : 'Imported Space'
+    throw new Error(`Too many items in space "${name}". The maximum allowed is ${MAX_IMPORT_ITEMS_PER_SPACE}.`)
+  }
+  if (Array.isArray(contents.items) && contents.items.length > MAX_IMPORT_ITEMS_PER_SPACE) {
+    throw new Error(`Too many dashboard items. The maximum allowed is ${MAX_IMPORT_ITEMS_PER_SPACE}.`)
+  }
 
   let itemsImported = 0
   let itemsSkipped = 0
@@ -319,9 +329,6 @@ export async function importSpaces(file, userId, cryptoKey, { askBackupPin } = {
     newIds.set(index, newCol.id)
 
     const items = Array.isArray(col.items) ? col.items : []
-    if (items.length > MAX_IMPORT_ITEMS_PER_SPACE) {
-      throw new Error(`Too many items in space "${name}". The maximum allowed is ${MAX_IMPORT_ITEMS_PER_SPACE}.`)
-    }
     const result = await insertImportedItems(items, newCol.id, userId, cryptoKey)
     itemsImported += result.imported
     itemsSkipped += result.skipped
@@ -329,9 +336,6 @@ export async function importSpaces(file, userId, cryptoKey, { askBackupPin } = {
 
   // Dashboard items (outside any space).
   if (Array.isArray(contents.items)) {
-    if (contents.items.length > MAX_IMPORT_ITEMS_PER_SPACE) {
-      throw new Error(`Too many dashboard items. The maximum allowed is ${MAX_IMPORT_ITEMS_PER_SPACE}.`)
-    }
     const result = await insertImportedItems(contents.items, null, userId, cryptoKey)
     itemsImported += result.imported
     itemsSkipped += result.skipped
