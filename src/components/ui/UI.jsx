@@ -46,17 +46,20 @@ const FOCUSABLE =
  *   - Optional `footer` prop for sticky action buttons
  *   - Optional `onSubmit`: renders the panel as a <form> so a submit
  *     button in the footer works (and Enter submits)
+ *   - `dismissible={false}`: no close button, and the backdrop and Escape
+ *     don't close it; only its own actions do
  *
- * @param {{ title: string, onClose: Function, children: React.ReactNode, footer?: React.ReactNode, onSubmit?: Function, size?: 'md'|'lg' }} props
+ * @param {{ title: string, onClose?: Function, children: React.ReactNode, footer?: React.ReactNode, onSubmit?: Function, size?: 'md'|'lg', dismissible?: boolean }} props
  */
-export function Modal({ title, onClose, children, footer, onSubmit, size = 'md' }) {
+export function Modal({ title, onClose, children, footer, onSubmit, size = 'md', dismissible = true }) {
   const titleId = useId()
   const panelRef = useRef(null)
+  const close = dismissible ? onClose : undefined
 
-  // Keep the latest onClose without re-running the focus effect (callers pass
+  // Keep the latest close without re-running the focus effect (callers pass
   // fresh inline handlers), so focus isn't stolen back on every render.
-  const onCloseRef = useRef(onClose)
-  useEffect(() => { onCloseRef.current = onClose }, [onClose])
+  const onCloseRef = useRef(close)
+  useEffect(() => { onCloseRef.current = close }, [close])
 
   // Focus: move into the dialog on open, trap Tab, restore on close
   useEffect(() => {
@@ -103,7 +106,7 @@ export function Modal({ title, onClose, children, footer, onSubmit, size = 'md' 
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
-      onClick={e => e.target === e.currentTarget && onClose()}
+      onClick={e => e.target === e.currentTarget && close?.()}
       role="presentation"
     >
       <Panel
@@ -118,14 +121,16 @@ export function Modal({ title, onClose, children, footer, onSubmit, size = 'md' 
         {/* Header - always visible */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-bg-border shrink-0">
           <h3 id={titleId} className="font-semibold text-text-primary">{title}</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close dialog"
-            className="p-1.5 rounded-full text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors"
-          >
-            <X size={16} />
-          </button>
+          {dismissible && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close dialog"
+              className="p-1.5 rounded-full text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors"
+            >
+              <X size={16} />
+            </button>
+          )}
         </div>
 
         {/* Scrollable body */}

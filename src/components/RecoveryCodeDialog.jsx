@@ -1,12 +1,16 @@
 /**
- * RecoveryCodeDialog.jsx - One-time recovery code shown in a popup, with copy
- * and an explicit "I've saved it" confirmation. Used after vault setup / PIN
- * reset and from Settings.
+ * RecoveryCodeDialog.jsx - One-time recovery code shown in a popup, with copy,
+ * download and an explicit "I've saved it" confirmation. Used after vault
+ * setup / PIN reset and from Settings.
  */
 import { useState } from 'react'
-import { Copy, Check, AlertTriangle } from 'lucide-react'
+import { Copy, Check, AlertTriangle, Download } from 'lucide-react'
 import { Modal } from './ui/UI'
 import { buttonClass } from './ui/buttonStyles'
+
+// Shown in groups of four to read and write down; entering it ignores the
+// spaces (normalizeRecoveryCode).
+const groupCode = (code) => code.match(/.{1,4}/g)?.join(' ') ?? code
 
 export default function RecoveryCodeDialog({
   code,
@@ -18,6 +22,7 @@ export default function RecoveryCodeDialog({
 }) {
   const [copied, setCopied] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
+  const grouped = groupCode(code)
 
   const copy = async () => {
     try {
@@ -29,8 +34,18 @@ export default function RecoveryCodeDialog({
     }
   }
 
-  // Only finish once the user has confirmed they saved the code, so a stray
-  // backdrop click or Escape can't dismiss it (and unlock the vault) unseen.
+  const download = () => {
+    const text = `ArcheSpace vault recovery code\n\n${grouped}\n\nIt sets a new vault PIN if you forget yours. Keep this file private.\n`
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'archespace-recovery-code.txt'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // Only the button finishes, once the user has confirmed they saved the code,
+  // so nothing can dismiss it (and unlock the vault) unseen.
   const finish = () => {
     if (confirmed && !busy) onAcknowledge()
   }
@@ -38,7 +53,7 @@ export default function RecoveryCodeDialog({
   return (
     <Modal
       title={title}
-      onClose={finish}
+      dismissible={false}
       footer={
         <div className="space-y-3">
           <label className="flex cursor-pointer select-none items-start gap-2.5 text-xs text-text-secondary">
@@ -68,25 +83,34 @@ export default function RecoveryCodeDialog({
           {description}
         </p>
 
-        <div className="rounded-xl border border-bg-border bg-bg-elevated p-4 space-y-3">
-          <p className="text-center font-mono text-xl tracking-[0.2em] text-text-primary break-all">
-            {code}
+        <div className="rounded-xl bg-bg-sunken p-4 space-y-3">
+          <p className="text-center font-mono text-xl tracking-[0.15em] text-text-primary" aria-label={`Recovery code: ${code.split('').join(' ')}`}>
+            {grouped}
           </p>
-          <button
-            type="button"
-            onClick={copy}
-            className={buttonClass({ variant: 'secondary', className: 'w-full' })}
-          >
-            {copied ? (
-              <>
-                <Check size={15} className="text-success" /> Copied
-              </>
-            ) : (
-              <>
-                <Copy size={15} /> Copy code
-              </>
-            )}
-          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={copy}
+              className={buttonClass({ variant: 'secondary', className: 'w-full' })}
+            >
+              {copied ? (
+                <>
+                  <Check size={15} className="text-success" /> Copied
+                </>
+              ) : (
+                <>
+                  <Copy size={15} /> Copy
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={download}
+              className={buttonClass({ variant: 'secondary', className: 'w-full' })}
+            >
+              <Download size={15} /> Download
+            </button>
+          </div>
         </div>
       </div>
 
