@@ -22,6 +22,8 @@ INSERT INTO auth.mfa_factors (id, user_id, friendly_name, factor_type, status, c
 VALUES (gen_random_uuid(), '00000000-0000-4000-8000-00000000a11c', 'rls-check', 'totp', 'verified', now(), now());
 INSERT INTO user_encryption (user_id, salt, key_check, wrapped_key)
 VALUES ('00000000-0000-4000-8000-00000000a11c', 'salt', 'check', 'wrapped');
+INSERT INTO spaces (id, user_id, name, position)
+VALUES ('00000000-0000-4000-8000-00000000a12c', '00000000-0000-4000-8000-00000000a11c', 'space', 0);
 
 -- Password only (AAL1).
 SET LOCAL ROLE authenticated;
@@ -51,6 +53,11 @@ BEGIN
   GET DIAGNOSTICS n = ROW_COUNT;
   IF n <> 0 THEN RAISE EXCEPTION 'FAILED: AAL1 deleted the vault row'; END IF;
 
+  -- Reordering goes through the same rules: nothing moves.
+  PERFORM update_space_positions('[{"id":"00000000-0000-4000-8000-00000000a12c","position":7}]');
+  PERFORM 1 FROM spaces WHERE id = '00000000-0000-4000-8000-00000000a12c' AND position = 7;
+  IF FOUND THEN RAISE EXCEPTION 'FAILED: AAL1 reordered a space'; END IF;
+
   -- The account can't be deleted.
   BEGIN
     PERFORM delete_current_user();
@@ -72,6 +79,9 @@ BEGIN
   UPDATE user_encryption SET wrapped_key = 'replaced';
   GET DIAGNOSTICS n = ROW_COUNT;
   IF n <> 1 THEN RAISE EXCEPTION 'FAILED: AAL2 could not change the vault row'; END IF;
+  PERFORM update_space_positions('[{"id":"00000000-0000-4000-8000-00000000a12c","position":7}]');
+  PERFORM 1 FROM spaces WHERE id = '00000000-0000-4000-8000-00000000a12c' AND position = 7;
+  IF NOT FOUND THEN RAISE EXCEPTION 'FAILED: AAL2 could not reorder a space'; END IF;
 END $$;
 
 ROLLBACK;

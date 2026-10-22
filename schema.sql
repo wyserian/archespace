@@ -545,7 +545,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE space_items;
 
 -- 6. RPC FUNCTIONS FOR BULK UPDATES
 
--- Bulk-update space positions (ownership enforced via auth.uid()).
+-- Bulk-update space positions. Runs as the caller, so the row rules
+-- (ownership, two-factor) apply as to any other write.
 CREATE OR REPLACE FUNCTION update_space_positions(updates jsonb)
 RETURNS void AS $$
 DECLARE r record;
@@ -554,9 +555,9 @@ BEGIN
     UPDATE spaces SET position = r.position WHERE id = r.id AND user_id = auth.uid();
   END LOOP;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY INVOKER;
 
--- Bulk-update item positions (ownership enforced via auth.uid()).
+-- Bulk-update item positions, also as the caller.
 CREATE OR REPLACE FUNCTION update_item_positions(updates jsonb)
 RETURNS void AS $$
 DECLARE r record;
@@ -565,7 +566,7 @@ BEGIN
     UPDATE space_items SET position = r.position WHERE id = r.id AND user_id = auth.uid();
   END LOOP;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY INVOKER;
 
 -- 7. VAULT PIN BRUTE-FORCE PROTECTION
 -- (pin_failed_attempts / pin_locked_until are on user_encryption, section 1)
