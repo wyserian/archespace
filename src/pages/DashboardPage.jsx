@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, Folder, FolderPlus,
   Trash2, Archive, Command, CheckSquare, ListChecks, Settings, Lock, Menu, Keyboard, LogOut,
-  Palette, Star, Bell,
+  Sun, Moon, Star, Bell,
 } from 'lucide-react'
 import SpaceItem from '../components/SpaceItem'
 import ItemBoardModals from '../components/ItemBoardModals'
@@ -76,14 +76,8 @@ export default function DashboardPage() {
   const { data: stats = {} } = useSpaceStats()
   const { data: globalSearchData } = useGlobalSearchData()
   const navigate = useNavigate()
-  const { accentColor, accentColors, setAccentColor, resolvedThemeMode, setThemeMode } = useTheme()
-  // Shuffle the look: a random accent (never the current one) and flip the
-  // theme between light and dark.
-  const shuffleAppearance = useCallback(() => {
-    const others = accentColors.filter(a => a.id !== accentColor)
-    if (others.length) setAccentColor(others[Math.floor(Math.random() * others.length)].id)
-    setThemeMode(resolvedThemeMode === 'dark' ? 'light' : 'dark')
-  }, [accentColor, accentColors, setAccentColor, resolvedThemeMode, setThemeMode])
+  const { resolvedThemeMode, setThemeMode } = useTheme()
+  const isDark = resolvedThemeMode === 'dark'
   const headerRef = useRef(null)
   const searchInputRef = useRef(null)
   const mobileSearchInputRef = useRef(null)
@@ -649,11 +643,11 @@ export default function DashboardPage() {
             )}
           </div>
           <IconButton
-            icon={Palette}
-            label="Shuffle accent and theme"
+            icon={isDark ? Sun : Moon}
+            label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
             size="md"
             className="ml-auto"
-            onClick={shuffleAppearance}
+            onClick={() => setThemeMode(isDark ? 'light' : 'dark')}
           />
           </div>
         </div>
