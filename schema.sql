@@ -508,6 +508,19 @@ BEGIN
   END LOOP;
 END $$;
 
+-- The same for adding or removing backup codes: otherwise a password alone
+-- (AAL1) could add a code of its own and redeem it, removing the second
+-- factor. Listing stays open (the count shows at sign-in), and redeeming goes
+-- through redeem_mfa_backup_code.
+DROP POLICY IF EXISTS "Require aal2 to add backup codes" ON mfa_backup_codes;
+CREATE POLICY "Require aal2 to add backup codes" ON mfa_backup_codes
+  AS RESTRICTIVE FOR INSERT TO authenticated
+  WITH CHECK ((SELECT auth.jwt()->>'aal') = 'aal2' OR NOT public.has_verified_mfa());
+DROP POLICY IF EXISTS "Require aal2 to remove backup codes" ON mfa_backup_codes;
+CREATE POLICY "Require aal2 to remove backup codes" ON mfa_backup_codes
+  AS RESTRICTIVE FOR DELETE TO authenticated
+  USING ((SELECT auth.jwt()->>'aal') = 'aal2' OR NOT public.has_verified_mfa());
+
 -- 5. REALTIME
 
 DROP PUBLICATION IF EXISTS supabase_realtime;
