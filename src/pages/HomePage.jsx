@@ -7,10 +7,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
+  AlignLeft,
   ArchiveRestore,
   ArrowRight,
   BellRing,
+  Check,
   CheckCircle2,
+  CheckSquare,
   FileDown,
   Fingerprint,
   FolderTree,
@@ -21,6 +24,7 @@ import {
   Mail,
   Menu,
   Palette,
+  Plus,
   RefreshCw,
   Search,
   Server,
@@ -44,6 +48,72 @@ function GithubMark({ size = 16, className = '' }) {
     >
       <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.1 3.29 9.4 7.86 10.93.58.1.79-.25.79-.56v-2.15c-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.2 1.77 1.2 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.27-5.23-5.67 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.17 1.18.92-.26 1.9-.38 2.88-.39.98.01 1.96.13 2.88.39 2.2-1.49 3.16-1.18 3.16-1.18.64 1.58.24 2.75.12 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.38-5.25 5.66.41.36.78 1.06.78 2.14v3.18c0 .31.21.67.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z" />
     </svg>
+  )
+}
+
+/**
+ * A still picture of the app beside the hero: a few item cards in its look
+ * (fixed colours, as the landing page is always dark). Decorative, so hidden
+ * from screen readers; wide screens only, so the text stays first elsewhere.
+ */
+function HeroPreview() {
+  const card = 'rounded-2xl bg-[#141a20] shadow-[0_12px_32px_-14px_rgba(0,0,0,0.7)]'
+  const head = 'flex items-center gap-2 border-b border-white/5 px-4 py-2.5 text-sm font-medium text-white'
+  const badge = (Icon, tone) => (
+    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${tone}`}>
+      <Icon size={13} />
+    </span>
+  )
+  return (
+    <div aria-hidden="true" className="hidden select-none xl:block">
+      <div className="rounded-3xl bg-white/[0.03] p-4 ring-1 ring-white/10">
+        <div className="mb-3 flex items-center gap-2">
+          <div className="flex h-8 flex-1 items-center gap-2 rounded-full bg-[#141a20] px-3 text-xs text-white/40">
+            <Search size={12} /> Search...
+          </div>
+          <div className="flex h-8 items-center gap-1 rounded-lg bg-emerald-300 px-3 text-xs font-semibold text-[#0c1a16]">
+            <Plus size={12} strokeWidth={2.5} /> New
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div className={card}>
+            <div className={head}>
+              {badge(CheckSquare, 'bg-[#4ade80]/10 text-[#4ade80]')}
+              Trip plan
+              <span className="ml-auto text-xs text-white/40">2/3 done</span>
+            </div>
+            <ul className="space-y-2 px-4 py-3 text-sm">
+              {[['Book flights', true], ['Renew passport', true], ['Pack the charger', false]].map(([label, done]) => (
+                <li key={label} className="flex items-center gap-2.5">
+                  <span className={`flex h-4 w-4 items-center justify-center rounded ${done ? 'bg-emerald-300 text-[#0c1a16]' : 'ring-1 ring-white/25'}`}>
+                    {done && <Check size={11} strokeWidth={3} />}
+                  </span>
+                  <span className={done ? 'text-white/40 line-through' : 'text-white/85'}>{label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className={card}>
+              <div className={head}>{badge(AlignLeft, 'bg-[#60a5fa]/10 text-[#60a5fa]')}Ideas</div>
+              <p className="m-3 rounded-xl bg-[#0f1419] px-3 py-2.5 text-xs leading-relaxed text-white/60">
+                A reading list to share, and a weekend for the garden.
+              </p>
+            </div>
+            <div className={card}>
+              <div className={head}>
+                {badge(AlignLeft, 'bg-[#60a5fa]/10 text-[#60a5fa]')}
+                <span className="truncate">Bank details</span>
+              </div>
+              <div className="m-3 flex flex-col items-center gap-1 rounded-xl bg-[#0f1419] py-3 text-white/45">
+                <ShieldCheck size={16} />
+                <span className="text-xs">Protected</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -296,7 +366,8 @@ export default function HomePage() {
       {/* Hero */}
       <section id="top" className="relative flex min-h-[100svh] items-center overflow-hidden px-4 pb-24 pt-28 sm:px-6">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(50,211,170,0.14),transparent_55%),linear-gradient(180deg,#0f1117_0%,#12151d_100%)]" />
-        <div className="hero-enter relative z-10 mx-auto w-full max-w-6xl">
+        <div className="hero-enter relative z-10 mx-auto w-full max-w-6xl xl:grid xl:grid-cols-[minmax(0,1fr)_25rem] xl:items-center xl:gap-14">
+          <div>
           {/* Size carries the emphasis: a quiet lead-in, then the key words
               large and bright (no second colour to compete with the buttons). */}
           <h1 className="tracking-[-0.025em]">
@@ -349,6 +420,8 @@ export default function HomePage() {
               <ArrowRight size={14} className="ml-auto shrink-0 transition-transform group-hover:translate-x-0.5" />
             </a>
           </div>
+          </div>
+          <HeroPreview />
         </div>
       </section>
 

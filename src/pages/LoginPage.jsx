@@ -264,13 +264,13 @@ export default function LoginPage() {
 
       <div className="w-full max-w-sm relative z-10 animate-fade-in-up">
         <div className="text-center mb-6 sm:mb-10">
-          <p className="text-text-secondary text-sm">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-text-primary">
             {isForgot
               ? 'Reset your password'
               : isSignUp
                 ? 'Sign up for ArcheSpace'
                 : 'Sign in to ArcheSpace'}
-          </p>
+          </h1>
         </div>
 
         <div className="bg-bg-card rounded-2xl p-6 shadow-sm">
