@@ -456,7 +456,8 @@ function SpaceItem({
             outside its space (the Starred view). */}
         {/* While renaming it keeps room to type: on a narrow card Save and
             Cancel wrap to the next line instead. */}
-        <div className={`flex-1 flex items-baseline gap-1.5 ${editingTitle ? 'min-w-[10rem]' : 'min-w-0'}`}>
+        <div className={`flex-1 ${editingTitle ? 'min-w-[10rem]' : 'min-w-0'}`}>
+          <div className="flex items-baseline gap-1.5">
           {editingTitle ? (
             <input
               autoFocus
@@ -504,13 +505,15 @@ function SpaceItem({
               {contextLabel}
             </span>
           )}
+          </div>
+          {/* Checklist progress under the title, so it never takes the
+              title's room. */}
+          {checklistProgress?.total > 0 && !hidden && !editingTitle && (
+            <p className="text-[11px] leading-4 text-text-muted font-medium tabular-nums">
+              {checklistProgress.done}/{checklistProgress.total} done
+            </p>
+          )}
         </div>
-
-        {checklistProgress?.total > 0 && !hidden && (
-          <span className="shrink-0 text-xs text-text-muted font-medium tabular-nums">
-            {checklistProgress.done}/{checklistProgress.total} done
-          </span>
-        )}
 
         {/* Dirty indicator badge */}
         {pendingSync && (

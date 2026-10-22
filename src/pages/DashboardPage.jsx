@@ -42,6 +42,7 @@ import { Button, IconButton } from '../components/ui/Button'
 import { ViewToggle } from '../components/ui/ViewToggle'
 import { SpaceCardSkeleton } from '../components/ui/CardSkeletons'
 import { CardColumns } from '../components/ui/CardColumns'
+import { MIN_SPACE_COLUMN_PX } from '../components/ui/columnFit'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { SpaceModal } from '../components/space/SpaceModal'
 import { SpaceCard } from '../components/space/SpaceCard'
@@ -433,8 +434,8 @@ export default function DashboardPage() {
   const firstSectionLabel = showSpacesSection || !showItemsSection ? 'Spaces' : 'Items'
 
   // One section's cards: masonry in grid view, one column in list.
-  const renderSection = (nodes, cols = gridCols) => (viewMode === 'grid' ? (
-    <CardColumns cols={cols}>{nodes}</CardColumns>
+  const renderSection = (nodes, cols = gridCols, minWidth) => (viewMode === 'grid' ? (
+    <CardColumns cols={cols} minWidth={minWidth}>{nodes}</CardColumns>
   ) : (
     <div className="grid grid-cols-1 gap-2">
       {nodes}
@@ -814,7 +815,7 @@ export default function DashboardPage() {
         ) : (
           <>
             <div className={`pb-32 ${viewMode === 'list' ? 'max-w-[52rem] mx-auto' : ''}`}>
-              {showSpacesSection && renderSection(sortedSpaces.map(renderSpaceCard), spaceCols)}
+              {showSpacesSection && renderSection(sortedSpaces.map(renderSpaceCard), spaceCols, MIN_SPACE_COLUMN_PX)}
               {showItemsSection && (
                 <>
                   {showSpacesSection && (

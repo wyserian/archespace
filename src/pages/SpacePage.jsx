@@ -31,6 +31,7 @@ import { Button, IconButton } from '../components/ui/Button'
 import { ViewToggle } from '../components/ui/ViewToggle'
 import { ItemCardSkeleton } from '../components/ui/CardSkeletons'
 import { CardColumns } from '../components/ui/CardColumns'
+import { MIN_SPACE_COLUMN_PX } from '../components/ui/columnFit'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { usePersistedSort } from '../hooks/usePersistedSort'
 import { useSpaceStats } from '../hooks/useSpaceStats'
@@ -519,8 +520,8 @@ export default function SpacePage() {
   // One section's cards: masonry in grid view, one column in list.
   // Sub-space cards take the full width on phones, where two columns would
   // cut their names short.
-  const renderSection = (nodes, cols = gridCols) => (viewMode === 'grid' ? (
-    <CardColumns cols={cols}>{nodes}</CardColumns>
+  const renderSection = (nodes, cols = gridCols, minWidth) => (viewMode === 'grid' ? (
+    <CardColumns cols={cols} minWidth={minWidth}>{nodes}</CardColumns>
   ) : (
     <div className="space-y-3">
       {nodes}
@@ -772,7 +773,7 @@ export default function SpacePage() {
                 and tags above stay where they are. */}
             <div className={viewMode === 'grid' ? '' : 'max-w-5xl mx-auto w-full'}>
               {labelSections && <h2 className={sectionLabelClass}>Spaces</h2>}
-              {subSpaceNodes.length > 0 && renderSection(subSpaceNodes, isSmallScreen ? 1 : gridCols)}
+              {subSpaceNodes.length > 0 && renderSection(subSpaceNodes, isSmallScreen ? 1 : gridCols, MIN_SPACE_COLUMN_PX)}
               {labelSections && <h2 className={`${sectionLabelClass} mt-6`}>Items</h2>}
               {itemNodes.length > 0 && renderSection(itemNodes)}
             </div>

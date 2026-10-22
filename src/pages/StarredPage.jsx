@@ -14,6 +14,7 @@ import { useSpaceStats } from '../hooks/useSpaceStats'
 import { useItemBoard } from '../hooks/useItemBoard'
 import { useColumnCount } from '../hooks/useColumnCount'
 import { CardColumns } from '../components/ui/CardColumns'
+import { MIN_SPACE_COLUMN_PX } from '../components/ui/columnFit'
 import { spacePathLabel } from '../lib/spaceTree'
 import { STARRED_ITEMS } from '../hooks/useSpaceItems'
 import { useToast } from '../context/ToastCore'
@@ -124,7 +125,7 @@ export default function StarredPage() {
     </div>
   )
 
-  const renderSection = (nodes) => <CardColumns cols={cols}>{nodes}</CardColumns>
+  const renderSection = (nodes, minWidth) => <CardColumns cols={cols} minWidth={minWidth}>{nodes}</CardColumns>
 
   const showSpaces = starredSpaces.length > 0
   const showItems = items.length > 0
@@ -161,7 +162,7 @@ export default function StarredPage() {
         ) : (
           <>
             {showSpaces && showItems && <h2 className={sectionLabel}>Spaces</h2>}
-            {showSpaces && renderSection(starredSpaces.map(renderSpaceCard))}
+            {showSpaces && renderSection(starredSpaces.map(renderSpaceCard), MIN_SPACE_COLUMN_PX)}
             {showSpaces && showItems && <h2 className={`${sectionLabel} mt-6`}>Items</h2>}
             {showItems && renderSection(items.map(renderItemCard))}
           </>
