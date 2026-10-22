@@ -8,6 +8,7 @@ import { ArrowLeft, Eye, EyeOff, KeyRound, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContextCore'
 import { useTheme } from '../context/ThemeCore'
 import { validatePassword } from '../lib/passwordPolicy'
+import { PasswordRules } from '../components/PasswordRules'
 import { logAudit } from '../lib/auditLog'
 import { useRouteMeta } from '../hooks/useRouteMeta'
 import { Spinner } from '../components/ui/UI'
@@ -117,6 +118,7 @@ export default function PasswordResetPage() {
                     required
                     autoFocus
                     autoComplete="new-password"
+                    aria-describedby="reset-password-rules"
                     className="password-field w-full bg-bg-elevated border border-bg-border rounded-xl px-4 py-3 pr-11 text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors text-sm"
                   />
                   <button
@@ -131,6 +133,7 @@ export default function PasswordResetPage() {
                 {capsLock && (
                   <p className="mt-1.5 text-[11px] text-amber-400">Caps Lock is on</p>
                 )}
+                <PasswordRules id="reset-password-rules" password={password} />
               </div>
 
               <div>

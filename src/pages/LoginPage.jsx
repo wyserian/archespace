@@ -11,6 +11,7 @@ import { MAX_LOGIN_ATTEMPTS, LOGIN_ATTEMPT_WINDOW_MS, LOGIN_COOLDOWN_MS } from '
 import { MULTI_USER_ENABLED } from '../lib/appConfig'
 import { TERMS_VERSION } from '../lib/legal'
 import { validatePassword } from '../lib/passwordPolicy'
+import { PasswordRules } from '../components/PasswordRules'
 import { logAudit } from '../lib/auditLog'
 import { setRememberMe } from '../lib/supabase'
 import { peekAuthRedirectError, clearAuthRedirectError } from '../lib/authRedirectError'
@@ -352,6 +353,7 @@ export default function LoginPage() {
                   onBlur={() => setCapsLock(false)}
                   required
                   autoComplete={isSignUp ? 'new-password' : 'current-password'}
+                  aria-describedby={isSignUp ? 'signup-password-rules' : undefined}
                   disabled={isCoolingDown}
                   className="password-field w-full bg-bg-elevated border border-bg-border rounded-xl px-4 py-3 pr-11 text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors text-sm disabled:opacity-50"
                 />
@@ -367,6 +369,7 @@ export default function LoginPage() {
               {capsLock && (
                 <p className="mt-1.5 text-[11px] text-amber-400">Caps Lock is on</p>
               )}
+              {isSignUp && <PasswordRules id="signup-password-rules" password={password} />}
               </div>
             )}
 

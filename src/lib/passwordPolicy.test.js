@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { validatePassword } from './passwordPolicy'
+import { validatePassword, passwordChecks } from './passwordPolicy'
+
+describe('passwordChecks', () => {
+  it('marks each rule met or not, matching validatePassword', () => {
+    expect(passwordChecks('abcdefgh1!').map(c => c.ok)).toEqual([true, false, true, true, true])
+    expect(passwordChecks('Abcdef1!').every(c => c.ok)).toBe(true)
+  })
+})
 
 describe('validatePassword', () => {
   it('accepts a password that meets every rule', () => {

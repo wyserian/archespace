@@ -26,6 +26,7 @@ import { validateVaultPin, getWeakPinWarning } from '../lib/crypto/vaultPin'
 import WeakPinWarning from '../components/WeakPinWarning'
 import { VAULT_PIN_MIN_LENGTH, VAULT_AUTO_LOCK_OPTIONS } from '../lib/constants'
 import { validatePassword } from '../lib/passwordPolicy'
+import { PasswordRules } from '../components/PasswordRules'
 import { logAudit } from '../lib/auditLog'
 import { APP_VERSION, COMMIT_URL, REPO_URL } from '../lib/buildInfo'
 import { isLocalMode, leaveLocalMode, LOCAL_USER } from '../lib/localMode'
@@ -666,8 +667,10 @@ export default function SettingsPage() {
                           onChange={e => setNewPassword(e.target.value)}
                           required
                           autoComplete="new-password"
+                          aria-describedby="new-password-rules"
                           className={`password-field ${inputClass}`}
                         />
+                        <PasswordRules id="new-password-rules" password={newPassword} />
                       </div>
                       <div>
                         <label htmlFor="confirm-password" className={labelClass}>Confirm new password</label>
