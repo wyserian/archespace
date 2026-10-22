@@ -766,7 +766,7 @@ function SpaceItem({
       {/* Content editor
           The header chevron hides the body entirely (only the header and tags
           stay). When shown, a long body is clamped to a fixed preview height
-          (with a fade) that expands to full height when tapped. A protected item
+          (with a fade and Show more) that expands to full height. A protected item
           shows a Protected panel instead until the vault PIN opens it. */}
       {!headerCollapsed && hidden && (
         <div className={`${denseView ? 'px-2.5 pb-3' : 'px-4 pb-4'} ${showTags ? 'pt-0' : denseView ? 'pt-3' : 'pt-4'}`}>
@@ -848,12 +848,38 @@ function SpaceItem({
         {item.type === 'table'         && <TableEditor      key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} />}
         {item.type === 'kanban'        && <KanbanEditor     key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} fill={isFullscreen} />}
         </div>
-        {/* A soft fade at the bottom cues "more below" without a label; tapping
-            the preview expands it in full. */}
+        {/* A soft fade at the bottom with Show more; tapping anywhere on the
+            preview expands it too. */}
         {clamped && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-bg-card to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex h-28 items-end justify-center bg-gradient-to-t from-bg-card from-40% to-transparent pb-3">
+            {!selectMode && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setExpanded(true) }}
+                className={buttonClass({ variant: 'secondary', size: 'xs', className: 'pointer-events-auto shadow-sm' })}
+              >
+                <ChevronDown size={14} /> Show more
+              </button>
+            )}
+          </div>
         )}
       </div>
+      )}
+      {/* An expanded long body can go back to its preview. */}
+      {!headerCollapsed && !hidden && canClamp && overflowing && expanded && !isDirty && !selectMode && (
+        <div className="flex justify-center px-4 pb-3 -mt-1">
+          <button
+            type="button"
+            onClick={() => {
+              setExpanded(false)
+              // The card shrinks under the reader; keep it on screen.
+              requestAnimationFrame(() => contentRef.current?.closest('[data-item-id]')?.scrollIntoView({ block: 'nearest' }))
+            }}
+            className={buttonClass({ variant: 'ghost', size: 'xs' })}
+          >
+            <ChevronUp size={14} /> Show less
+          </button>
+        </div>
       )}
     </div>
   )
