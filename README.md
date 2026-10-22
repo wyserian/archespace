@@ -33,9 +33,9 @@ A companion Mobile/Flutter app lives in a [separate repository](https://github.c
 - **Protected** items and spaces, and **read-only** spaces
 - **Spaces** with sub-spaces nested to any depth, tags and colours
 - **Item types**: notes, rich text, lists, checklists, cards, tables, Kanban boards, whiteboards and code ([Item types](#item-types))
-- **Reminders** that repeat or stay until turned off, all listed in one view
+- **Reminders** that repeat or stay until turned off, each with or without a sound, all listed in one view
 - **Search** across spaces, tags and content
-- **Starred**, **archive** and **recycle bin**
+- **Starred**, **archive** and **bin**
 - **Realtime sync** with the [mobile app](https://github.com/wyserian/archespace-mobile), and **offline mode**
 - **Encrypted backups** and **PDF export**
 - **Local mode**: no account, nothing leaves the browser
@@ -168,10 +168,10 @@ archespace/
 
 Key areas:
 
-- `src/pages/` contains the public home page, login, password reset, dashboard, space view, archive, recycle bin, and settings pages.
+- `src/pages/` contains the public home page, login, password reset, dashboard, space view, starred, reminders, archive, bin, settings, and the terms and privacy pages.
 - `src/components/` contains reusable UI (shared buttons, menus, type badges, dialogs), item editors, layout shell, vault unlock gate, and space components.
 - `src/context/` contains auth, encryption, vault PIN prompt, appearance/theme, toast, shortcuts, command palette, and page action providers.
-- `src/hooks/` contains data hooks for spaces, items, starred, reminders, archive, recycle bin, global search, offline sync, online status, drag reordering, and session timeout.
+- `src/hooks/` contains data hooks for spaces, items, starred, reminders, archive, bin, global search, offline sync, online status, drag reordering, and session timeout.
 - `src/lib/richText/` contains the Tiptap editor setup (extensions, find and replace, line spacing), conversion of older notes, and `webview/`, the source of the offline editor bundled into the mobile app (`npm run build:mobile-editor`).
 - `src/lib/whiteboard/` contains the Whiteboard's Excalidraw setup, its saved format (with a PNG preview for cards and PDFs), conversion of older drawings, and `webview/`, the source of the mobile app's offline whiteboard (built by the same command).
 - `src/lib/crypto/` contains AES-GCM encryption, Argon2id key derivation, vault setup and unlock, non-extractable session key storage, PIN recovery code, and WebAuthn PRF passkey wrapping/unlock with a local (IndexedDB) passkey store.
