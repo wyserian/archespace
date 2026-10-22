@@ -122,14 +122,6 @@ export default function LoginPage() {
   const isSignUp = pathMode === 'signup' && MULTI_USER_ENABLED
   const isForgot = forgot && pathMode === 'signin'
 
-  // Keep the submit button disabled until the required fields are filled: email
-  // for the reset flow, email + password (+ confirm on sign-up) otherwise.
-  const canSubmit = isForgot
-    ? Boolean(email.trim())
-    : isSignUp
-      ? Boolean(email.trim() && password && confirmPassword && acceptedTerms)
-      : Boolean(email.trim() && password)
-
   // Sign-up is only reachable when multi-user mode is on; otherwise send the
   // /signup route back to sign in.
   useEffect(() => {
@@ -455,9 +447,11 @@ export default function LoginPage() {
               </div>
             )}
 
+            {/* Enabled while filling in: pressing it says what's missing
+                (the browser for empty fields, the form for the rest). */}
             <button
               type="submit"
-              disabled={loading || !canSubmit || (isCoolingDown && !isSignUp && !isForgot)}
+              disabled={loading || (isCoolingDown && !isSignUp && !isForgot)}
               className={buttonClass({ variant: 'primary', size: 'lg', className: 'w-full mt-1' })}
             >
               {isForgot ? <Mail size={14} /> : isSignUp ? <UserPlus size={14} /> : <Lock size={14} />}

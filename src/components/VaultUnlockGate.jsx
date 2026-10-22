@@ -280,13 +280,7 @@ export default function VaultUnlockGate({ children }) {
   const weakPinWarning = isNewPinMode && !validateVaultPin(pin) ? getWeakPinWarning(pin) : null
   const showPasskeyUnlock = !needsSetup && !forgotPin && passkeySupported && passkeys.length > 0
 
-  // The submit button stays disabled until the required fields are filled.
   const pinsMatch = confirmPin.length > 0 && pin === confirmPin
-  const canSubmit = needsSetup
-    ? Boolean(pin && confirmPin)
-    : forgotPin
-      ? Boolean(recoveryCodeInput.trim() && pin && confirmPin)
-      : Boolean(pin)
 
   if (oneTimeRecoveryCode) {
     return (
@@ -585,7 +579,8 @@ export default function VaultUnlockGate({ children }) {
 
           <button
             type="submit"
-            disabled={unlocking || !canSubmit}
+            // Enabled while filling in; pressing it says what's missing.
+            disabled={unlocking}
             // With a passkey offered above, PIN is the second way in.
             className={buttonClass({ variant: showPasskeyUnlock && !forgotPin ? 'secondary' : 'primary', size: 'lg', className: 'w-full' })}
           >

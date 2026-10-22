@@ -69,7 +69,12 @@ export function Modal({ title, onClose, children, footer, onSubmit, size = 'md',
       Array.from(panel?.querySelectorAll(FOCUSABLE) || [])
         .filter(el => el.getClientRects().length > 0)
 
-    ;(getFocusable()[0] || panel)?.focus()
+    // Start on the dialog's own content (a field that took autoFocus keeps
+    // it), not the close button; that is only the fallback.
+    if (!panel?.contains(document.activeElement)) {
+      const items = getFocusable()
+      ;(items.find(el => !el.hasAttribute('data-modal-close')) || items[0] || panel)?.focus()
+    }
 
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') { onCloseRef.current?.(); return }
@@ -126,6 +131,7 @@ export function Modal({ title, onClose, children, footer, onSubmit, size = 'md',
               type="button"
               onClick={onClose}
               aria-label="Close dialog"
+              data-modal-close
               className="p-1.5 rounded-full text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors"
             >
               <X size={16} />

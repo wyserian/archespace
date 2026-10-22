@@ -33,8 +33,6 @@ export default function PasswordResetPage() {
   }
   const currentThemeName = themeModes.find(option => option.id === themeMode)?.name || 'Theme'
 
-  const canSubmit = Boolean(password && confirmPassword)
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
@@ -157,7 +155,7 @@ export default function PasswordResetPage() {
 
               <button
                 type="submit"
-                disabled={saving || !canSubmit}
+                disabled={saving}
                 className={buttonClass({ variant: 'primary', size: 'lg', className: 'w-full mt-1' })}
               >
                 <KeyRound size={14} />

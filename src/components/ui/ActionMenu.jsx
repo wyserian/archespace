@@ -18,6 +18,8 @@ const MENU_GAP = 8
  * `triggerProps` go on the trigger button (a table grip makes it draggable).
  * An action's optional `group` names its section: a divider goes above each
  * action whose group differs from the one before it.
+ * `touchTarget` (default true) gives the icon trigger a 44px tap area on touch
+ * screens; off where it would cover the controls beside it (table grips).
  */
 export function ActionMenu({
   actions,
@@ -30,6 +32,7 @@ export function ActionMenu({
   openOnHover = true,
   disabled = false,
   triggerProps,
+  touchTarget = true,
 }) {
   const [open, setOpen] = useState(false)
   const [position, setPosition] = useState({ top: 0, left: 0, origin: 'top' })
@@ -205,7 +208,7 @@ export function ActionMenu({
           ? buttonClass({ variant: 'primary', size: 'sm' })
           // A round, borderless icon trigger; `bordered` only adds a soft
           // fill so it reads as a control on a busy surface.
-          : `${compact ? 'p-1.5' : 'p-2'} rounded-full transition-colors ${
+          : `${compact ? 'p-1.5' : 'p-2'} ${touchTarget ? 'touch-target' : ''} rounded-full transition-colors ${
               open
                 ? 'bg-accent-muted text-accent'
                 : `${bordered ? 'bg-bg-elevated' : ''} text-text-muted hover:text-text-primary hover:bg-bg-hover`

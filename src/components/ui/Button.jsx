@@ -61,7 +61,7 @@ export function IconButton({
       aria-label={label}
       title={props.title ?? label}
       aria-pressed={active === undefined ? undefined : active}
-      className={`${BUTTON_BASE} ${box} rounded-full ${
+      className={`${BUTTON_BASE} ${box} touch-target rounded-full ${
         active
           ? 'bg-accent-muted text-accent hover:text-accent-hover'
           : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'

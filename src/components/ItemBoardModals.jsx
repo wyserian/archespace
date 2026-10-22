@@ -90,7 +90,7 @@ export default function ItemBoardModals({ board, spaces }) {
 
       {bulkDeleteConfirm && (
         <Modal
-          title={`Move ${bulkDeleteConfirm.ids.length} items to bin?`}
+          title={`Move ${bulkDeleteConfirm.ids.length} items to the bin?`}
           onClose={() => setBulkDeleteConfirm(null)}
           footer={
             <div className="flex gap-2 justify-end">
@@ -106,7 +106,7 @@ export default function ItemBoardModals({ board, spaces }) {
                 onClick={() => {
                   bulkRemove.mutate(bulkDeleteConfirm.ids, {
                     onSuccess: () => {
-                      toast.success(`Moved ${bulkDeleteConfirm.ids.length} items to bin`)
+                      toast.success(`Moved ${bulkDeleteConfirm.ids.length} items to the bin`)
                       bulkDeleteConfirm.onDone?.()
                       setBulkDeleteConfirm(null)
                     },
@@ -115,7 +115,7 @@ export default function ItemBoardModals({ board, spaces }) {
                 }}
                 className={buttonClass({ variant: 'dangerSolid' })}
               >
-                Move to bin
+                Move to the bin
               </button>
             </div>
           }
@@ -179,7 +179,7 @@ export default function ItemBoardModals({ board, spaces }) {
                 }}
                 className={buttonClass({ variant: 'dangerSolid' })}
               >
-                Move to bin
+                Move to the bin
               </button>
             </div>
           }

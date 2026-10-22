@@ -206,6 +206,7 @@ export function TableEditor({ content, onChange, readOnly = false }) {
                           bordered={false}
                           compact
                           openOnHover={false}
+                          touchTarget={false}
                           triggerProps={gripDragProps('column', c)}
                         />
                       </span>
@@ -261,6 +262,7 @@ export function TableEditor({ content, onChange, readOnly = false }) {
                         bordered={false}
                         compact
                         openOnHover={false}
+                        touchTarget={false}
                         triggerProps={gripDragProps('row', r)}
                       />
                     </span>

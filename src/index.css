@@ -10,6 +10,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Touch screens: a small icon button gets a 44px tap area around its middle
+   without changing how it looks. In the components layer, so a button's own
+   `absolute` (a utility) still wins over the `relative` here. */
+@layer components {
+  @media (pointer: coarse) {
+    .touch-target { position: relative; }
+    .touch-target::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: max(100%, 44px);
+      height: max(100%, 44px);
+      transform: translate(-50%, -50%);
+    }
+  }
+}
+
 * { box-sizing: border-box; }
 
 /* Theme mode tokens (dark is the default) */
@@ -26,7 +44,7 @@
   --text-primary:  #f5f7f2;
   --text-content:  #d4dad4;
   --text-secondary:#a8b7ad;
-  --text-muted:    #6d7e76;
+  --text-muted:    #7b8e85;
   --success:       #34d399;
   --danger:        #fb7185;
   --danger-hover:  #f43f5e;
@@ -37,7 +55,7 @@
 
 /* Light: neutral cool greys (no warm/sage tint), with clear layers - a grey
    page, white cards and panels on it, and a slightly grey field inside them.
-   Muted text still clears 4.5:1 on white. */
+   Muted text clears 4.5:1 on all of them, in both themes. */
 [data-theme-mode="light"] {
   color-scheme: light;
   --bg-base:       #eef1f5;
@@ -50,7 +68,7 @@
   --text-primary:  #0f172a;
   --text-content:  #1e293b;
   --text-secondary:#475569;
-  --text-muted:    #64748b;
+  --text-muted:    #5d6c81;
   --success:       #047857;
   --danger:        #dc2626;
   --danger-hover:  #b91c1c;

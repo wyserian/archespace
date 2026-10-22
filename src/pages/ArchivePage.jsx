@@ -57,7 +57,7 @@ export default function ArchivePage() {
     try {
       if (colIds.length) await bulkMoveSpacesToBin.mutateAsync(colIds)
       if (itemIds.length) await bulkMoveItemsToBin.mutateAsync(itemIds)
-      toast.success(`Moved ${count} ${count === 1 ? 'item' : 'items'} to bin`)
+      toast.success(`Moved ${count} ${count === 1 ? 'item' : 'items'} to the bin`)
       exitSelectMode()
     } catch {
       toast.error("Couldn't move the selection to the bin.")
@@ -73,7 +73,7 @@ export default function ArchivePage() {
     },
     {
       id: 'move-to-bin',
-      label: 'Move to bin',
+      label: 'Move to the bin',
       icon: BULK_ICONS.trash,
       variant: 'danger',
       onClick: runBulkMoveToBin,
@@ -152,10 +152,10 @@ export default function ArchivePage() {
                           <button
                             type="button"
                             onClick={() => moveSpaceToBin.mutate(col.id, {
-                              onSuccess: () => toast.success('Space moved to bin'),
+                              onSuccess: () => toast.success('Space moved to the bin'),
                               onError: () => toast.error("Couldn't move it to the bin."),
                             })}
-                            title="Move to bin"
+                            title="Move to the bin"
                             className={buttonClass({ variant: 'danger', size: 'sm' })}
                           >
                             <Trash2 size={14} /> Delete
@@ -198,10 +198,10 @@ export default function ArchivePage() {
                           <button
                             type="button"
                             onClick={() => moveItemToBin.mutate(item.id, {
-                              onSuccess: () => toast.success('Item moved to bin'),
+                              onSuccess: () => toast.success('Item moved to the bin'),
                               onError: () => toast.error("Couldn't move it to the bin."),
                             })}
-                            title="Move to bin"
+                            title="Move to the bin"
                             className={buttonClass({ variant: 'danger', size: 'sm' })}
                           >
                             <Trash2 size={14} /> Delete

@@ -19,7 +19,7 @@ const SPACES_OPEN_KEY = 'arche:sidebar-spaces-open'
 function SectionLabel({ children, collapsed }) {
   if (collapsed) return <div className="h-4" />
   return (
-    <p className="px-3 pt-5 pb-1 text-[10px] font-medium uppercase tracking-wider text-text-muted/70">
+    <p className="px-3 pt-5 pb-1 text-[10px] font-medium uppercase tracking-wider text-text-muted">
       {children}
     </p>
   )
@@ -136,7 +136,7 @@ export default function AppSidebar({
               type="button"
               onClick={toggleSpaces}
               aria-expanded={spacesOpen}
-              className="group flex items-center gap-1 px-3 pt-4 pb-1 text-[10px] font-medium uppercase tracking-wider text-text-muted/70 hover:text-text-secondary transition-colors"
+              className="group flex items-center gap-1 px-3 pt-4 pb-1 text-[10px] font-medium uppercase tracking-wider text-text-muted hover:text-text-secondary transition-colors"
             >
               Spaces
               <ChevronRight size={12} className={`transition-transform duration-150 ${spacesOpen ? 'rotate-90' : ''}`} />

@@ -536,9 +536,10 @@ function SpaceItem({
           </span>
         )}
 
-        {/* Action buttons */}
+        {/* Action buttons, wider apart on touch screens, where each icon's
+            tap area grows. */}
         {!selectMode && (
-        <div className="flex items-center gap-1 shrink-0 flex-wrap">
+        <div className="flex items-center gap-1 [@media(pointer:coarse)]:gap-3 shrink-0 flex-wrap">
           {isDirty ? (
             /* Save / Discard mode */
             <>
@@ -577,7 +578,7 @@ function SpaceItem({
                   <button
                     type="button"
                     onClick={handleCollapseClick}
-                    className="p-1.5 rounded-full text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors"
+                    className="touch-target p-1.5 rounded-full text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors"
                     aria-label={headerCollapsed ? 'Expand item' : 'Collapse item'}
                     title={headerCollapsed ? 'Expand' : 'Collapse'}
                   >
@@ -589,7 +590,7 @@ function SpaceItem({
                   <button
                     type="button"
                     onClick={handleFullscreenClick}
-                    className="p-1.5 rounded-full transition-colors bg-accent-muted text-accent"
+                    className="touch-target p-1.5 rounded-full transition-colors bg-accent-muted text-accent"
                     aria-label="Exit full screen"
                     title="Exit full screen"
                   >
