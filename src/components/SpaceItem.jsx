@@ -813,7 +813,7 @@ function SpaceItem({
         {item.type === 'textbox'       && <TextboxEditor    key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} />}
         {item.type === 'markdown'      && <MarkdownEditor   key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} />}
         {item.type === 'richtext' && (
-          <Suspense fallback={<div className="min-h-[80px] rounded-xl border border-bg-border-soft bg-bg-sunken" />}>
+          <Suspense fallback={<div className="min-h-[80px] rounded-xl bg-bg-sunken" />}>
             <RichTextEditor
               key={`${item.id}:${editorVersion}`}
               content={localContent}
