@@ -29,8 +29,13 @@ export function invalidateSpaceList(qc) {
 }
 
 export function invalidateSpaceItems(qc, spaceId) {
+  qc.invalidateQueries({ queryKey: queryKeys.items(spaceId) })
+  invalidateItemViews(qc)
+}
+
+/** The other views an item shows in, for a change already put in its list. */
+export function invalidateItemViews(qc) {
   invalidateKeys(qc, [
-    queryKeys.items(spaceId),
     // An item edited anywhere may be starred or have a reminder; keep the
     // Starred and Reminders views in step.
     queryKeys.starredItems(),

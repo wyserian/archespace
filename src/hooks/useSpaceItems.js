@@ -17,7 +17,7 @@ import { parseTags } from '../lib/spaceColors'
 import { assertOnline } from '../lib/offlineQueue'
 import { saveRows, loadRows } from '../lib/offlineCache'
 import { setReachable, isNetworkError } from '../lib/connectivity'
-import { invalidateSpaceItems } from '../lib/queryInvalidation'
+import { invalidateItemViews, invalidateSpaceItems } from '../lib/queryInvalidation'
 import { queryKeys } from '../lib/queryKeys'
 import {
   makeSoftDelete,
@@ -134,7 +134,11 @@ export function useSpaceItems(spaceId) {
           table: 'space_items',
           filter,
         },
-        () => {
+        ({ new: row }) => {
+          // The echo of a change already in the list (our own save) changes
+          // nothing.
+          const cached = qc.getQueryData(queryKeys.items(itemsKey))
+          if (row?.updated_at && cached?.some(i => i.id === row.id && i.updated_at === row.updated_at)) return
           clearTimeout(timer)
           timer = setTimeout(() => invalidateSpaceItems(qc, itemsKey), 250)
         }
@@ -193,7 +197,14 @@ export function useSpaceItems(spaceId) {
       if (error) throw error
       return decryptItem(data, cryptoKey)
     },
-    onSuccess: () => invalidateSpaceItems(qc, itemsKey),
+    // The saved item goes straight into the list: refetching would download
+    // and decrypt the whole space on every auto-save.
+    onSuccess: (saved) => {
+      qc.setQueryData(queryKeys.items(itemsKey), (items) =>
+        items?.map(item => (item.id === saved.id ? saved : item))
+      )
+      invalidateItemViews(qc)
+    },
   })
 
   const togglePin = useMutation(makeTogglePin({
