@@ -8,7 +8,7 @@
  * current PIN (like recovery-code setup) so it always wraps a freshly unlocked,
  * exportable master key.
  */
-import { unlockUserVault } from './vault'
+import { isCurrentVaultKey, unlockUserVault } from './vault'
 import {
   enrollPasskeyCredential,
   unlockWithPasskeyCredentials,
@@ -76,6 +76,13 @@ export async function unlockVaultWithPasskey(userId) {
   if (!rows.length) throw new Error('No passkeys are enrolled for this vault.')
 
   const { masterKey, credentialId } = await unlockWithPasskeyCredentials(rows)
+
+  // A passkey made before the vault was reset elsewhere holds the old key:
+  // using it would leave nothing readable and new items unreadable elsewhere.
+  if (!(await isCurrentVaultKey(userId, masterKey))) {
+    await Promise.all(rows.map(r => deletePasskeyRecord(r.id)))
+    throw new Error('This passkey was set up for an earlier vault and has been removed. Unlock with your PIN.')
+  }
 
   // Best-effort "last used" bookkeeping; never block unlock on it.
   const used = rows.find(r => r.credentialId === credentialId)

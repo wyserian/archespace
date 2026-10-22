@@ -421,6 +421,22 @@ export async function getVaultBackupMeta(userId) {
 }
 
 /**
+ * Whether `key` is this vault's current master key: its key_check opens, as on
+ * a PIN unlock. A key kept on the device (passkey unlock) is from an earlier
+ * vault after a reset elsewhere. Uses the offline copy when the server can't
+ * be reached.
+ */
+export async function isCurrentVaultKey(userId, key) {
+  const meta = await fetchVaultMeta(userId)
+  if (!meta?.key_check) return false
+  try {
+    return (await decryptString(meta.key_check, key)) === VAULT_CHECK_PLAINTEXT
+  } catch {
+    return false
+  }
+}
+
+/**
  * Unwrap a vault key from its PIN-wrapped form (a backup's `vault` block).
  * Throws 'Incorrect PIN...' when the PIN doesn't open it.
  */

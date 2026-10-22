@@ -214,11 +214,13 @@ export function EncryptionProvider({ children }) {
     } catch (err) {
       const msg = err?.message || "Couldn't unlock with passkey."
       setUnlockError(msg)
+      // A stale passkey is removed on the way out: stop offering it.
+      refreshPasskeys()
       throw err
     } finally {
       setUnlocking(false)
     }
-  }, [userId, applyUnlockedKey])
+  }, [userId, applyUnlockedKey, refreshPasskeys])
 
   // Enroll a passkey. Re-verifies the current PIN to obtain an exportable master
   // key (mirrors recovery-code setup), then wraps it with the passkey's PRF secret.
