@@ -7,10 +7,10 @@ the name is plain text: "ArcheSpace".
 
 | Context                          | Form |
 | -------------------------------- | ---- |
-| Favicon (tabs, search results)   | Bare mint mark on transparent, so it sits on the browser's or search engine's own background |
-| PWA and Apple touch icon         | Mint mark on a dark rounded square (180-512px) |
-| Link preview image (`og-image.png`) | The icon beside the name |
-| Home page phone illustration     | The app icon (`icon-192.png`, 32px) |
+| Favicon (tabs, search results)   | Bare mint mark on transparent, so it sits on the browser's or search engine's own background; vector (`favicon.svg`), with `favicon.ico` for those that ask for it |
+| PWA and Apple touch icon         | Mint mark on a dark rounded square (48-512px, each size drawn from the vector) |
+| Link preview image (`og-image.png`) | The icon, large, beside the name |
+| Reminder notifications           | The app icon (`icon-192.png`) |
 | Android launcher icon and splash | Mint mark on a dark square |
 
 ## Where the name is text
@@ -30,6 +30,5 @@ corner. Inside the app there is no logo.
 ## Assets
 
 Generated from the mark by `scripts/generate-icons.mjs` into `public/`:
-`favicon.svg`, `favicon.ico`, `favicon-32.png`, `favicon-96.png`,
-`icon-192.png`, `icon-512.png`,
+`favicon.svg`, `favicon.ico`, `icon-48/96/144/192/256/512.png`,
 `icon-maskable-512.png`, `apple-touch-icon.png` and `og-image.png`.

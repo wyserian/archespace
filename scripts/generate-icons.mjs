@@ -40,18 +40,19 @@ const roundedMark = (px) => icon(px, 65.7, { rx: 25 })
 // sits inside the safe zone so platform masking never clips it.
 const solidMark = (px) => icon(px, 50.2)
 
-// 1200x630 Open Graph / Twitter share card.
+// 1200x630 Open Graph / Twitter share card. The icon is large so it still
+// reads in the small thumbnails chat apps show.
 const ogImage = () => `
 <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
   <rect width="1200" height="630" fill="#0f1117"/>
   <rect width="1200" height="6" fill="${MINT}"/>
-  <g transform="translate(100,210)">
-    <rect width="200" height="200" rx="48" fill="#151a23" stroke="${MINT}" stroke-width="2"/>
-    ${mark(135.3, 200)}
+  <g transform="translate(100,165)">
+    <rect width="300" height="300" rx="72" fill="#151a23" stroke="${MINT}" stroke-width="3"/>
+    ${mark(203, 300)}
   </g>
-  <text x="360" y="300" font-family="Arial, sans-serif" font-size="76" font-weight="700" fill="#ffffff">ArcheSpace</text>
-  <text x="362" y="360" font-family="Arial, sans-serif" font-size="30" fill="#aeb4c2">Everything in One Encrypted Space</text>
-  <text x="100" y="560" font-family="Arial, sans-serif" font-size="26" font-weight="600" fill="${MINT}">archespace.app</text>
+  <text x="460" y="305" font-family="Arial, sans-serif" font-size="84" font-weight="700" fill="#ffffff">ArcheSpace</text>
+  <text x="462" y="368" font-family="Arial, sans-serif" font-size="34" fill="#aeb4c2">Everything in One Encrypted Space</text>
+  <text x="100" y="580" font-family="Arial, sans-serif" font-size="26" font-weight="600" fill="${MINT}">archespace.app</text>
 </svg>`
 
 // Favicon: the bare mint mark on a transparent background, so browser tabs and
@@ -65,8 +66,8 @@ const pngBuffer = (svg) => sharp(Buffer.from(svg)).png().toBuffer()
 const png = (svg, file) =>
   sharp(Buffer.from(svg)).png().toFile(join(publicDir, file))
 
-// favicon.ico for the crawlers and browsers that ask for it by name: 16, 32 and
-// 48px PNGs in one ICO container.
+// favicon.ico for the crawlers and browsers that ask for it by name (others
+// use favicon.svg, sharp at any size): 16, 32 and 48px PNGs in one ICO.
 const ico = async (sizes) => {
   const images = await Promise.all(sizes.map(size => pngBuffer(favicon(size))))
   const header = Buffer.alloc(6 + 16 * sizes.length)
@@ -91,13 +92,14 @@ const ico = async (sizes) => {
 writeFileSync(join(publicDir, 'favicon.svg'), faviconSvg)
 writeFileSync(join(publicDir, 'favicon.ico'), await ico([16, 32, 48]))
 
+// App icons at every size an installed app is drawn at, each rendered from the
+// vector mark rather than scaled down from a larger PNG (which blurs).
+const APP_ICON_SIZES = [48, 96, 144, 192, 256, 512]
+
 await Promise.all([
-  png(roundedMark(192), 'icon-192.png'),
-  png(roundedMark(512), 'icon-512.png'),
+  ...APP_ICON_SIZES.map(size => png(roundedMark(size), `icon-${size}.png`)),
   png(solidMark(512), 'icon-maskable-512.png'),
   png(solidMark(180), 'apple-touch-icon.png'),
-  png(favicon(32), 'favicon-32.png'),
-  png(favicon(96), 'favicon-96.png'),
   png(ogImage(), 'og-image.png'),
 ])
 
@@ -113,6 +115,6 @@ if (existsSync(mobileIcons)) {
 }
 
 console.log(
-  'Generated favicon.svg/.ico, favicon-32/96, icon-192/512, icon-maskable-512, apple-touch-icon, og-image'
+  `Generated favicon.svg/.ico, icon-${APP_ICON_SIZES.join('/')}, icon-maskable-512, apple-touch-icon, og-image`
   + (existsSync(mobileIcons) ? ', and the mobile app_icon/app_icon_foreground' : '')
 )
