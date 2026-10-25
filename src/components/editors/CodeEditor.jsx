@@ -60,7 +60,7 @@ export function CodeEditor({ content, onChange, readOnly = false }) {
   const highlighted = code ? hljs.highlightAuto(code).value : ''
 
   return (
-    <div className="relative overflow-hidden rounded-xl bg-bg-sunken text-text-primary">
+    <div className="relative overflow-hidden rounded-xl border border-bg-border-faint bg-bg-sunken text-text-primary">
       <pre
         aria-hidden="true"
         className="hljs pointer-events-none absolute inset-0"

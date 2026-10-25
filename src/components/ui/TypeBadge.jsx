@@ -12,7 +12,7 @@ export function TypeBadge({ type, size = 14 }) {
   if (!Icon || !style) return null
   return (
     <span
-      className={`shrink-0 inline-flex items-center justify-center p-1 rounded-lg border ${style.bg} ${style.text} ${style.border}`}
+      className={`shrink-0 inline-flex items-center justify-center p-1 rounded-md border ${style.bg} ${style.text} ${style.border}`}
       title={TYPE_LABELS[type]}
       aria-label={TYPE_LABELS[type]}
     >

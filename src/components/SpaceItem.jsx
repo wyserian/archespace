@@ -428,10 +428,7 @@ function SpaceItem({
         ? 'fixed inset-0 z-[80] flex flex-col rounded-none border-0 bg-bg-base'
         : 'relative rounded-2xl bg-bg-card shadow-sm hover:shadow-md transition-shadow duration-200'
     } ${denseView ? 'text-[13px]' : ''} ${
-      isFullscreen ? '' : selected ? 'ring-[1.5px] ring-accent-border'
-        // Faint accent hairline while one of its text fields has the cursor
-        // (index.css), marking the item being edited. Read-only never edits.
-        : readOnly ? '' : 'item-card-editable'
+      !isFullscreen && selected ? 'ring-[1.5px] ring-accent-border' : ''
     }`}
     >
       {/* Header */}
@@ -440,11 +437,9 @@ function SpaceItem({
       <div
         {...(canDrag ? dragHandleProps : {})}
         className={`flex items-center gap-2 flex-wrap gap-y-2 ${
-          denseView ? 'px-2.5 py-[7px]' : 'px-4 py-[9px]'
+          denseView ? 'px-2.5 py-[7px]' : 'px-3 py-2'
         } ${
           isFullscreen ? 'sticky top-0 z-10 bg-bg-surface/95 backdrop-blur-md' : ''
-        } ${
-          !headerCollapsed || collapseGuard ? 'border-b border-bg-border-soft' : ''
         } ${canDrag ? 'cursor-grab active:cursor-grabbing' : ''}`}
       >
         {/* Pin indicator */}
@@ -695,7 +690,7 @@ function SpaceItem({
 
       {/* Tags */}
       {showTags && (
-        <div className={`flex flex-wrap items-center gap-1.5 ${denseView ? 'px-2.5 py-2' : 'px-4 py-2.5'}`}>
+        <div className={`flex flex-wrap items-center gap-1.5 ${denseView ? 'px-2.5 py-2' : 'px-3 py-2'}`}>
           {item.reminder && (
             <ReminderChip
               reminder={item.reminder}
@@ -729,7 +724,7 @@ function SpaceItem({
             if (clamped) setExpanded(true)
             else if (denseView) setIsFullscreen(true)
           }}
-          className={`${denseView ? 'mx-2.5' : 'mx-4'} border-y border-bg-border-soft py-1 ${showTags ? '' : 'mt-3'}`}
+          className={`${denseView ? 'mx-2.5' : 'mx-3'} border-y border-bg-border-soft py-1 ${showTags ? '' : 'mt-3'}`}
         >
           <Suspense fallback={<div className="h-8" />}>
             <RichTextToolbar editor={richEditor} />
@@ -739,7 +734,7 @@ function SpaceItem({
 
       {/* Unsaved collapse warning */}
       {collapseGuard && (
-        <div className="px-4 py-3 bg-amber-400/8 border-b border-amber-400/20 flex items-center gap-3 flex-wrap">
+        <div className="px-3 py-3 bg-amber-400/8 border-b border-amber-400/20 flex items-center gap-3 flex-wrap">
           <AlertTriangle size={16} className="text-amber-400 shrink-0" />
           <span className="text-sm text-amber-400 flex-1">You have unsaved changes.</span>
           <div className="flex gap-2">
@@ -774,7 +769,7 @@ function SpaceItem({
           (with a fade and Show more) that expands to full height. A protected item
           shows a Protected panel instead until the vault PIN opens it. */}
       {!headerCollapsed && hidden && (
-        <div className={`${denseView ? 'px-2.5 pb-3' : 'px-4 pb-4'} ${showTags ? 'pt-0' : denseView ? 'pt-3' : 'pt-4'}`}>
+        <div className={`${denseView ? 'px-2.5 pb-3' : 'px-3 pb-3'} ${showTags ? 'pt-0' : denseView ? 'pt-3' : 'pt-1'}`}>
           <button
             type="button"
             onClick={handleReveal}
@@ -805,10 +800,10 @@ function SpaceItem({
             // Sides lined up with the header and tags, and close under the
             // tags as on the card. A Whiteboard's canvas or a Kanban's
             // columns fill the space and scroll themselves.
-            ? `flex-1 px-4 ${showRichToolbar ? 'pt-3' : showTags || item.type === 'kanban' ? 'pt-1' : 'pt-5'} ${item.type === 'kanban' ? 'pb-4' : 'pb-5'} ${item.type === 'whiteboard' || item.type === 'kanban' ? 'min-h-0' : 'overflow-y-auto'}`
+            ? `flex-1 px-3 ${showRichToolbar ? 'pt-3' : showTags || item.type === 'kanban' ? 'pt-1' : 'pt-5'} ${item.type === 'kanban' ? 'pb-4' : 'pb-5'} ${item.type === 'whiteboard' || item.type === 'kanban' ? 'min-h-0' : 'overflow-y-auto'}`
             : denseView
               ? `px-2.5 ${showTags && !showRichToolbar ? 'pt-0' : 'pt-3'} pb-3 cursor-pointer`
-              : `px-4 ${showRichToolbar ? 'pt-3' : showTags ? 'pt-0' : 'pt-4'} pb-4`
+              : `px-3 ${showRichToolbar ? 'pt-3' : showTags ? 'pt-0' : 'pt-1'} pb-3`
         }${clamped ? ` relative overflow-hidden rounded-b-2xl${selectMode ? '' : ' cursor-pointer'}` : ''}`}
       >
         {/* In the dense grid, or while clamped, the content is a non-interactive
@@ -818,7 +813,7 @@ function SpaceItem({
         {item.type === 'textbox'       && <TextboxEditor    key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} />}
         {item.type === 'markdown'      && <MarkdownEditor   key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} />}
         {item.type === 'richtext' && (
-          <Suspense fallback={<div className="min-h-[80px] rounded-xl bg-bg-sunken" />}>
+          <Suspense fallback={<div className="min-h-[80px] rounded-xl border border-bg-border-faint bg-bg-sunken" />}>
             <RichTextEditor
               key={`${item.id}:${editorVersion}`}
               content={localContent}
@@ -872,7 +867,7 @@ function SpaceItem({
       )}
       {/* An expanded long body can go back to its preview. */}
       {!headerCollapsed && !hidden && canClamp && overflowing && expanded && !isDirty && !selectMode && (
-        <div className="flex justify-center px-4 pb-3 -mt-1">
+        <div className="flex justify-center px-3 pb-3 -mt-1">
           <button
             type="button"
             onClick={() => {

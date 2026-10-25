@@ -28,6 +28,8 @@ export default {
           border: color('--bg-border'),
           // The lighter border inside cards and settings groups.
           'border-soft': 'color-mix(in srgb, var(--bg-border) 60%, transparent)',
+          // The faintest border: the outline of an item's content field.
+          'border-faint': 'color-mix(in srgb, var(--bg-border) 40%, transparent)',
         },
         accent: {
           DEFAULT: color('--accent'),

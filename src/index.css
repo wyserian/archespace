@@ -457,12 +457,3 @@ input:-webkit-autofill {
 .legal-prose a { color: var(--accent); }
 .legal-prose strong { color: var(--text-primary); font-weight: 600; }
 
-/* Item card being edited: while the cursor is in one of a card's text fields (not when a header button
-   has focus), a faint accent hairline marks the item being worked on, on the
-   card's usual shadow. Far softer than the selection ring so the two never
-   read the same. */
-.item-card-editable:has(:is(input, textarea, [contenteditable="true"]):focus) {
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent),
-    0 1px 2px 0 rgb(0 0 0 / 0.05);
-}

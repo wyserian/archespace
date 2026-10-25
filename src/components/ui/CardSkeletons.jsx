@@ -35,12 +35,12 @@ export function SpaceCardSkeleton({ list = false }) {
 export function ItemCardSkeleton() {
   return (
     <div className="rounded-2xl bg-bg-card shadow-sm animate-pulse" aria-hidden="true">
-      <div className="flex items-center gap-2 px-4 py-[9px] border-b border-bg-border-soft">
-        <div className="h-6 w-6 shrink-0 rounded-lg bg-bg-elevated" />
+      <div className="flex items-center gap-2 px-3 py-2">
+        <div className="h-6 w-6 shrink-0 rounded-md bg-bg-elevated" />
         <div className={`h-4 w-1/3 ${BAR}`} />
         <div className={`ml-auto h-4 w-14 ${BAR}`} />
       </div>
-      <div className="px-4 py-4">
+      <div className="px-3 pt-1 pb-3">
         <div className="h-20 rounded-xl bg-bg-elevated" />
       </div>
     </div>
