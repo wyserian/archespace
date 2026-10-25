@@ -607,10 +607,18 @@ function SpaceItem({
                     icon={MoreVertical}
                     // Alt+Up / Alt+Down here move the card (handled by the page).
                     triggerProps={canDrag && !dragDisabled ? { 'aria-keyshortcuts': REORDER_KEYSHORTCUTS } : undefined}
-                    // Grouped: open it, mark it, work with its content, where
-                    // and how it's kept, then delete on its own at the end.
+                    // Grouped: open or copy it; mark it; rename, duplicate,
+                    // move or export it; protect or archive it; then delete on
+                    // its own at the end.
                     actions={[
                       !hidden && !isFullscreen && { id: 'fullscreen', group: 'view', label: 'Full screen', icon: Maximize2, onClick: handleFullscreenClick },
+                      canCopy && {
+                        id: 'copy',
+                        group: 'view',
+                        label: copied ? 'Copied' : 'Copy',
+                        icon: copied ? ClipboardCheck : ClipboardCopy,
+                        onClick: handleCopy,
+                      },
                       !readOnly && {
                         id: 'pin',
                         group: 'mark',
@@ -638,18 +646,12 @@ function SpaceItem({
                         disabled: !online,
                         onClick: () => setReminderOpen(true),
                       },
-                      !readOnly && { id: 'rename', group: 'content', label: 'Rename', icon: Pencil, onClick: () => setEditingTitle(true) },
-                      canCopy && {
-                        id: 'copy',
-                        group: 'content',
-                        label: copied ? 'Copied' : 'Copy',
-                        icon: copied ? ClipboardCheck : ClipboardCopy,
-                        onClick: handleCopy,
-                      },
-                      !readOnly && onDuplicate && { id: 'duplicate', group: 'content', label: 'Duplicate', icon: Copy, disabled: !online, onClick: () => onDuplicate(item) },
+                      !readOnly && { id: 'rename', group: 'edit', label: 'Rename', icon: Pencil, onClick: () => setEditingTitle(true) },
+                      !readOnly && onDuplicate && { id: 'duplicate', group: 'edit', label: 'Duplicate', icon: Copy, disabled: !online, onClick: () => onDuplicate(item) },
+                      !readOnly && onMove && { id: 'move', group: 'edit', label: 'Move', icon: MoveRight, disabled: !online, onClick: () => onMove(item.id) },
                       !hidden && {
                         id: 'export-pdf',
-                        group: 'content',
+                        group: 'edit',
                         label: 'Export PDF',
                         icon: FileDown,
                         onClick: () => exportItemToPdf({
@@ -658,7 +660,6 @@ function SpaceItem({
                           content: latestState.current.content,
                         }),
                       },
-                      !readOnly && onMove && { id: 'move', group: 'keep', label: 'Move', icon: MoveRight, disabled: !online, onClick: () => onMove(item.id) },
                       onToggleLock && {
                         id: 'lock',
                         group: 'keep',

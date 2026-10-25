@@ -125,8 +125,8 @@ export function SpaceCard({
   }
 
   // Every space action writes to the server, so all are disabled offline.
-  // Grouped as in an item's menu: mark it, its content, where and how it's
-  // kept, then delete on its own.
+  // Grouped: mark it; edit, duplicate or move it; how it's kept (read-only,
+  // protected, archived); then delete on its own.
   const menuActions = [
     {
       id: 'pin',
@@ -152,7 +152,7 @@ export function SpaceCard({
     { id: 'duplicate', group: 'content', label: 'Duplicate', icon: Copy, disabled: !online, onClick: () => onDuplicate?.(col.id) },
     // A read-only space stays where it is; a hidden one opens first (moving it
     // out of a protected space would show it without the PIN).
-    onMove && !col.read_only && !hidden && { id: 'move', group: 'keep', label: 'Move', icon: MoveRight, disabled: !online, onClick: () => onMove(col.id) },
+    onMove && !col.read_only && !hidden && { id: 'move', group: 'content', label: 'Move', icon: MoveRight, disabled: !online, onClick: () => onMove(col.id) },
     // Read-only locks the space's content (its details and items); managing
     // the space itself (pin, duplicate, archive, delete) stays available.
     toggleReadOnly && {
