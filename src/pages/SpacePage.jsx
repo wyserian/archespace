@@ -102,6 +102,7 @@ export default function SpacePage() {
     toggleStar: toggleSpaceStar,
     toggleReadOnly: toggleSpaceReadOnly,
     toggleLock: toggleSpaceLock,
+    setTags: setSpaceTags,
     remove: removeSpace,
     archive: archiveSpace,
     duplicate: duplicateSpace,
@@ -495,6 +496,7 @@ export default function SpacePage() {
       toggleStar={toggleSpaceStar}
       toggleReadOnly={toggleSpaceReadOnly}
       toggleLock={toggleSpaceLock}
+      setTags={setSpaceTags}
       setModal={setSpaceModal}
       setDeleteConfirm={setSpaceDeleteConfirm}
       onDuplicate={(sid) => duplicateSpace.mutate(sid, {
@@ -889,8 +891,8 @@ export default function SpacePage() {
       {/* Sub-space create / edit modal */}
       {spaceModal?.type === 'create' && (
         <SpaceModal
-          onSave={({ name, description, color, tags }) => {
-            createSpace.mutate({ name, description, color, tags, parentId: id }, {
+          onSave={({ name, description, color }) => {
+            createSpace.mutate({ name, description, color, parentId: id }, {
               onSuccess: () => toast.success('Space created'),
               onError: () => toast.error("Couldn't create space."),
             })
@@ -901,8 +903,8 @@ export default function SpacePage() {
       {spaceModal?.type === 'edit' && (
         <SpaceModal
           initial={spaceModal.col}
-          onSave={({ name, description, color, tags }) => {
-            updateSpace.mutate({ id: spaceModal.col.id, name, description, color, tags }, {
+          onSave={({ name, description, color }) => {
+            updateSpace.mutate({ id: spaceModal.col.id, name, description, color }, {
               onSuccess: () => toast.success('Space updated'),
               onError: () => toast.error("Couldn't update space."),
             })

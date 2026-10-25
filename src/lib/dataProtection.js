@@ -71,7 +71,7 @@ export async function decryptSpaces(rows, key) {
 
 // Space items
 
-/** Encrypt just an item's tags (for a tags-only update). */
+/** Encrypt just an item's or a space's tags (for a tags-only update). */
 export async function encryptTags(tags, key) {
   const parsed = parseTags(tags)
   return key ? encryptJson(parsed, key) : parsed

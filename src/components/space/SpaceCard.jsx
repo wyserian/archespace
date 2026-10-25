@@ -6,8 +6,9 @@
  * action-menu behaviour: borderless cards, a soft space-colour strip, tags
  * coloured by name inline with the item count, and a 3-dot menu.
  */
-import { Pin, PinOff, Star, StarOff, Pencil, PencilOff, PencilLine, Trash2, Copy, MoveRight, Archive, MoreVertical, Shield, ShieldCheck, ShieldOff } from 'lucide-react'
-import { getColorPreset, softColorValue, tagColorValue } from '../../lib/spaceColors'
+import { useState } from 'react'
+import { Pin, PinOff, Star, StarOff, Pencil, PencilOff, PencilLine, Trash2, Copy, MoveRight, Archive, MoreVertical, Shield, ShieldCheck, ShieldOff, Tag, X } from 'lucide-react'
+import { getColorPreset, parseTags, softColorValue, tagColorValue } from '../../lib/spaceColors'
 import { ActionMenu } from '../ui/ActionMenu'
 import { SelectCheck } from '../ui/SelectCheck'
 import { useOnlineStatus } from '../../hooks/useOnlineStatus'
@@ -17,23 +18,65 @@ import { useItemRevealed, useSpaceHidden } from '../../lib/itemLock'
 import { REORDER_KEYSHORTCUTS, reorderKeyStep } from '../../lib/reorderKeys'
 
 /** A tag chip tinted by the tag's own stable colour; brighter when it's an
- * active filter. Consumes its own click so it filters instead of opening. */
-function TagPill({ tag, active, onClick }) {
+ * active filter. Its clicks stay on the chip, so it filters instead of opening
+ * the space. With `onRemove`, an × shows on hover or focus (always on touch
+ * screens) to remove the tag. */
+function TagPill({ tag, active, onClick, onRemove }) {
   const color = tagColorValue(tag)
   return (
-    <button
-      type="button"
-      onClick={(e) => { e.stopPropagation(); onClick?.(tag) }}
-      aria-pressed={active}
-      className="text-[11px] font-semibold px-2 py-0.5 rounded-md border transition-colors"
+    <span
+      className="group/tag inline-flex items-center rounded-md border transition-colors"
       style={{
         backgroundColor: `${color}${active ? '42' : '29'}`,
-        color,
         borderColor: active ? `${color}8c` : 'transparent',
       }}
     >
-      {tag}
-    </button>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onClick?.(tag) }}
+        aria-pressed={active}
+        className="text-[11px] font-semibold pl-2 pr-2 py-0.5"
+        style={{ color }}
+      >
+        {tag}
+      </button>
+      {onRemove && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onRemove(tag) }}
+          aria-label={`Remove tag ${tag}`}
+          className="hidden -ml-1 pr-1.5 py-0.5 opacity-70 hover:opacity-100 group-hover/tag:inline-flex group-focus-within/tag:inline-flex [@media(hover:none)]:inline-flex"
+          style={{ color }}
+        >
+          <X size={11} />
+        </button>
+      )}
+    </span>
+  )
+}
+
+/** The box for adding tags on a space card (comma-separated, Enter to add). */
+function TagInput({ onCommit, onCancel }) {
+  const [value, setValue] = useState('')
+  const commit = () => onCommit(value.split(',').map(t => t.trim()).filter(Boolean))
+  return (
+    <input
+      autoFocus
+      value={value}
+      onChange={e => setValue(e.target.value)}
+      onClick={e => e.stopPropagation()}
+      onBlur={commit}
+      onKeyDown={e => {
+        // Typing here must not reach the card's own keys (open, reorder).
+        e.stopPropagation()
+        if (e.key === 'Enter') { e.preventDefault(); commit() }
+        else if (e.key === 'Escape') onCancel()
+      }}
+      placeholder="tag"
+      aria-label="New tag"
+      maxLength={32}
+      className="w-20 text-[11px] px-2 py-0.5 rounded-md bg-bg-elevated border border-accent/40 text-text-primary placeholder-text-muted focus:outline-none"
+    />
   )
 }
 
@@ -58,7 +101,7 @@ function ProtectedMark({ hidden }) {
 export function SpaceCard({
   col, index, search, dragIndex, dragOverIndex,
   handleDragStart, handleDragOver, handleDrop, handleDragEnd,
-  navigate, togglePin, toggleStar, toggleReadOnly, toggleLock, setModal, setDeleteConfirm, onDuplicate, onMove, onArchive,
+  navigate, togglePin, toggleStar, toggleReadOnly, toggleLock, setTags, setModal, setDeleteConfirm, onDuplicate, onMove, onArchive,
   stats,
   onTagClick,
   activeTags = [],
@@ -102,6 +145,23 @@ export function SpaceCard({
     ? `${itemStats.total} ${itemStats.total === 1 ? 'item' : 'items'}`
     : '0 items'
   const tags = Array.isArray(col.tags) ? col.tags : []
+
+  // Tags are the space's details, so they follow Edit: not in a read-only
+  // space, nor a protected one before it's opened.
+  const [addingTag, setAddingTag] = useState(false)
+  const canEditTags = !!setTags && !col.read_only && !hidden && online && !selectMode
+  const saveTags = (next) => setTags.mutate({ id: col.id, tags: next }, {
+    onError: () => toast.error("Couldn't update the tags."),
+  })
+  const addTags = (added) => {
+    setAddingTag(false)
+    const next = parseTags([...new Set([...tags, ...added])])
+    if (next.length !== tags.length) saveTags(next)
+  }
+  const removeTag = canEditTags ? (tag) => saveTags(tags.filter(t => t !== tag)) : undefined
+  const tagInput = addingTag && canEditTags && (
+    <TagInput onCommit={addTags} onCancel={() => setAddingTag(false)} />
+  )
 
   const activate = () => (selectMode ? onToggleSelect?.() : navigate(`/space/${col.id}`))
 
@@ -147,6 +207,7 @@ export function SpaceCard({
       disabled: !online,
       onClick: () => toggleStar.mutate({ id: col.id, starred: col.starred }),
     },
+    setTags && !col.read_only && !hidden && { id: 'tag', group: 'mark', label: 'Add tag', icon: Tag, disabled: !online, onClick: () => setAddingTag(true) },
     // Editing shows the description, so a hidden protected space opens first.
     !col.read_only && !hidden && { id: 'edit', group: 'content', label: 'Edit', icon: Pencil, disabled: !online, onClick: () => setModal({ type: 'edit', col }) },
     { id: 'duplicate', group: 'content', label: 'Duplicate', icon: Copy, disabled: !online, onClick: () => onDuplicate?.(col.id) },
@@ -237,11 +298,12 @@ export function SpaceCard({
           ? <p className="text-text-secondary text-sm truncate flex-1 min-w-0">{col.description}</p>
           : <span className="flex-1 min-w-0" />}
 
-        {tags.length > 0 && (
-          <div className="hidden md:flex items-center gap-1.5 shrink-0">
+        {(tags.length > 0 || tagInput) && (
+          <div className={`${tagInput ? 'flex' : 'hidden md:flex'} items-center gap-1.5 shrink-0`}>
             {tags.slice(0, 3).map(tag => (
-              <TagPill key={tag} tag={tag} active={activeTags.includes(tag)} onClick={onTagClick} />
+              <TagPill key={tag} tag={tag} active={activeTags.includes(tag)} onClick={onTagClick} onRemove={removeTag} />
             ))}
+            {tagInput}
             <span className="text-text-muted text-xs">·</span>
           </div>
         )}
@@ -296,12 +358,14 @@ export function SpaceCard({
         )}
       </div>
 
-      {/* Tags and item count on one line, separated by a dot. */}
+      {/* Tags (all of them, as the card is where they're removed) and the
+          item count, separated by a dot. */}
       <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1">
-        {tags.slice(0, 4).map(tag => (
-          <TagPill key={tag} tag={tag} active={activeTags.includes(tag)} onClick={onTagClick} />
+        {tags.map(tag => (
+          <TagPill key={tag} tag={tag} active={activeTags.includes(tag)} onClick={onTagClick} onRemove={removeTag} />
         ))}
-        {tags.length > 0 && <span className="text-text-muted text-xs">·</span>}
+        {tagInput}
+        {(tags.length > 0 || tagInput) && <span className="text-text-muted text-xs">·</span>}
         <span className="text-text-muted text-xs tabular-nums">{itemLabel}</span>
       </div>
     </div>

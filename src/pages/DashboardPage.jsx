@@ -62,7 +62,7 @@ export default function DashboardPage() {
   const { toast } = useToast()
   const { openPalette, registerCommands, closePalette } = useCommandPalette()
   const {
-    data: spaces = [], isLoading, create, update, togglePin, toggleStar, toggleReadOnly, toggleLock, remove, reorder,
+    data: spaces = [], isLoading, create, update, setTags, togglePin, toggleStar, toggleReadOnly, toggleLock, remove, reorder,
     archive, move, duplicate, bulkRemove, bulkArchive, bulkSetPinned, bulkDuplicate,
   } = useSpaces()
   // Dashboard items: items that belong to no space, shown after the spaces.
@@ -358,6 +358,7 @@ export default function DashboardPage() {
       toggleStar={toggleStar}
       toggleReadOnly={toggleReadOnly}
       toggleLock={toggleLock}
+      setTags={setTags}
       setModal={setModal}
       setDeleteConfirm={setDeleteConfirm}
       onDuplicate={(id) => duplicate.mutate(id, {
@@ -936,8 +937,8 @@ export default function DashboardPage() {
       {/* Modals */}
       {modal?.type === 'create' && (
         <SpaceModal
-          onSave={({ name, description, color, tags }) => {
-            create.mutate({ name, description, color, tags }, {
+          onSave={({ name, description, color }) => {
+            create.mutate({ name, description, color }, {
               onSuccess: () => toast.success('Space created'),
               onError: () => toast.error("Couldn't create space.")
             })
@@ -948,8 +949,8 @@ export default function DashboardPage() {
       {modal?.type === 'edit' && (
         <SpaceModal
           initial={modal.col}
-          onSave={({ name, description, color, tags }) => {
-            update.mutate({ id: modal.col.id, name, description, color, tags }, {
+          onSave={({ name, description, color }) => {
+            update.mutate({ id: modal.col.id, name, description, color }, {
               onSuccess: () => toast.success('Space updated'),
               onError: () => toast.error("Couldn't update space.")
             })

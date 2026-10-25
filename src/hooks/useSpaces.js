@@ -10,7 +10,7 @@ import { useEncryption } from '../context/EncryptionCore'
 import { assertOnline } from '../lib/offlineQueue'
 import { saveRows, loadRows } from '../lib/offlineCache'
 import { setReachable, isNetworkError } from '../lib/connectivity'
-import { encryptSpace, decryptSpace, decryptSpaces } from '../lib/dataProtection'
+import { encryptSpace, decryptSpace, decryptSpaces, encryptTags } from '../lib/dataProtection'
 import { duplicateSpaceWithItems } from '../lib/spaceDuplicate'
 import { archiveSpaces, deleteSpaces, moveSpaces } from '../lib/spaceLifecycle'
 import { invalidateSpaceCollections, invalidateSpaceList } from '../lib/queryInvalidation'
@@ -156,6 +156,32 @@ export function useSpaces() {
     onSuccess: () => invalidateSpaceList(qc),
   })
 
+  // Tags only, from the space card (encrypted like the rest). Optimistic so the
+  // chip appears or goes at once.
+  const setTags = useMutation({
+    mutationFn: async ({ id, tags }) => {
+      assertOnline()
+      const encrypted = await encryptTags(tags, cryptoKey)
+      const { error } = await supabase
+        .from('spaces')
+        .update({ tags: encrypted })
+        .eq('id', id)
+      if (error) throw error
+    },
+    onMutate: async ({ id, tags }) => {
+      await qc.cancelQueries({ queryKey: queryKeys.spaces() })
+      const previous = qc.getQueryData(queryKeys.spaces())
+      qc.setQueryData(queryKeys.spaces(), (old) =>
+        old?.map(s => (s.id === id ? { ...s, tags: parseTags(tags) } : s))
+      )
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(queryKeys.spaces(), context.previous)
+    },
+    onSettled: () => invalidateSpaceList(qc),
+  })
+
   const togglePin = useMutation(makeTogglePin({
     table: 'spaces',
     qc,
@@ -294,6 +320,7 @@ export function useSpaces() {
     ...query,
     create,
     update,
+    setTags,
     togglePin,
     toggleStar,
     toggleReadOnly,

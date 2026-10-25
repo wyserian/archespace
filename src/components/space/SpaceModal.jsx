@@ -1,19 +1,17 @@
 /**
- * SpaceModal.jsx - Modal for creating or editing a space.
+ * SpaceModal.jsx - Modal for creating or editing a space: its name,
+ * description and colour. Tags are added and removed on the space card.
  */
 import { useState } from 'react'
 import { Ban } from 'lucide-react'
 import { Modal, Spinner } from '../ui/UI'
-import { SPACE_COLORS, parseTags } from '../../lib/spaceColors'
+import { SPACE_COLORS } from '../../lib/spaceColors'
 import { buttonClass } from '../ui/buttonStyles'
 
 export function SpaceModal({ initial, onSave, onClose }) {
   const [name, setName] = useState(initial?.name || '')
   const [description, setDescription] = useState(initial?.description || '')
   const [color, setColor] = useState(initial?.color || null)
-  const [tagsInput, setTagsInput] = useState(
-    () => (Array.isArray(initial?.tags) ? initial.tags.join(', ') : '')
-  )
   const [saving, setSaving] = useState(false)
 
   const handleSave = async () => {
@@ -23,7 +21,6 @@ export function SpaceModal({ initial, onSave, onClose }) {
       name: name.trim(),
       description: description.trim(),
       color,
-      tags: parseTags(tagsInput.split(',').map(t => t.trim())),
     })
     setSaving(false)
     onClose()
@@ -85,17 +82,6 @@ export function SpaceModal({ initial, onSave, onClose }) {
               />
             ))}
           </div>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-text-secondary mb-1.5">
-            Tags <span className="text-text-muted font-normal">(comma-separated)</span>
-          </label>
-          <input
-            placeholder="work, personal, ideas"
-            value={tagsInput}
-            onChange={e => setTagsInput(e.target.value)}
-            className="w-full bg-bg-elevated border border-bg-border rounded-xl px-4 py-2.5 text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors text-sm"
-          />
         </div>
         <div className="flex gap-2 justify-end pt-1">
           <button

@@ -32,7 +32,7 @@ export default function StarredPage() {
   const { toast } = useToast()
   const {
     data: spaces = [], isLoading: spacesLoading,
-    update, togglePin, toggleStar, toggleReadOnly, toggleLock, remove, archive, duplicate, move,
+    update, setTags, togglePin, toggleStar, toggleReadOnly, toggleLock, remove, archive, duplicate, move,
   } = useSpaces()
   const { data: spaceStats = {} } = useSpaceStats()
   // Starred items from every space (and the dashboard).
@@ -89,6 +89,7 @@ export default function StarredPage() {
       toggleStar={toggleStar}
       toggleReadOnly={toggleReadOnly}
       toggleLock={toggleLock}
+      setTags={setTags}
       setModal={setSpaceModal}
       setDeleteConfirm={setSpaceDeleteConfirm}
       onDuplicate={(id) => duplicate.mutate(id, {
@@ -176,8 +177,8 @@ export default function StarredPage() {
       {spaceModal?.type === 'edit' && (
         <SpaceModal
           initial={spaceModal.col}
-          onSave={({ name, description, color, tags }) => {
-            update.mutate({ id: spaceModal.col.id, name, description, color, tags }, {
+          onSave={({ name, description, color }) => {
+            update.mutate({ id: spaceModal.col.id, name, description, color }, {
               onSuccess: () => toast.success('Space updated'),
               onError: () => toast.error("Couldn't update space."),
             })
