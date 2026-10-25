@@ -53,6 +53,10 @@ import { AUTO_SAVE_DELAY_MS } from '../lib/constants'
 // (with a fade) rather than hiding the content; expanding restores full height.
 const COLLAPSED_MAX_PX = 640
 
+// Show more / Show less: plain text links, no fill.
+const EXPAND_TOGGLE_CLASS =
+  'inline-flex items-center gap-1 rounded-md text-xs font-medium text-text-muted hover:text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-border'
+
 /**
  * The handlers come from useItemBoard's `cardProps`.
  */
@@ -463,10 +467,10 @@ function SpaceItem({
                 if (e.key === 'Escape') { setTitleVal(item.title); setEditingTitle(false) }
               }}
               onBlur={saveTitle}
-              className="w-full bg-bg-elevated border border-accent rounded-lg px-2.5 py-1 text-sm font-medium text-text-primary focus:outline-none"
+              className="w-full bg-bg-elevated border border-accent rounded-lg px-2.5 py-1 text-sm font-semibold text-text-primary focus:outline-none"
             />
           ) : (
-            <span className={`min-w-0 text-sm font-medium truncate block ${item.title ? 'text-text-primary' : 'text-text-muted italic'}`}>
+            <span className={`min-w-0 text-sm font-semibold truncate block ${item.title ? 'text-text-primary' : 'text-text-muted italic'}`}>
               {item.title || 'Untitled'}
             </span>
           )}
@@ -856,7 +860,7 @@ function SpaceItem({
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setExpanded(true) }}
-                className={buttonClass({ variant: 'secondary', size: 'xs', className: 'pointer-events-auto shadow-sm' })}
+                className={`pointer-events-auto ${EXPAND_TOGGLE_CLASS}`}
               >
                 <ChevronDown size={14} /> Show more
               </button>
@@ -875,7 +879,7 @@ function SpaceItem({
               // The card shrinks under the reader; keep it on screen.
               requestAnimationFrame(() => contentRef.current?.closest('[data-item-id]')?.scrollIntoView({ block: 'nearest' }))
             }}
-            className={buttonClass({ variant: 'ghost', size: 'xs' })}
+            className={EXPAND_TOGGLE_CLASS}
           >
             <ChevronUp size={14} /> Show less
           </button>
