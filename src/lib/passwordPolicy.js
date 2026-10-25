@@ -10,7 +10,7 @@ const SYMBOL = /[!-/:-@[-`{-~]/
 
 // `label` for the checklist, `need` for the submit error.
 const RULES = [
-  { label: `${MIN_LENGTH}+ characters`, need: `at least ${MIN_LENGTH} characters`, test: p => p.length >= MIN_LENGTH },
+  { label: `${MIN_LENGTH}+ chars`, need: `at least ${MIN_LENGTH} characters`, test: p => p.length >= MIN_LENGTH },
   { label: 'Uppercase', need: 'an uppercase letter', test: p => /[A-Z]/.test(p) },
   { label: 'Lowercase', need: 'a lowercase letter', test: p => /[a-z]/.test(p) },
   { label: 'Number', need: 'a number', test: p => /\d/.test(p) },
