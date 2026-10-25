@@ -9,14 +9,13 @@ import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, Folder, FolderPlus,
   Trash2, Archive, Command, CheckSquare, ListChecks, Settings, Lock, Menu, Keyboard, LogOut,
-  Sun, Moon, Star, Bell,
+  Star, Bell,
 } from 'lucide-react'
 import SpaceItem from '../components/SpaceItem'
 import ItemBoardModals from '../components/ItemBoardModals'
 import { useItemBoard } from '../hooks/useItemBoard'
 import { useDualEntitySelection } from '../hooks/useDualEntitySelection'
 import { useShortcut } from '../context/ShortcutsCore'
-import { useTheme } from '../context/ThemeCore'
 import GlobalSearchResults from '../components/GlobalSearchResults'
 import { useDragReorder } from '../hooks/useDragReorder'
 import { useCommandPalette } from '../context/CommandPaletteCore'
@@ -77,8 +76,6 @@ export default function DashboardPage() {
   const { data: stats = {} } = useSpaceStats()
   const { data: globalSearchData } = useGlobalSearchData()
   const navigate = useNavigate()
-  const { resolvedThemeMode, setThemeMode } = useTheme()
-  const isDark = resolvedThemeMode === 'dark'
   const headerRef = useRef(null)
   const searchInputRef = useRef(null)
   const mobileSearchInputRef = useRef(null)
@@ -467,6 +464,20 @@ export default function DashboardPage() {
   const selectionLabel = describeSelection(selectedSpaceIds.size, selectedItemIds.size)
   const hasSelectedItems = selectedItemIds.size > 0
 
+  // The page's one main action.
+  const newMenu = (
+    <ActionMenu
+      label={online ? 'New' : 'Unavailable offline'}
+      triggerLabel="New"
+      icon={Plus}
+      disabled={!online}
+      actions={[
+        { id: 'item', label: 'New item', icon: Plus, onClick: openAddItem },
+        { id: 'space', label: 'New space', icon: FolderPlus, onClick: () => setModal({ type: 'create' }) },
+      ]}
+    />
+  )
+
   return (
     <div className="min-h-screen bg-bg-base">
       {/* Header (mobile only) */}
@@ -644,13 +655,7 @@ export default function DashboardPage() {
               />
             )}
           </div>
-          <IconButton
-            icon={isDark ? Sun : Moon}
-            label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
-            size="md"
-            className="ml-auto"
-            onClick={() => setThemeMode(isDark ? 'light' : 'dark')}
-          />
+          {!selectMode && <div className="ml-auto">{newMenu}</div>}
           </div>
         </div>
 
@@ -695,8 +700,7 @@ export default function DashboardPage() {
             <h2 className="text-xl font-semibold text-text-primary">{firstSectionLabel}</h2>
           </div>
           <div className="flex items-center gap-2">
-            {/* View, sort and select are quiet tools; the one main action is
-                New, a menu of New item / New space. */}
+            {/* View, sort and select are quiet tools. */}
             {hasEntries && !selectMode && (
               <ViewToggle value={viewMode} onChange={changeViewMode} />
             )}
@@ -719,18 +723,8 @@ export default function DashboardPage() {
                 {selectMode ? 'Done' : 'Select'}
               </Button>
             )}
-            {!selectMode && (
-              <ActionMenu
-                label={online ? 'New' : 'Unavailable offline'}
-                triggerLabel="New"
-                icon={Plus}
-                disabled={!online}
-                actions={[
-                  { id: 'item', label: 'New item', icon: Plus, onClick: openAddItem },
-                  { id: 'space', label: 'New space', icon: FolderPlus, onClick: () => setModal({ type: 'create' }) },
-                ]}
-              />
-            )}
+            {/* From sm up, New sits in the search row instead. */}
+            {!selectMode && <div className="sm:hidden">{newMenu}</div>}
           </div>
         </div>
 
