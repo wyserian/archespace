@@ -57,8 +57,8 @@ function NavItem({ icon: Icon, label, active, count, badge, hint, collapsed, onC
       title={collapsed ? (hint ? `${label} (${hint})` : label) : undefined}
       aria-label={badge ? `${label}, ${badge} for today or past` : label}
       aria-current={active ? 'page' : undefined}
-      className={`relative w-full flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors ${
-        collapsed ? 'justify-center py-2' : hint ? 'pr-2' : ''
+      className={`relative w-full flex items-center gap-3 rounded-lg text-sm transition-colors ${
+        collapsed ? 'justify-center py-2' : `py-1.5 pl-3 ${hint ? 'pr-2' : 'pr-3'}`
       } ${
         active
           ? 'bg-bg-elevated text-text-primary font-medium'
@@ -71,7 +71,7 @@ function NavItem({ icon: Icon, label, active, count, badge, hint, collapsed, onC
       />
       {/* What needs attention now: a pill, or a dot on the icon when collapsed. */}
       {badge > 0 && collapsed && (
-        <span className="absolute top-1.5 right-4 h-2 w-2 rounded-full bg-accent" aria-hidden="true" />
+        <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-accent" aria-hidden="true" />
       )}
       {/* With a key hint, label and hint sit closer, so both fit the rail. */}
       {!collapsed && (hint ? (
@@ -114,7 +114,7 @@ export default function AppSidebar({
   return (
     <aside
       className={`hidden sm:flex flex-col shrink-0 h-screen sticky top-0 z-30 bg-bg-surface/40 transition-[width] duration-200 ${
-        collapsed ? 'w-14' : 'w-44'
+        collapsed ? 'w-[52px]' : 'w-44'
       }`}
     >
       {/* The name, as in the emails, and the collapse toggle. The name is too
