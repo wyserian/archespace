@@ -9,6 +9,8 @@ import { useAuth } from '../context/AuthContextCore'
 import { getVerifiedTotpFactorId, verifyTotp, redeemBackupCode, validateTotpCode, normalizeTotpCode, TOTP_CODE_LENGTH } from '../lib/mfa'
 import { validateRecoveryCode, normalizeRecoveryCode } from '../lib/crypto/recoveryCode'
 import { buttonClass } from './ui/buttonStyles'
+import { ConfirmDialog } from './ui/UI'
+import { SIGN_OUT_TEXT } from '../lib/localMode'
 
 export default function MfaChallenge({ onVerified }) {
   const { signOut } = useAuth()
@@ -16,6 +18,7 @@ export default function MfaChallenge({ onVerified }) {
   const [useBackup, setUseBackup] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [confirmSignOut, setConfirmSignOut] = useState(false)
 
   const submit = async (e) => {
     e.preventDefault()
@@ -96,13 +99,24 @@ export default function MfaChallenge({ onVerified }) {
           </button>
           <button
             type="button"
-            onClick={() => signOut()}
+            onClick={() => setConfirmSignOut(true)}
             className="block mx-auto text-xs text-text-muted hover:text-text-primary"
           >
-            Sign out
+            {SIGN_OUT_TEXT.label}
           </button>
         </form>
       </div>
+
+      {/* Asks first, as on the vault screens. */}
+      {confirmSignOut && (
+        <ConfirmDialog
+          title={SIGN_OUT_TEXT.title}
+          message={SIGN_OUT_TEXT.message}
+          confirmLabel={SIGN_OUT_TEXT.label}
+          onConfirm={() => { setConfirmSignOut(false); signOut() }}
+          onClose={() => setConfirmSignOut(false)}
+        />
+      )}
     </div>
   )
 }

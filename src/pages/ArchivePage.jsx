@@ -1,7 +1,7 @@
 /**
  * ArchivePage.jsx - Archived spaces and items (reversible).
  */
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Archive, RotateCcw, Trash2, Folder, LayoutList, CheckSquare, ListChecks } from 'lucide-react'
 import { useArchive } from '../hooks/useArchive'
@@ -10,7 +10,7 @@ import { useToast } from '../context/ToastCore'
 import BulkSelectionBar from '../components/BulkSelectionBar'
 import { BULK_ICONS } from '../components/BulkSelectionIcons'
 import SelectableRow from '../components/SelectableRow'
-import { Spinner } from '../components/ui/UI'
+import { ConfirmDialog, Spinner } from '../components/ui/UI'
 import { Button, IconButton } from '../components/ui/Button'
 import { buttonClass } from '../components/ui/buttonStyles'
 import { TypeBadge } from '../components/ui/TypeBadge'
@@ -25,6 +25,10 @@ export default function ArchivePage() {
     moveSpaceToBin, moveItemToBin, bulkMoveSpacesToBin, bulkMoveItemsToBin,
     total,
   } = useArchive()
+
+  // What's waiting for the "move to the bin" confirmation: one space or item
+  // ({ kind, id, name }), or the selection ({ kind: 'bulk' }).
+  const [binConfirm, setBinConfirm] = useState(null)
 
   const spaces = data?.spaces || []
   const items = data?.items || []
@@ -76,9 +80,20 @@ export default function ArchivePage() {
       label: 'Move to the bin',
       icon: BULK_ICONS.trash,
       variant: 'danger',
-      onClick: runBulkMoveToBin,
+      onClick: () => setBinConfirm({ kind: 'bulk' }),
     },
-  ], [runBulkUnarchive, runBulkMoveToBin])
+  ], [runBulkUnarchive])
+
+  const confirmMoveToBin = () => {
+    const target = binConfirm
+    setBinConfirm(null)
+    if (target.kind === 'bulk') return runBulkMoveToBin()
+    const isSpace = target.kind === 'space'
+    ;(isSpace ? moveSpaceToBin : moveItemToBin).mutate(target.id, {
+      onSuccess: () => toast.success(isSpace ? 'Space moved to the bin' : 'Item moved to the bin'),
+      onError: () => toast.error("Couldn't move it to the bin."),
+    })
+  }
 
   return (
     <div className="min-h-screen bg-bg-base pb-32">
@@ -151,10 +166,7 @@ export default function ArchivePage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => moveSpaceToBin.mutate(col.id, {
-                              onSuccess: () => toast.success('Space moved to the bin'),
-                              onError: () => toast.error("Couldn't move it to the bin."),
-                            })}
+                            onClick={() => setBinConfirm({ kind: 'space', id: col.id, name: col.name })}
                             title="Move to the bin"
                             className={buttonClass({ variant: 'danger', size: 'sm' })}
                           >
@@ -197,10 +209,7 @@ export default function ArchivePage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => moveItemToBin.mutate(item.id, {
-                              onSuccess: () => toast.success('Item moved to the bin'),
-                              onError: () => toast.error("Couldn't move it to the bin."),
-                            })}
+                            onClick={() => setBinConfirm({ kind: 'item', id: item.id, name: item.title })}
                             title="Move to the bin"
                             className={buttonClass({ variant: 'danger', size: 'sm' })}
                           >
@@ -230,6 +239,21 @@ export default function ArchivePage() {
           </div>
         )}
       </main>
+
+      {binConfirm && (
+        <ConfirmDialog
+          title={binConfirm.kind === 'bulk'
+            ? `Move ${selectedCount} ${selectedCount === 1 ? 'entry' : 'entries'} to the bin?`
+            : `Move ${binConfirm.kind} to the bin?`}
+          message={binConfirm.kind === 'bulk'
+            ? 'They go to the bin, where they can still be restored.'
+            : `"${binConfirm.name || 'Untitled'}" will be moved to the bin, where it can still be restored.`}
+          confirmLabel="Move to the bin"
+          destructive
+          onConfirm={confirmMoveToBin}
+          onClose={() => setBinConfirm(null)}
+        />
+      )}
     </div>
   )
 }

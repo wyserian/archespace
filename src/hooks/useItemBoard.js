@@ -175,7 +175,22 @@ export function useItemBoard(spaceId) {
   }, [])
 
   // Props every SpaceItem card on the page shares (all stable identities).
+  // Quick note: a Rich text item titled "Quick Note" whose card opens in full
+  // screen, ready to type. Its id is held until that card has opened.
+  const [quickNoteId, setQuickNoteId] = useState(null)
+  const addQuickNote = useCallback(async () => {
+    try {
+      const added = await create.mutateAsync({ type: 'richtext', title: 'Quick Note' })
+      setQuickNoteId(added.id)
+    } catch {
+      toastRef.current.error("Couldn't add the note.")
+    }
+  }, [create])
+  const clearQuickNote = useCallback(() => setQuickNoteId(null), [])
+
   const cardProps = useMemo(() => ({
+    quickNoteId,
+    onQuickNoteOpened: clearQuickNote,
     onCollapsedChange: setItemCollapsed,
     onUpdate: handleItemUpdate,
     onSetTags: handleSetTags,
@@ -190,7 +205,7 @@ export function useItemBoard(spaceId) {
     onArchive: handleArchiveItem,
     onDirtyChange: handleDirtyChange,
   }), [
-    setItemCollapsed, handleItemUpdate, handleSetTags, handleSetReminder, handleSetListNumbered, handleTogglePin, handleToggleStar,
+    quickNoteId, clearQuickNote, setItemCollapsed, handleItemUpdate, handleSetTags, handleSetReminder, handleSetListNumbered, handleTogglePin, handleToggleStar,
     handleToggleLock, handleDuplicateItem, handleMoveOne, handleArchiveItem, handleDirtyChange,
   ])
 
@@ -282,6 +297,7 @@ export function useItemBoard(spaceId) {
     addedItemId,
     cardProps,
     openAddItem,
+    addQuickNote,
     openMoveItems,
     requestBulkDelete,
     closeAll,

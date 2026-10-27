@@ -86,12 +86,18 @@ function SpaceItem({
   selected = false,
   onSelectedChange,
   dense = false,
+  // In grid view: no collapse chevron, and the body always shows.
+  grid = false,
   // Where the item lives, shown beside the title outside its space (Starred).
   contextLabel,
   // In a read-only space: content stays readable and copyable, but every edit
   // (content, title, tags, pin, order, move, archive, delete) is off. A
   // reminder, like a star, can still be set.
   readOnly = false,
+  // Quick note (see useItemBoard): the card for this item opens in full
+  // screen with the cursor in the text, then reports back.
+  quickNoteId = null,
+  onQuickNoteOpened,
 }) {
   const { cryptoKey } = useEncryption()
   const askVaultPin = useVaultPinPrompt()
@@ -177,7 +183,7 @@ function SpaceItem({
   // the body entirely - only the header (and tags) stay visible. Never applies
   // in fullscreen or select mode. Defined here (above the measure effect) so
   // that re-expanding a card re-measures its body.
-  const headerCollapsed = !isFullscreen && !selectMode && forcedCollapsed
+  const headerCollapsed = !isFullscreen && !selectMode && !grid && forcedCollapsed
 
   // Measure content height to decide if the card is "long"
   // scrollHeight reports the full natural height even while the card is clamped,
@@ -204,6 +210,20 @@ function SpaceItem({
       clearTimeout(copyTimer.current)
     }
   }, [])
+
+  // Quick note: open in full screen, then put the cursor at the end of the
+  // text once the editor is there.
+  const isQuickNote = quickNoteId === item.id && !readOnly
+  const [quickNoteSeen, setQuickNoteSeen] = useState(null)
+  if (isQuickNote && quickNoteSeen !== item.id) {
+    setQuickNoteSeen(item.id)
+    setIsFullscreen(true)
+  }
+  useEffect(() => {
+    if (!isQuickNote || !isFullscreen || !richEditor) return
+    richEditor.commands.focus('end')
+    onQuickNoteOpened?.()
+  }, [isQuickNote, isFullscreen, richEditor, onQuickNoteOpened])
 
   useEffect(() => {
     if (!isFullscreen) return undefined
@@ -396,8 +416,8 @@ function SpaceItem({
   // header collapse, and never while editing (unsaved) so typing can't clamp the
   // card out from under the user.
   const clamped = canClamp && !headerCollapsed && overflowing && !isDirty && !expanded
-  // The collapse/expand chevron is always available outside fullscreen.
-  const showCollapseToggle = !isFullscreen
+  // The collapse/expand chevron: list view only (not fullscreen or grid).
+  const showCollapseToggle = !isFullscreen && !grid
   // Whether the tags row (with the reminder) is shown (drives content top
   // padding so the two don't stack into a large gap).
   const showTags = !selectMode && ((item.tags?.length ?? 0) > 0 || !!item.reminder || addingTag)

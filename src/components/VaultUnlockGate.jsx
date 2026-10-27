@@ -461,7 +461,6 @@ export default function VaultUnlockGate({ children }) {
             title={SIGN_OUT_TEXT.title}
             message={SIGN_OUT_TEXT.message}
             confirmLabel={SIGN_OUT_TEXT.label}
-            destructive
             onConfirm={() => { setConfirmSignOut(false); signOut() }}
             onClose={() => setConfirmSignOut(false)}
           />
@@ -645,7 +644,6 @@ export default function VaultUnlockGate({ children }) {
           title={SIGN_OUT_TEXT.title}
           message={SIGN_OUT_TEXT.message}
           confirmLabel={SIGN_OUT_TEXT.label}
-          destructive
           onConfirm={() => { setConfirmSignOut(false); signOut() }}
           onClose={() => setConfirmSignOut(false)}
         />

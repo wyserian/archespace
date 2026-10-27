@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, Folder, FolderPlus,
   Trash2, Archive, Command, CheckSquare, ListChecks, Settings, Lock, Menu, Keyboard, LogOut,
-  Star, Bell,
+  Star, Bell, X, NotebookPen,
 } from 'lucide-react'
 import SpaceItem from '../components/SpaceItem'
 import ItemBoardModals from '../components/ItemBoardModals'
@@ -117,9 +117,6 @@ export default function DashboardPage() {
   // render denser, as they do inside a space.
   const isSmallScreen = useMediaQuery('(max-width: 639px)')
   const denseItems = viewMode === 'grid' && isSmallScreen
-  // Space cards are mostly their name, which two phone-width columns would cut
-  // short, so on phones they take the full width (items keep two columns).
-  const spaceCols = isSmallScreen ? 1 : gridCols
 
   // "New item" on the dashboard too: command palette entry + the "I" shortcut.
   const { openAddItem } = board
@@ -257,6 +254,20 @@ export default function DashboardPage() {
     setSearch('')
     setSearchActive(-1)
   }, [])
+
+  // Clears the search box (desktop and phone) and keeps typing focus in it.
+  const searchClear = (
+    <button
+      type="button"
+      onMouseDown={e => e.preventDefault()}
+      onClick={() => { setSearch(''); setSearchActive(-1) }}
+      aria-label="Clear search"
+      title="Clear"
+      className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-text-muted hover:bg-bg-elevated hover:text-text-primary transition-colors"
+    >
+      <X size={14} />
+    </button>
+  )
 
   const goSpaceFromSearch = useCallback((spaceId) => {
     closeSearch()
@@ -420,6 +431,7 @@ export default function DashboardPage() {
         onDragEnd={itemDrag.handleDragEnd}
         dragDisabled={reorderDisabled}
         dense={denseItems}
+        grid={viewMode === 'grid'}
       />
     </div>
   )
@@ -435,7 +447,8 @@ export default function DashboardPage() {
   const renderSection = (nodes, cols = gridCols, minWidth) => (viewMode === 'grid' ? (
     <CardColumns cols={cols} minWidth={minWidth}>{nodes}</CardColumns>
   ) : (
-    <div className="grid grid-cols-1 gap-2">
+    // The grid's own gap (see CardColumns), so switching views keeps the spacing.
+    <div className="grid grid-cols-1 gap-2 sm:gap-3">
       {nodes}
     </div>
   ))
@@ -472,6 +485,8 @@ export default function DashboardPage() {
       icon={Plus}
       disabled={!online}
       actions={[
+        // First, nearest the button: the one-click way to jot something down.
+        { id: 'quick-note', label: 'Quick note', icon: NotebookPen, onClick: board.addQuickNote },
         { id: 'item', label: 'New item', icon: Plus, onClick: openAddItem },
         { id: 'space', label: 'New space', icon: FolderPlus, onClick: () => setModal({ type: 'create' }) },
       ]}
@@ -611,7 +626,6 @@ export default function DashboardPage() {
           title={SIGN_OUT_TEXT.title}
           message={SIGN_OUT_TEXT.message}
           confirmLabel={SIGN_OUT_TEXT.label}
-          destructive
           onConfirm={() => { setConfirmSignOut(false); signOut(); toast.info(SIGN_OUT_TEXT.done) }}
           onClose={() => setConfirmSignOut(false)}
         />
@@ -640,7 +654,9 @@ export default function DashboardPage() {
               aria-autocomplete="list"
               className="w-full h-9 bg-bg-card rounded-full pl-9 pr-12 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 focus:ring-accent-border transition-shadow"
             />
-            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-text-muted font-mono">/</kbd>
+            {search ? searchClear : (
+              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-text-muted font-mono">/</kbd>
+            )}
             {showSearchResults && (
               <GlobalSearchResults
                 search={search}
@@ -676,8 +692,9 @@ export default function DashboardPage() {
               aria-controls="global-search-listbox-mobile"
               aria-activedescendant={activeOptionId}
               aria-autocomplete="list"
-              className="w-full h-10 bg-bg-card rounded-full pl-9 pr-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 focus:ring-accent-border transition-shadow"
+              className="w-full h-10 bg-bg-card rounded-full pl-9 pr-10 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 focus:ring-accent-border transition-shadow"
             />
+            {search && searchClear}
             {showSearchResults && (
               <GlobalSearchResults
                 search={search}
@@ -773,7 +790,7 @@ export default function DashboardPage() {
           <div className={viewMode === 'list' ? 'max-w-[52rem] mx-auto' : ''}>
             {renderSection(
               [...Array(6)].map((_, i) => <SpaceCardSkeleton key={i} list={viewMode === 'list'} />),
-              spaceCols,
+              gridCols,
             )}
           </div>
         ) : !hasEntries ? (
@@ -810,7 +827,7 @@ export default function DashboardPage() {
         ) : (
           <>
             <div className={`pb-32 ${viewMode === 'list' ? 'max-w-[52rem] mx-auto' : ''}`}>
-              {showSpacesSection && renderSection(sortedSpaces.map(renderSpaceCard), spaceCols, MIN_SPACE_COLUMN_PX)}
+              {showSpacesSection && renderSection(sortedSpaces.map(renderSpaceCard), gridCols, MIN_SPACE_COLUMN_PX)}
               {showItemsSection && (
                 <>
                   {showSpacesSection && (

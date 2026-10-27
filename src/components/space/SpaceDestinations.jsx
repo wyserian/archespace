@@ -9,6 +9,7 @@
  */
 import { LayoutDashboard, Folder } from 'lucide-react'
 import { moveDestinations, spacePathLabel } from '../../lib/spaceTree'
+import { getColorPreset } from '../../lib/spaceColors'
 import { menuItemClass } from '../ui/menuStyles'
 
 export function SpaceDestinations({ spaces, exclude, top, onPick, disabled }) {
@@ -41,7 +42,12 @@ export function SpaceDestinations({ spaces, exclude, top, onPick, disabled }) {
             className={menuItemClass()}
             style={{ paddingLeft: `${8 + Math.min(depth, 4) * 14}px` }}
           >
-            <Folder size={14} className="shrink-0 text-text-muted" />
+            {/* In the space's own colour, so spaces tell apart at a glance. */}
+            <Folder
+              size={14}
+              className="shrink-0 text-text-muted"
+              style={{ color: getColorPreset(space.color)?.value }}
+            />
             <span className="min-w-0">
               <span className="block text-text-primary truncate">{space.name || 'Untitled'}</span>
               {hint && (

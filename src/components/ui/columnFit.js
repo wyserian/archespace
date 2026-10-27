@@ -3,9 +3,10 @@
  */
 
 // About 45 characters of note text per line in an item card. Space cards hold
-// only a name and a line or two, so they can sit narrower.
+// only a name and a line or two, so they can sit narrower: two to a row even
+// on a phone, as in the mobile app.
 export const MIN_ITEM_COLUMN_PX = 300
-export const MIN_SPACE_COLUMN_PX = 200
+export const MIN_SPACE_COLUMN_PX = 150
 const GAP_PX = 12
 
 /** How many of `cols` columns fit in `width` px without one getting narrower
