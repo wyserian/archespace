@@ -831,7 +831,7 @@ export default function DashboardPage() {
               {showItemsSection && (
                 <>
                   {showSpacesSection && (
-                    <h2 className="mt-8 mb-4 text-xl font-semibold text-text-primary">Items</h2>
+                    <h2 className="mt-6 mb-4 text-xl font-semibold text-text-primary">Items</h2>
                   )}
                   {renderSection(sortedItems.map(renderItemCard))}
                 </>

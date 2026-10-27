@@ -623,7 +623,7 @@ export default function SpacePage() {
       </header>
 
       {/* Main content */}
-      <main className={`flex-1 flex flex-col px-2 sm:px-4 pt-6 ${selectMode ? 'pb-32' : 'pb-6'}`}>
+      <main className={`flex-1 flex flex-col px-2 sm:px-4 pt-3 ${selectMode ? 'pb-32' : 'pb-6'}`}>
         {readOnly && (
           <p className="mb-3 px-1 flex items-center gap-2 text-sm text-text-muted">
             <PencilOff size={14} className="shrink-0" />
@@ -780,7 +780,7 @@ export default function SpacePage() {
             <div className={viewMode === 'grid' ? '' : 'max-w-5xl mx-auto w-full'}>
               {labelSections && <h2 className={sectionLabelClass}>Spaces</h2>}
               {subSpaceNodes.length > 0 && renderSection(subSpaceNodes, gridCols, MIN_SPACE_COLUMN_PX)}
-              {labelSections && <h2 className={`${sectionLabelClass} mt-6`}>Items</h2>}
+              {labelSections && <h2 className={`${sectionLabelClass} mt-4`}>Items</h2>}
               {itemNodes.length > 0 && renderSection(itemNodes)}
             </div>
 

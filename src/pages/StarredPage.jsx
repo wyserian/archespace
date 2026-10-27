@@ -164,7 +164,7 @@ export default function StarredPage() {
           <>
             {showSpaces && showItems && <h2 className={sectionLabel}>Spaces</h2>}
             {showSpaces && renderSection(starredSpaces.map(renderSpaceCard), MIN_SPACE_COLUMN_PX)}
-            {showSpaces && showItems && <h2 className={`${sectionLabel} mt-6`}>Items</h2>}
+            {showSpaces && showItems && <h2 className={`${sectionLabel} mt-4`}>Items</h2>}
             {showItems && renderSection(items.map(renderItemCard))}
           </>
         )}
