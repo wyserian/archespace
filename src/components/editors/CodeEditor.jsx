@@ -4,8 +4,7 @@
  * auto-detected, so no picker); the highlighted markup is decorative and the
  * raw text is what gets stored, copied, and exported.
  */
-import { useState, useRef, useEffect } from 'react'
-import hljs from 'highlight.js/lib/common'
+import { useState, useRef, useEffect, useMemo } from 'react'
 
 const CODE_FONT =
   'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace'
@@ -26,9 +25,29 @@ const METRICS = {
   boxSizing: 'border-box',
 }
 
+// highlight.js and its languages load the first time a Code item shows, once
+// for the whole app, rather than with every page; until then the code shows
+// plain, in the same layout.
+let hljsLib = null
+let hljsLoading = null
+function loadHljs() {
+  hljsLoading ??= import('highlight.js/lib/common').then(m => (hljsLib = m.default))
+  return hljsLoading
+}
+
+const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
 export function CodeEditor({ content, onChange, readOnly = false }) {
   const [code, setCode] = useState(content?.code || '')
+  const [hljs, setHljs] = useState(() => hljsLib)
   const taRef = useRef(null)
+
+  useEffect(() => {
+    if (hljs) return undefined
+    let live = true
+    loadHljs().then(lib => { if (live) setHljs(() => lib) }).catch(() => {})
+    return () => { live = false }
+  }, [hljs])
 
   // Grow the textarea to fit its content; the <pre> (absolute) follows.
   const resize = () => {
@@ -57,7 +76,12 @@ export function CodeEditor({ content, onChange, readOnly = false }) {
     })
   }
 
-  const highlighted = code ? hljs.highlightAuto(code).value : ''
+  // Auto-detection tries every language, so it runs only when the code (or
+  // the highlighter's arrival) changes, not on every render of the card.
+  const highlighted = useMemo(
+    () => (!code ? '' : hljs ? hljs.highlightAuto(code).value : escapeHtml(code)),
+    [code, hljs],
+  )
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-bg-border-faint bg-bg-sunken text-text-primary">

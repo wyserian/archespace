@@ -521,8 +521,6 @@ export default function SpacePage() {
   const sectionLabelClass = 'mb-3 px-1 text-base font-semibold text-text-primary'
 
   // One section's cards: masonry in grid view, one column in list.
-  // Sub-space cards take the full width on phones, where two columns would
-  // cut their names short.
   const renderSection = (nodes, cols = gridCols, minWidth) => (viewMode === 'grid' ? (
     <CardColumns cols={cols} minWidth={minWidth}>{nodes}</CardColumns>
   ) : (

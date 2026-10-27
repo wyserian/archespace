@@ -17,11 +17,18 @@ import {
   Bell, Tag,
 } from 'lucide-react'
 import { TextboxEditor, MarkdownEditor, ChecklistEditor, ListItemsEditor, CardListEditor } from './editors/ItemEditors'
-// The Rich text editor (Tiptap) loads only when a Rich text item is shown.
+// The Rich text editor (Tiptap) is its own download, kept out of the first
+// page load...
 const RichTextEditor = lazy(() => import('./editors/RichTextEditor'))
 const RichTextToolbar = lazy(() =>
   import('./editors/RichTextEditor').then(m => ({ default: m.RichTextToolbar }))
 )
+// ...and fetched in the background once the page is idle, so the first note
+// opened (or a Quick note) shows its editor at once instead of a placeholder.
+if (typeof window !== 'undefined' && import.meta.env.MODE !== 'test') {
+  const whenIdle = window.requestIdleCallback ?? ((run) => setTimeout(run, 1500))
+  whenIdle(() => { import('./editors/RichTextEditor').catch(() => {}) })
+}
 // Excalidraw loads only when a Whiteboard opens full screen; its card shows
 // the saved preview.
 const WhiteboardEditor = lazy(() => import('./editors/WhiteboardEditor'))
@@ -220,9 +227,16 @@ function SpaceItem({
     setIsFullscreen(true)
   }
   useEffect(() => {
-    if (!isQuickNote || !isFullscreen || !richEditor) return
-    richEditor.commands.focus('end')
-    onQuickNoteOpened?.()
+    if (!isQuickNote || !isFullscreen || !richEditor) return undefined
+    const open = () => {
+      richEditor.commands.focus('end')
+      onQuickNoteOpened?.()
+    }
+    // A preloaded editor can arrive before its view mounts, or already torn
+    // down by a remount (the next instance re-runs this effect).
+    if (!richEditor.isDestroyed) open()
+    else richEditor.on('mount', open)
+    return () => richEditor.off('mount', open)
   }, [isQuickNote, isFullscreen, richEditor, onQuickNoteOpened])
 
   useEffect(() => {

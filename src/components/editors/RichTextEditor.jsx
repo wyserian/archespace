@@ -39,7 +39,9 @@ export default function RichTextEditor({ type = 'richtext', content, onChange, r
   useEffect(() => { onChangeRef.current = onChange })
   const editorRef = useRef(null)
 
-  const editor = useEditor({
+  // Built once: useEditor compares its options on every render and reconfigures
+  // the editor when they differ (new extension instances always do).
+  const [options] = useState(() => ({
     extensions: richTextExtensions(),
     // Initial content only: SpaceItem remounts the editor (via its key) when
     // the item changes elsewhere, so it never fights the cursor.
@@ -61,7 +63,8 @@ export default function RichTextEditor({ type = 'richtext', content, onChange, r
       },
     },
     onUpdate: ({ editor: e }) => onChangeRef.current?.({ doc: e.getJSON() }),
-  }, [])
+  }))
+  const editor = useEditor(options, [])
 
   useEffect(() => {
     editorRef.current = editor

@@ -180,7 +180,10 @@ export function useSpaceItems(spaceId) {
       if (error) throw error
       return decryptItem(data, cryptoKey)
     },
-    onSuccess: () => {
+    onSuccess: (added) => {
+      // Show it at once (it goes last, as its position says); the refetch
+      // then brings the server's view without making the new card wait.
+      qc.setQueryData(itemsKey, (old) => (Array.isArray(old) ? [...old, added] : old))
       invalidateSpaceItems(qc, itemsKey)
     },
   })
