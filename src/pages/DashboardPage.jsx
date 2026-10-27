@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, Folder, FolderPlus,
   Trash2, Archive, Command, CheckSquare, ListChecks, Settings, Lock, Menu, Keyboard, LogOut,
-  Star, Bell, X, NotebookPen,
+  Star, Bell, X,
 } from 'lucide-react'
 import SpaceItem from '../components/SpaceItem'
 import ItemBoardModals from '../components/ItemBoardModals'
@@ -486,9 +486,9 @@ export default function DashboardPage() {
       disabled={!online}
       actions={[
         // First, nearest the button: the one-click way to jot something down.
-        { id: 'quick-note', label: 'Quick note', icon: NotebookPen, onClick: board.addQuickNote },
-        { id: 'item', label: 'New item', icon: Plus, onClick: openAddItem },
-        { id: 'space', label: 'New space', icon: FolderPlus, onClick: () => setModal({ type: 'create' }) },
+        { id: 'quick-note', label: 'Quick note', onClick: board.addQuickNote },
+        { id: 'item', label: 'New item', onClick: openAddItem },
+        { id: 'space', label: 'New space', onClick: () => setModal({ type: 'create' }) },
       ]}
     />
   )

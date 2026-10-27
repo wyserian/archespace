@@ -5,7 +5,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft, Plus, CheckSquare, ListChecks, FileDown, FolderPlus, NotebookPen, Search, SearchX, X, PencilOff, PencilLine, Shield, ShieldCheck, ShieldOff,
+  ArrowLeft, Plus, CheckSquare, ListChecks, FileDown, Search, SearchX, X, PencilOff, PencilLine, Shield, ShieldCheck, ShieldOff,
   ChevronRight, MoreHorizontal, MoreVertical, Folder,
 } from 'lucide-react'
 import { useDragReorder } from '../hooks/useDragReorder'
@@ -580,9 +580,9 @@ export default function SpacePage() {
                 disabled={!online}
                 actions={[
                   // First, nearest the button: the one-click way to jot something down.
-                  { id: 'quick-note', label: 'Quick note', icon: NotebookPen, onClick: board.addQuickNote },
-                  { id: 'item', label: 'New item', icon: Plus, onClick: openAddItem },
-                  { id: 'space', label: 'New space', icon: FolderPlus, onClick: () => setSpaceModal({ type: 'create' }) },
+                  { id: 'quick-note', label: 'Quick note', onClick: board.addQuickNote },
+                  { id: 'item', label: 'New item', onClick: openAddItem },
+                  { id: 'space', label: 'New space', onClick: () => setSpaceModal({ type: 'create' }) },
                 ]}
               />
             )}
