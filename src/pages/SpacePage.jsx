@@ -443,7 +443,7 @@ export default function SpacePage() {
           ? 'ring-[1.5px] ring-accent-border'
           : ''
       } ${!reorderDisabled && dragIndex === index ? 'opacity-40' : ''} ${
-        board.flashItemId === item.id ? 'rounded-2xl ring-2 ring-accent' : ''
+        board.flashItemId === item.id ? 'ring-[1.5px] ring-accent-border' : ''
       }`}
       style={{ animationDelay: `${index * 40}ms` }}
     >

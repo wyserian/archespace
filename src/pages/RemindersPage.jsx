@@ -66,8 +66,8 @@ export default function RemindersPage() {
     <div
       key={item.id}
       data-item-id={item.id}
-      className={`transition-all duration-300 animate-fade-in-up ${
-        board.flashItemId === item.id ? 'rounded-2xl ring-2 ring-accent' : ''
+      className={`rounded-2xl transition-all duration-300 animate-fade-in-up ${
+        board.flashItemId === item.id ? 'ring-[1.5px] ring-accent-border' : ''
       }`}
       style={{ animationDelay: `${index * 40}ms` }}
     >
