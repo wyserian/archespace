@@ -46,7 +46,7 @@ function ReorderBtn({ onDragStart, onDragEnd, onKeyDown }) {
  *
  * @param {{ content: { text: string }, onChange: Function }} props
  */
-export function TextboxEditor({ content, onChange, readOnly = false }) {
+export function TextboxEditor({ content, onChange, readOnly = false, fill = false }) {
   const [text, setText] = useState(content?.text || '')
   const ref = useRef(null)
 
@@ -67,7 +67,7 @@ export function TextboxEditor({ content, onChange, readOnly = false }) {
   }
 
   return (
-    <div>
+    <div className={fill ? 'flex min-h-full flex-col' : undefined}>
       <textarea
         ref={ref}
         value={text}
@@ -75,7 +75,7 @@ export function TextboxEditor({ content, onChange, readOnly = false }) {
         readOnly={readOnly}
         placeholder={readOnly ? 'Empty' : 'Start writing anything...'}
         rows={3}
-        className="w-full bg-bg-sunken border border-bg-border-faint rounded-xl px-4 py-3 text-text-content placeholder-text-muted focus:outline-none transition-colors text-sm resize-none overflow-hidden leading-relaxed min-h-[80px]"
+        className={`w-full bg-bg-sunken border border-bg-border-faint rounded-xl px-4 py-3 text-text-content placeholder-text-muted focus:outline-none transition-colors text-sm resize-none overflow-hidden leading-relaxed min-h-[80px] ${fill ? 'grow' : ''}`}
       />
     </div>
   )

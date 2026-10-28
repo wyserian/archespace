@@ -37,7 +37,7 @@ function loadHljs() {
 
 const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-export function CodeEditor({ content, onChange, readOnly = false }) {
+export function CodeEditor({ content, onChange, readOnly = false, fill = false }) {
   const [code, setCode] = useState(content?.code || '')
   const [hljs, setHljs] = useState(() => hljsLib)
   const taRef = useRef(null)
@@ -84,7 +84,7 @@ export function CodeEditor({ content, onChange, readOnly = false }) {
   )
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-bg-border-faint bg-bg-sunken text-text-primary">
+    <div className={`relative overflow-hidden rounded-xl border border-bg-border-faint bg-bg-sunken text-text-primary ${fill ? 'flex min-h-full flex-col' : ''}`}>
       <pre
         aria-hidden="true"
         className="hljs pointer-events-none absolute inset-0"
@@ -101,7 +101,7 @@ export function CodeEditor({ content, onChange, readOnly = false }) {
         rows={3}
         spellCheck={false}
         placeholder={readOnly ? 'Empty' : 'Paste or write code...'}
-        className="relative z-10 block w-full resize-none overflow-hidden bg-transparent caret-text-primary placeholder-text-muted focus:outline-none"
+        className={`relative z-10 block w-full resize-none overflow-hidden bg-transparent caret-text-primary placeholder-text-muted focus:outline-none ${fill ? 'grow' : ''}`}
         style={{
           ...METRICS,
           minHeight: 96,

@@ -837,7 +837,8 @@ function SpaceItem({
           isFullscreen
             // Sides lined up with the header and tags, and close under the
             // tags as on the card. A Whiteboard's canvas or a Kanban's
-            // columns fill the space and scroll themselves.
+            // columns fill the space and scroll themselves; a Note, Rich text
+            // or Code box reaches the bottom and scrolls here once longer.
             ? `flex-1 px-3 ${showRichToolbar ? 'pt-3' : showTags || item.type === 'kanban' ? 'pt-1' : 'pt-5'} ${item.type === 'kanban' ? 'pb-4' : 'pb-5'} ${item.type === 'whiteboard' || item.type === 'kanban' ? 'min-h-0' : 'overflow-y-auto'}`
             : denseView
               ? `px-2.5 ${showTags && !showRichToolbar ? 'pt-0' : 'pt-3'} pb-3 cursor-pointer`
@@ -848,7 +849,7 @@ function SpaceItem({
             preview; tapping it opens full screen / expands instead of editing. */}
         <div className={denseView || clamped ? 'pointer-events-none' : 'contents'}>
         {/* Only the editor for this item's type */}
-        {item.type === 'textbox'       && <TextboxEditor    key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} />}
+        {item.type === 'textbox'       && <TextboxEditor    key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} fill={isFullscreen} />}
         {item.type === 'markdown'      && <MarkdownEditor   key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} />}
         {item.type === 'richtext' && (
           <Suspense fallback={<div className="min-h-[80px] rounded-xl border border-bg-border-faint bg-bg-sunken" />}>
@@ -858,10 +859,11 @@ function SpaceItem({
               onChange={handleContentChange}
               readOnly={readOnly}
               onEditor={setRichEditor}
+              fill={isFullscreen}
             />
           </Suspense>
         )}
-        {item.type === 'code'          && <CodeEditor       key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} />}
+        {item.type === 'code'          && <CodeEditor       key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} fill={isFullscreen} />}
         {item.type === 'checkbox_list' && <ChecklistEditor  key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} />}
         {/* One List type: bullets (menu_list) or numbers (numbered_list); the
             Numbered checkbox switches between them without remounting. */}

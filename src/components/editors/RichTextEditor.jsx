@@ -32,9 +32,10 @@ import { MENU_PANEL, menuItemClass } from '../ui/menuStyles'
 const MARKDOWN_HINT = /(^|\n)\s{0,3}(#{1,6}\s|[-*+]\s|\d+\.\s|>\s|```|- \[[ xX]\]\s)|\*\*[^*\n]+\*\*|\[[^\]\n]+\]\([^)\n]+\)/
 
 /**
- * @param {{ type?: string, content: object, onChange: Function, readOnly?: boolean, onEditor?: Function }} props
+ * @param {{ type?: string, content: object, onChange: Function, readOnly?: boolean, onEditor?: Function, fill?: boolean }} props
+ *   `fill` (full screen): the text box takes at least the whole height.
  */
-export default function RichTextEditor({ type = 'richtext', content, onChange, readOnly = false, onEditor }) {
+export default function RichTextEditor({ type = 'richtext', content, onChange, readOnly = false, onEditor, fill = false }) {
   const onChangeRef = useRef(onChange)
   useEffect(() => { onChangeRef.current = onChange })
   const editorRef = useRef(null)
@@ -78,7 +79,7 @@ export default function RichTextEditor({ type = 'richtext', content, onChange, r
     if (editor && editor.isEditable === readOnly) editor.setEditable(!readOnly, false)
   }, [editor, readOnly])
 
-  return <EditorContent editor={editor} />
+  return <EditorContent editor={editor} className={fill ? 'flex min-h-full flex-col [&>.ProseMirror]:grow' : undefined} />
 }
 
 /**
