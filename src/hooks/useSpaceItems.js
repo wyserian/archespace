@@ -36,14 +36,17 @@ const defaultContent = {
   },
   menu_list: { items: [] },
   numbered_list: { items: [] },
-  card_list: { items: [] },
   richtext: { doc: EMPTY_RICH_DOC },
   code: { code: '' },
   whiteboard: { elements: [] },
   table: { columns: ['', ''], rows: [['', ''], ['', '']] },
 }
-// Fresh ids for every new Kanban's columns.
-const newContent = (type) => (type === 'kanban' ? defaultKanban() : defaultContent[type])
+// Fresh ids for every new Kanban's columns and Cards' first (empty) card.
+const newContent = (type) => {
+  if (type === 'kanban') return defaultKanban()
+  if (type === 'card_list') return { items: [{ id: crypto.randomUUID(), title: '', description: '' }] }
+  return defaultContent[type]
+}
 
 // Query/cache key for the dashboard's items (those with no space).
 const DASHBOARD_ITEMS_KEY = 'dashboard'
