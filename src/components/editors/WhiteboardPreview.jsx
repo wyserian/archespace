@@ -33,8 +33,10 @@ export function WhiteboardPreview({ content, onOpen, onUpgrade, readOnly = false
     <button
       type="button"
       onClick={onOpen}
+      // Without onOpen (Archive, Bin) it's only a picture.
+      disabled={!onOpen}
       aria-label={readOnly ? 'View whiteboard' : 'Open whiteboard'}
-      className="group block w-full overflow-hidden rounded-xl border border-bg-border-soft bg-white transition-colors hover:border-accent-border"
+      className="group block w-full overflow-hidden rounded-xl border border-bg-border-soft bg-white transition-colors enabled:hover:border-accent-border"
     >
       {preview ? (
         <img src={preview} alt="" draggable={false} className="mx-auto max-h-[360px] w-full object-contain" />
@@ -43,7 +45,7 @@ export function WhiteboardPreview({ content, onOpen, onUpgrade, readOnly = false
           {upgrading
             ? <Loader2 size={18} className="animate-spin" />
             : <Shapes size={18} />}
-          {upgrading ? 'Updating whiteboard' : empty ? (readOnly ? 'Empty whiteboard' : 'Open to draw') : 'Open to view'}
+          {upgrading ? 'Updating whiteboard' : empty ? (readOnly ? 'Empty whiteboard' : 'Open to draw') : onOpen ? 'Open to view' : 'Whiteboard'}
         </span>
       )}
     </button>

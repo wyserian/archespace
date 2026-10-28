@@ -1,19 +1,19 @@
 /**
- * ArchivePage.jsx - Archived spaces and items (reversible).
+ * ArchivePage.jsx - Archived spaces and items (reversible), as read-only grid
+ * cards with Unarchive and Delete on each.
  */
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Archive, RotateCcw, Trash2, Folder, LayoutList, CheckSquare, ListChecks } from 'lucide-react'
+import { ArrowLeft, Archive, RotateCcw, Trash2, CheckSquare, ListChecks } from 'lucide-react'
 import { useArchive } from '../hooks/useArchive'
 import { useDualEntitySelection } from '../hooks/useDualEntitySelection'
 import { useToast } from '../context/ToastCore'
 import BulkSelectionBar from '../components/BulkSelectionBar'
 import { BULK_ICONS } from '../components/BulkSelectionIcons'
-import SelectableRow from '../components/SelectableRow'
+import StoredGrid from '../components/StoredGrid'
 import { ConfirmDialog, Spinner } from '../components/ui/UI'
 import { Button, IconButton } from '../components/ui/Button'
 import { buttonClass } from '../components/ui/buttonStyles'
-import { TypeBadge } from '../components/ui/TypeBadge'
 import { timeAgo } from '../lib/timeAgo'
 
 export default function ArchivePage() {
@@ -84,6 +84,30 @@ export default function ArchivePage() {
     },
   ], [runBulkUnarchive])
 
+  // A card's buttons: Unarchive and Delete (to the bin).
+  const cardButtons = (entry, kind) => (
+    <>
+      <button
+        type="button"
+        onClick={() => (kind === 'space' ? unarchiveSpace : unarchiveItem).mutate(entry.id, {
+          onSuccess: () => toast.success(kind === 'space' ? 'Space restored from archive' : 'Item restored'),
+          onError: () => toast.error("Couldn't restore it."),
+        })}
+        className={buttonClass({ variant: 'secondary', size: 'xs' })}
+      >
+        <RotateCcw size={14} /> Unarchive
+      </button>
+      <button
+        type="button"
+        onClick={() => setBinConfirm({ kind, id: entry.id, name: kind === 'space' ? entry.name : entry.title })}
+        title="Move to the bin"
+        className={buttonClass({ variant: 'danger', size: 'xs' })}
+      >
+        <Trash2 size={14} /> Delete
+      </button>
+    </>
+  )
+
   const confirmMoveToBin = () => {
     const target = binConfirm
     setBinConfirm(null)
@@ -126,7 +150,7 @@ export default function ArchivePage() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-6">
+      <main className="px-4 sm:px-6 py-6">
         {isLoading ? (
           <div className="flex justify-center py-20"><Spinner size={24} /></div>
         ) : total === 0 ? (
@@ -138,105 +162,25 @@ export default function ArchivePage() {
             <p className="text-text-muted text-sm mt-1">Archive spaces from the dashboard menu</p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {spaces.length > 0 && (
-              <section>
-                <div className="flex items-center gap-2 mb-3">
-                  <Folder size={14} className="text-text-muted" />
-                  <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wide">Spaces</h2>
-                </div>
-                <div className="space-y-2">
-                  {spaces.map(col => (
-                    <SelectableRow
-                      key={col.id}
-                      selectMode={selectMode}
-                      selected={selectedSpaceIds.has(col.id)}
-                      onToggle={() => toggleSpace(col.id)}
-                      actions={
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => unarchiveSpace.mutate(col.id, {
-                              onSuccess: () => toast.success('Space restored from archive'),
-                              onError: () => toast.error("Couldn't restore it."),
-                            })}
-                            className={buttonClass({ variant: 'secondary', size: 'sm' })}
-                          >
-                            <RotateCcw size={14} /> Unarchive
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setBinConfirm({ kind: 'space', id: col.id, name: col.name })}
-                            title="Move to the bin"
-                            className={buttonClass({ variant: 'danger', size: 'sm' })}
-                          >
-                            <Trash2 size={14} /> Delete
-                          </button>
-                        </>
-                      }
-                    >
-                      <p className="text-sm font-semibold text-text-primary truncate">{col.name}</p>
-                      <p className="text-xs text-text-muted mt-1">Archived {timeAgo(col.archived_at)}</p>
-                    </SelectableRow>
-                  ))}
-                </div>
-              </section>
-            )}
-            {items.length > 0 && (
-              <section>
-                <div className="flex items-center gap-2 mb-3">
-                  <LayoutList size={14} className="text-text-muted" />
-                  <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wide">Items</h2>
-                </div>
-                <div className="space-y-2">
-                  {items.map(item => (
-                    <SelectableRow
-                      key={item.id}
-                      selectMode={selectMode}
-                      selected={selectedItemIds.has(item.id)}
-                      onToggle={() => toggleItem(item.id)}
-                      actions={
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => unarchiveItem.mutate(item.id, {
-                              onSuccess: () => toast.success('Item restored'),
-                              onError: () => toast.error("Couldn't restore it."),
-                            })}
-                            className={buttonClass({ variant: 'secondary', size: 'sm' })}
-                          >
-                            <RotateCcw size={14} /> Unarchive
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setBinConfirm({ kind: 'item', id: item.id, name: item.title })}
-                            title="Move to the bin"
-                            className={buttonClass({ variant: 'danger', size: 'sm' })}
-                          >
-                            <Trash2 size={14} /> Delete
-                          </button>
-                        </>
-                      }
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <TypeBadge type={item.type} />
-                        <p className="min-w-0 text-sm font-semibold text-text-primary truncate">{item.title || 'Untitled'}</p>
-                      </div>
-                      {item.archived_at && (
-                        <p className="text-xs text-text-muted mt-1">Archived {timeAgo(item.archived_at)}</p>
-                      )}
-                    </SelectableRow>
-                  ))}
-                </div>
-              </section>
-            )}
+          <>
+            <StoredGrid
+              spaces={spaces}
+              items={items}
+              selectMode={selectMode}
+              selectedSpaceIds={selectedSpaceIds}
+              selectedItemIds={selectedItemIds}
+              onToggleSpace={toggleSpace}
+              onToggleItem={toggleItem}
+              actions={cardButtons}
+              note={entry => (entry.archived_at ? `Archived ${timeAgo(entry.archived_at)}` : null)}
+            />
 
             <BulkSelectionBar
               count={selectedCount}
               onClear={exitSelectMode}
               actions={bulkActions}
             />
-          </div>
+          </>
         )}
       </main>
 

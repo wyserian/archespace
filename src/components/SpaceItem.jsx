@@ -105,6 +105,12 @@ function SpaceItem({
   // screen with the cursor in the text, then reports back.
   quickNoteId = null,
   onQuickNoteOpened,
+  // Archive and Bin: the card's only actions, as buttons in the header in
+  // place of its menu (pair with readOnly), and a line under the title (when
+  // it was archived or deleted). The card then never opens full screen, as it
+  // has no button to leave it.
+  actions,
+  note,
 }) {
   const { cryptoKey } = useEncryption()
   const askVaultPin = useVaultPinPrompt()
@@ -546,6 +552,7 @@ function SpaceItem({
               {checklistProgress.done}/{checklistProgress.total} done
             </p>
           )}
+          {note && <p className="text-[11px] leading-4 text-text-muted">{note}</p>}
         </div>
 
         {/* Dirty indicator badge */}
@@ -574,7 +581,10 @@ function SpaceItem({
 
         {/* Action buttons, wider apart on touch screens, where each icon's
             tap area grows. */}
-        {!selectMode && (
+        {actions && !selectMode && (
+          <div className="flex items-center gap-1.5 shrink-0 flex-wrap">{actions}</div>
+        )}
+        {!selectMode && !actions && (
         <div className="flex items-center gap-1 [@media(pointer:coarse)]:gap-3 shrink-0 flex-wrap">
           {isDirty ? (
             /* Save / Discard mode */
@@ -883,7 +893,7 @@ function SpaceItem({
             <WhiteboardEditor key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} />
           </Suspense>
         ) : (
-          <WhiteboardPreview content={localContent} onOpen={handleFullscreenClick} onUpgrade={handleContentChange} readOnly={readOnly} />
+          <WhiteboardPreview content={localContent} onOpen={actions ? undefined : handleFullscreenClick} onUpgrade={handleContentChange} readOnly={readOnly} />
         ))}
         {item.type === 'table'         && <TableEditor      key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} />}
         {item.type === 'kanban'        && <KanbanEditor     key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} fill={isFullscreen} />}

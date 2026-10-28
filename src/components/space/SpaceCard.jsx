@@ -116,6 +116,12 @@ export function SpaceCard({
   reorderDisabled = false,
   // (index, -1 | 1): move this card one place, from the keyboard.
   onKeyMove,
+  // Archive and Bin (grid card): the card's only actions, as buttons in the
+  // header in place of its menu, and a line under the name (when it was
+  // archived or deleted). It then doesn't open or drag (there's no page to
+  // open), except to toggle in select mode.
+  actions,
+  note,
 }) {
   const online = useOnlineStatus()
   const { toast } = useToast()
@@ -180,7 +186,10 @@ export function SpaceCard({
     <TagInput onCommit={addTags} onCancel={() => setAddingTag(false)} />
   )
 
-  const activate = () => (selectMode ? onToggleSelect?.() : navigate(`/space/${col.id}`))
+  const activate = () => {
+    if (selectMode) onToggleSelect?.()
+    else if (!actions) navigate(`/space/${col.id}`)
+  }
 
   // Alt+Up / Alt+Down move the card (on it or its menu button), where dragging
   // would be allowed.
@@ -336,18 +345,21 @@ export function SpaceCard({
     )
   }
 
-  // Grid card
+  // Grid card. With actions it's a plain card, a button only in select mode.
+  const pressable = !actions || selectMode
   return (
     <div
-      {...dragProps}
+      {...(actions ? {} : dragProps)}
       {...keyProps}
-      onClick={activate}
-      onKeyDown={handleKeyDown}
-      role="button"
-      tabIndex={0}
+      onClick={pressable ? activate : undefined}
+      onKeyDown={pressable ? handleKeyDown : undefined}
+      role={pressable ? 'button' : undefined}
+      tabIndex={pressable ? 0 : undefined}
       aria-pressed={selectMode ? selected : undefined}
-      aria-label={ariaLabel}
-      className={`group relative rounded-2xl p-3.5 cursor-pointer bg-bg-card shadow-sm hover:shadow-md hover:bg-bg-elevated active:scale-[0.99] transition-all duration-200 animate-fade-in-up ${selectedRing} ${dropRing} ${
+      aria-label={pressable ? ariaLabel : undefined}
+      className={`group relative rounded-2xl p-3.5 bg-bg-card shadow-sm transition-all duration-200 animate-fade-in-up ${
+        pressable ? 'cursor-pointer hover:shadow-md hover:bg-bg-elevated active:scale-[0.99]' : ''
+      } ${selectedRing} ${dropRing} ${
         !selectMode && dragIndex === index ? 'opacity-40' : ''
       }`}
       style={{
@@ -356,8 +368,9 @@ export function SpaceCard({
         borderTopColor: softColor,
       }}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
+      {/* With actions, they wrap under the name on a narrow card. */}
+      <div className={`flex items-start justify-between gap-2 ${actions ? 'flex-wrap' : ''}`}>
+        <div className={`flex-1 ${actions ? 'min-w-[8rem]' : 'min-w-0'}`}>
           <div className="flex items-center gap-1.5">
             {col.pinned && <Pin size={14} className="shrink-0 text-accent fill-accent" />}
             <h3 className="min-w-0 font-semibold text-text-primary truncate">{col.name}</h3>
@@ -365,16 +378,23 @@ export function SpaceCard({
             {col.read_only && <ReadOnlyMark />}
             {(col.locked || hidden) && <ProtectedMark hidden={hidden} />}
           </div>
-          {col.description && !hidden && (
+          {note && <p className="text-[11px] leading-4 text-text-muted">{note}</p>}
+          {col.description && !hidden && !actions && (
             <p className="text-text-secondary text-sm mt-1 line-clamp-2 leading-relaxed">{col.description}</p>
           )}
         </div>
         {selectMode ? (
           <SelectCheck selected={selected} className="mt-0.5" />
+        ) : actions ? (
+          <div className="flex shrink-0 flex-wrap items-center gap-1.5">{actions}</div>
         ) : (
           <ActionMenu label="Space actions" actions={menuActions} bordered={false} icon={MoreVertical} />
         )}
       </div>
+      {/* With actions (which may wrap under the name), the description goes below them. */}
+      {col.description && !hidden && actions && (
+        <p className="text-text-secondary text-sm mt-2 line-clamp-2 leading-relaxed">{col.description}</p>
+      )}
 
       {/* Tags (all of them, as the card is where they're removed) and the
           item count, separated by a dot. */}

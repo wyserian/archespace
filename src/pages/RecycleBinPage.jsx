@@ -1,21 +1,21 @@
 /**
- * RecycleBinPage.jsx - Manage soft-deleted items and spaces.
+ * RecycleBinPage.jsx - Soft-deleted spaces and items, as read-only grid cards
+ * with Restore and Delete permanently on each.
  */
 import { useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft, Trash2, RotateCcw, Folder, LayoutList, AlertTriangle, CheckSquare, ListChecks,
+  ArrowLeft, Trash2, RotateCcw, AlertTriangle, CheckSquare, ListChecks,
 } from 'lucide-react'
 import { useRecycleBin } from '../hooks/useRecycleBin'
 import { useDualEntitySelection } from '../hooks/useDualEntitySelection'
 import { useToast } from '../context/ToastCore'
 import BulkSelectionBar from '../components/BulkSelectionBar'
 import { BULK_ICONS } from '../components/BulkSelectionIcons'
-import SelectableRow from '../components/SelectableRow'
+import StoredGrid from '../components/StoredGrid'
 import { Spinner, Modal } from '../components/ui/UI'
 import { Button, IconButton } from '../components/ui/Button'
 import { buttonClass } from '../components/ui/buttonStyles'
-import { TypeBadge } from '../components/ui/TypeBadge'
 import { timeAgo } from '../lib/timeAgo'
 
 export default function RecycleBinPage() {
@@ -85,6 +85,29 @@ export default function RecycleBinPage() {
     },
   ], [runBulkRestore])
 
+  // A card's buttons: Restore and Delete permanently.
+  const cardButtons = (entry, kind) => (
+    <>
+      <button
+        type="button"
+        onClick={() => (kind === 'space' ? restoreSpace : restoreItem).mutate(entry.id, {
+          onSuccess: () => toast.success(kind === 'space' ? 'Space restored' : 'Item restored'),
+          onError: () => toast.error(kind === 'space' ? "Couldn't restore space." : "Couldn't restore item."),
+        })}
+        className={buttonClass({ variant: 'secondary', size: 'xs' })}
+      >
+        <RotateCcw size={14} /> Restore
+      </button>
+      <button
+        type="button"
+        onClick={() => setConfirmPurge({ type: kind, id: entry.id, name: (kind === 'space' ? entry.name : entry.title) || 'Untitled' })}
+        className={buttonClass({ variant: 'danger', size: 'xs' })}
+      >
+        <Trash2 size={14} /> Delete permanently
+      </button>
+    </>
+  )
+
   const handleEmptyBin = async () => {
     try {
       await emptyBin.mutateAsync()
@@ -151,7 +174,7 @@ export default function RecycleBinPage() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-6">
+      <main className="px-4 sm:px-6 py-6">
         {isLoading ? (
           <div className="flex justify-center py-20"><Spinner size={24} /></div>
         ) : total === 0 ? (
@@ -163,109 +186,25 @@ export default function RecycleBinPage() {
             <p className="text-text-muted text-sm mt-1">Deleted spaces and items will appear here</p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {spaces.length > 0 && (
-              <section>
-                <div className="flex items-center gap-2 mb-3">
-                  <Folder size={14} className="text-text-muted" />
-                  <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wide">Spaces</h2>
-                  <span className="text-xs text-text-muted">({spaces.length})</span>
-                </div>
-                <div className="space-y-2">
-                  {spaces.map(col => (
-                    <SelectableRow
-                      key={col.id}
-                      selectMode={selectMode}
-                      selected={selectedSpaceIds.has(col.id)}
-                      onToggle={() => toggleSpace(col.id)}
-                      actions={
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => restoreSpace.mutate(col.id, {
-                              onSuccess: () => toast.success('Space restored'),
-                              onError: () => toast.error("Couldn't restore space."),
-                            })}
-                            className={buttonClass({ variant: 'secondary', size: 'sm' })}
-                          >
-                            <RotateCcw size={14} /> Restore
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setConfirmPurge({ type: 'space', id: col.id, name: col.name })}
-                            className={buttonClass({ variant: 'danger', size: 'sm' })}
-                          >
-                            <Trash2 size={14} /> Delete permanently
-                          </button>
-                        </>
-                      }
-                    >
-                      <p className="text-sm font-semibold text-text-primary truncate">{col.name}</p>
-                      {col.description && (
-                        <p className="text-xs text-text-muted truncate mt-0.5">{col.description}</p>
-                      )}
-                      <p className="text-xs text-text-muted mt-1">Deleted {timeAgo(col.deleted_at)}</p>
-                    </SelectableRow>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {items.length > 0 && (
-              <section>
-                <div className="flex items-center gap-2 mb-3">
-                  <LayoutList size={14} className="text-text-muted" />
-                  <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wide">Items</h2>
-                  <span className="text-xs text-text-muted">({items.length})</span>
-                </div>
-                <div className="space-y-2">
-                  {items.map(item => (
-                    <SelectableRow
-                      key={item.id}
-                      selectMode={selectMode}
-                      selected={selectedItemIds.has(item.id)}
-                      onToggle={() => toggleItem(item.id)}
-                      actions={
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => restoreItem.mutate(item.id, {
-                              onSuccess: () => toast.success('Item restored'),
-                              onError: () => toast.error("Couldn't restore item."),
-                            })}
-                            className={buttonClass({ variant: 'secondary', size: 'sm' })}
-                          >
-                            <RotateCcw size={14} /> Restore
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setConfirmPurge({ type: 'item', id: item.id, name: item.title || 'Untitled' })}
-                            className={buttonClass({ variant: 'danger', size: 'sm' })}
-                          >
-                            <Trash2 size={14} /> Delete permanently
-                          </button>
-                        </>
-                      }
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <TypeBadge type={item.type} />
-                        <p className="min-w-0 text-sm font-semibold text-text-primary truncate">
-                          {item.title || 'Untitled'}
-                        </p>
-                      </div>
-                      <p className="text-xs text-text-muted mt-1">Deleted {timeAgo(item.deleted_at)}</p>
-                    </SelectableRow>
-                  ))}
-                </div>
-              </section>
-            )}
+          <>
+            <StoredGrid
+              spaces={spaces}
+              items={items}
+              selectMode={selectMode}
+              selectedSpaceIds={selectedSpaceIds}
+              selectedItemIds={selectedItemIds}
+              onToggleSpace={toggleSpace}
+              onToggleItem={toggleItem}
+              actions={cardButtons}
+              note={entry => (entry.deleted_at ? `Deleted ${timeAgo(entry.deleted_at)}` : null)}
+            />
 
             <BulkSelectionBar
               count={selectedCount}
               onClear={exitSelectMode}
               actions={bulkActions}
             />
-          </div>
+          </>
         )}
       </main>
 
