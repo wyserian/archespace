@@ -296,8 +296,21 @@ export default function SpacePage() {
     () => items.filter(i => selectedItemIds.has(i.id)),
     [items, selectedItemIds]
   )
-  // Grid (masonry) and list share the same items; list is a single column.
   const online = useOnlineStatus()
+
+  // Typing into an item here does nothing, so say why, with the way out. Once
+  // per little while (not per key), and copying (Ctrl/Cmd keys) is left alone.
+  const lastNudge = useRef(0)
+  const nudgeReadOnly = (e) => {
+    const editable = e.target.closest?.('[data-item-id] textarea, [data-item-id] input, [data-item-id] [contenteditable]')
+    const typing = e.key.length === 1 || ['Backspace', 'Delete', 'Enter'].includes(e.key)
+    if (!editable || !typing || e.ctrlKey || e.metaKey || e.altKey) return
+    if (lastNudge.current && e.timeStamp - lastNudge.current < 4000) return
+    lastNudge.current = e.timeStamp
+    toast.info('This space is read-only', online ? { action: { label: 'Allow editing', onClick: handleToggleReadOnly } } : undefined)
+  }
+
+  // Grid (masonry) and list share the same items; list is a single column.
   const [viewMode, setViewMode] = useState(() => {
     try {
       const saved = localStorage.getItem('arche:items-view')
@@ -570,6 +583,12 @@ export default function SpacePage() {
               <SpaceBreadcrumbs ancestors={ancestors} navigate={navigate} />
               <h1 className="min-w-0 text-sm font-semibold text-text-primary truncate">{space?.name}</h1>
               {locked && <ShieldCheck size={13} className="shrink-0 text-text-muted" aria-label="Protected" />}
+              {/* Stays in view while scrolling, unlike the banner. */}
+              {readOnly && (
+                <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-bg-elevated px-2 py-0.5 text-[11px] font-semibold text-text-secondary">
+                  <PencilOff size={11} aria-hidden="true" /> Read-only
+                </span>
+              )}
             </div>
             {space?.description && (
               <p className="text-xs text-text-muted truncate mt-0.5">{space.description}</p>
@@ -681,11 +700,24 @@ export default function SpacePage() {
       </header>
 
       {/* Main content */}
-      <main className={`flex-1 flex flex-col px-2 sm:px-4 pt-3 ${selectMode ? 'pb-32' : 'pb-6'}`}>
+      <main
+        className={`flex-1 flex flex-col px-2 sm:px-4 pt-3 ${selectMode ? 'pb-32' : 'pb-6'}`}
+        onKeyDownCapture={readOnly ? nudgeReadOnly : undefined}
+      >
+        {/* A quiet line, not a box (it would read as one more card), with
+            the way out right after the text. */}
         {readOnly && (
-          <p className="mb-3 px-1 flex items-center gap-2 text-sm text-text-muted">
+          <p className="mb-3 px-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-muted">
             <PencilOff size={14} className="shrink-0" />
-            Read-only. Items can be viewed, copied and exported, not changed.
+            <span>Read-only. Items can be viewed, copied and exported, not changed.</span>
+            <button
+              type="button"
+              onClick={handleToggleReadOnly}
+              disabled={!online}
+              className="font-semibold text-accent hover:underline underline-offset-2 disabled:opacity-50 disabled:no-underline"
+            >
+              Allow editing
+            </button>
           </p>
         )}
         {isLoading ? (

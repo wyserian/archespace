@@ -772,7 +772,11 @@ function SpaceItem({
       >
         {/* In the dense grid, or while clamped, the content is a non-interactive
             preview; tapping it opens full screen / expands instead of editing. */}
-        <div className={denseView || clamped ? 'pointer-events-none' : 'contents'}>
+        {/* Read-only content keeps the arrow cursor (it can still be selected). */}
+        <div className={denseView || clamped
+          ? 'pointer-events-none'
+          : `contents ${readOnly ? '[&_textarea]:cursor-default [&_input]:cursor-default [&_[contenteditable]]:cursor-default' : ''}`}
+        >
         {/* Only the editor for this item's type */}
         {item.type === 'textbox'       && <TextboxEditor    key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} fill={isFullscreen} />}
         {item.type === 'markdown'      && <MarkdownEditor   key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} />}

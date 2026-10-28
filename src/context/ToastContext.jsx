@@ -54,7 +54,8 @@ export function ToastProvider({ children }) {
    * Show a toast notification.
    * @param {'success'|'error'|'info'} type
    * @param {string} message
-   * @param {{ duration?: number }} [options] - How long it stays (ms)
+   * @param {{ duration?: number, action?: { label: string, onClick: Function } }} [options]
+   *   How long it stays (ms), and a button that runs `onClick` and closes it.
    */
   const show = useCallback((type, message, options) => {
     const id = crypto.randomUUID()
@@ -62,7 +63,7 @@ export function ToastProvider({ children }) {
 
     setToasts(prev => {
       const trimmed = prev.length >= MAX_TOASTS ? prev.slice(1) : prev
-      return [...trimmed, { id, type, message, exiting: false, duration }]
+      return [...trimmed, { id, type, message, exiting: false, duration, action: options?.action }]
     })
 
     const timerId = setTimeout(() => dismiss(id), duration)
@@ -97,7 +98,7 @@ export function ToastProvider({ children }) {
 
       {/* Toast stack (bottom-right, fixed) */}
       <div className="toast-stack fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none max-w-sm w-full">
-        {toasts.map(({ id, type, message, exiting, duration }) => {
+        {toasts.map(({ id, type, message, exiting, duration, action }) => {
           const { Icon, color, bg, border } = TYPE_CONFIG[type] || TYPE_CONFIG.info
           return (
             <div
@@ -113,6 +114,15 @@ export function ToastProvider({ children }) {
             >
               <Icon size={20} className={`${color} shrink-0`} />
               <span className="flex-1 text-sm text-text-primary">{message}</span>
+              {action && (
+                <button
+                  type="button"
+                  onClick={() => { action.onClick(); dismiss(id) }}
+                  className="shrink-0 rounded-lg px-2 py-1 text-sm font-semibold text-accent hover:bg-accent-muted transition-colors"
+                >
+                  {action.label}
+                </button>
+              )}
               <button
                 onClick={() => dismiss(id)}
                 className="shrink-0 p-1 rounded-lg text-text-muted hover:text-text-primary transition-colors"

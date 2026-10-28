@@ -359,7 +359,8 @@ body.bulk-bar-active .toast-stack {
    the empty placeholder, task lists, tables and the last block's spacing. */
 .rich-text-editor > :last-child { margin-bottom: 0; }
 .rich-text-editor p { margin-bottom: 0.5rem; }
-.rich-text-editor p.is-editor-empty:first-child::before {
+/* Only an editable note invites writing (not a read-only one). */
+.rich-text-editor[contenteditable="true"] p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   color: var(--text-muted);
   float: left;
