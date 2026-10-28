@@ -14,6 +14,7 @@ import {
   BetweenHorizontalStart, BetweenHorizontalEnd, BetweenVerticalStart, BetweenVerticalEnd,
 } from 'lucide-react'
 import { ActionMenu } from '../ui/ActionMenu'
+import { useConfirm, quoted } from '../../hooks/useConfirm'
 
 // Narrow enough that a new two-column table fits a two-column grid card.
 const MIN_COLUMN_WIDTH = 80
@@ -86,8 +87,15 @@ export function TableEditor({ content, onChange, readOnly = false }) {
   const insertColumn = (at) =>
     push({ columns: insertAt(columns, at, ''), rows: rows.map(row => insertAt(row, at, '')) })
 
-  const removeColumn = (c) => {
+  const [confirm, confirmDialog] = useConfirm()
+
+  const removeColumn = async (c) => {
     if (columns.length <= 1) return
+    const ok = await confirm({
+      title: 'Delete this column?',
+      message: `${quoted(columns[c], `Column ${c + 1}`)} and its cells will be removed.`,
+    })
+    if (!ok) return
     push({
       columns: columns.filter((_, i) => i !== c),
       rows: rows.map(row => row.filter((_, j) => j !== c)),
@@ -101,9 +109,13 @@ export function TableEditor({ content, onChange, readOnly = false }) {
 
   const insertRow = (at) => push({ columns, rows: insertAt(rows, at, columns.map(() => '')) })
 
-  const removeRow = (r) => {
+  const removeRow = async (r) => {
     if (rows.length <= 1) return
-    push({ columns, rows: rows.filter((_, i) => i !== r) })
+    const ok = await confirm({
+      title: 'Delete this row?',
+      message: `Row ${r + 1} and its cells will be removed.`,
+    })
+    if (ok) push({ columns, rows: rows.filter((_, i) => i !== r) })
   }
 
   const moveRow = (from, to) => {
@@ -283,6 +295,7 @@ export function TableEditor({ content, onChange, readOnly = false }) {
           <Plus size={13} /> Add row
         </button>
       )}
+      {confirmDialog}
     </div>
   )
 }

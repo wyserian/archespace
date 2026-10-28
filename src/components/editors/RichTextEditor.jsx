@@ -26,6 +26,7 @@ import { toRichDoc } from '../../lib/richText/convert'
 import { registerSearchOpener } from '../../lib/richText/searchReplace'
 import { LINE_HEIGHTS } from '../../lib/richText/lineHeight'
 import { buttonClass } from '../ui/buttonStyles'
+import { useConfirm } from '../../hooks/useConfirm'
 import { MENU_PANEL, menuItemClass } from '../ui/menuStyles'
 
 // Plain text that reads like markdown is pasted as formatting.
@@ -162,6 +163,11 @@ function ToolbarControls({ editor }) {
   )
 
   const run = (fn) => fn(editor.chain().focus()).run()
+  // Table deletes ask first; the table keeps the cursor's place meanwhile.
+  const [confirm, confirmDialog] = useConfirm()
+  const runAfterConfirm = async (title, message, fn) => {
+    if (await confirm({ title, message })) run(fn)
+  }
 
   const openLink = () => {
     setLinkValue(state.linkHref || 'https://')
@@ -296,9 +302,9 @@ function ToolbarControls({ editor }) {
           { id: 'insert', label: 'Insert table', icon: Table, onClick: () => run(c => c.insertTable({ rows: 3, cols: 3, withHeaderRow: true })) },
           state.table && { id: 'row', label: 'Add row', icon: BetweenHorizontalEnd, onClick: () => run(c => c.addRowAfter()) },
           state.table && { id: 'col', label: 'Add column', icon: BetweenVerticalEnd, onClick: () => run(c => c.addColumnAfter()) },
-          state.table && { id: 'delrow', label: 'Delete row', icon: Rows3, onClick: () => run(c => c.deleteRow()) },
-          state.table && { id: 'delcol', label: 'Delete column', icon: Columns3, onClick: () => run(c => c.deleteColumn()) },
-          state.table && { id: 'deltable', label: 'Delete table', icon: Trash2, danger: true, onClick: () => run(c => c.deleteTable()) },
+          state.table && { id: 'delrow', label: 'Delete row', icon: Rows3, onClick: () => runAfterConfirm('Delete this row?', 'The table row with the cursor will be removed.', c => c.deleteRow()) },
+          state.table && { id: 'delcol', label: 'Delete column', icon: Columns3, onClick: () => runAfterConfirm('Delete this column?', 'The table column with the cursor will be removed.', c => c.deleteColumn()) },
+          state.table && { id: 'deltable', label: 'Delete table', icon: Trash2, danger: true, onClick: () => runAfterConfirm('Delete this table?', 'The whole table and its contents will be removed.', c => c.deleteTable()) },
         ]}
       />
       <ToolbarBtn icon={Minus} label="Divider" onClick={() => run(c => c.setHorizontalRule())} />
@@ -314,6 +320,7 @@ function ToolbarControls({ editor }) {
     </div>
     </div>
     {searchPanel}
+    {confirmDialog}
     </>
   )
 }

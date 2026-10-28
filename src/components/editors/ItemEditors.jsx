@@ -2,12 +2,14 @@
  * Content editors, one per space-item type. Each takes the current `content`
  * and calls `onChange(newContent)` on every keystroke so the parent can track
  * dirty state and auto-save. `readOnly` (a read-only space) keeps the content
- * readable and selectable but hides every editing control.
+ * readable and selectable but hides every editing control. Deleting a list row
+ * or a card asks first.
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Plus, Trash2, CheckSquare, Square, GripVertical, Pencil, Eye } from 'lucide-react'
 import MarkdownPreview from './MarkdownPreview'
+import { useConfirm, quoted } from '../../hooks/useConfirm'
 
 /** Small icon-only delete button, visible only when the row is hovered. */
 function DelBtn({ onClick, label = 'Delete item' }) {
@@ -221,8 +223,14 @@ function ListEditor({ content, onChange, variant, readOnly = false, onNumberedCh
   const updateItem = (id, field, value) =>
     push(items.map(item => item.id === id ? { ...item, [field]: value } : item))
 
-  const removeItem = (id) =>
-    push(items.filter(item => item.id !== id))
+  const [confirm, confirmDialog] = useConfirm()
+  const removeItem = async (item) => {
+    const ok = await confirm({
+      title: 'Delete this item?',
+      message: `${quoted(item.text, 'This empty item')} will be removed from the list.`,
+    })
+    if (ok) push(items.filter(i => i.id !== item.id))
+  }
 
   const moveItem = (fromIndex, toIndex) => {
     if (toIndex < 0 || toIndex >= items.length) return
@@ -319,11 +327,12 @@ function ListEditor({ content, onChange, variant, readOnly = false, onNumberedCh
                 onDragEnd={() => { dragFromIndex.current = null }}
                 onKeyDown={e => handleReorderKeyDown(e, idx)}
               />
-              <DelBtn onClick={() => removeItem(item.id)} />
+              <DelBtn onClick={() => removeItem(item)} />
             </div>
           )}
         </div>
       ))}
+      {confirmDialog}
 
       {readOnly ? (
         items.length === 0 && <p className="text-text-muted text-sm italic">Empty</p>
@@ -390,8 +399,14 @@ export function CardListEditor({ content, onChange, readOnly = false }) {
   const updateItem = (id, field, value) =>
     push(items.map(item => item.id === id ? { ...item, [field]: value } : item))
 
-  const removeItem = (id) =>
-    push(items.filter(item => item.id !== id))
+  const [confirm, confirmDialog] = useConfirm()
+  const removeItem = async (item) => {
+    const ok = await confirm({
+      title: 'Delete this card?',
+      message: `${quoted(item.title || item.description, 'This empty card')} will be removed.`,
+    })
+    if (ok) push(items.filter(i => i.id !== item.id))
+  }
 
   const moveItem = (fromIndex, toIndex) => {
     if (toIndex < 0 || toIndex >= items.length) return
@@ -445,7 +460,7 @@ export function CardListEditor({ content, onChange, readOnly = false }) {
                   onDragEnd={() => { dragFromIndex.current = null }}
                   onKeyDown={e => handleReorderKeyDown(e, idx)}
                 />
-                <DelBtn onClick={() => removeItem(item.id)} label="Delete card" />
+                <DelBtn onClick={() => removeItem(item)} label="Delete card" />
               </>
             )}
           </div>
@@ -475,6 +490,7 @@ export function CardListEditor({ content, onChange, readOnly = false }) {
           <Plus size={14} /> Add card
         </button>
       )}
+      {confirmDialog}
     </div>
   )
 }

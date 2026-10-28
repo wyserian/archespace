@@ -6,20 +6,18 @@
  * button. A card moves by dragging its handle, within a stage or to another;
  * with the handle focused, the arrow keys move it too (up / down within the
  * stage, left / right across). A stage's menu moves it, sets its colour, or
- * deletes it. Deleting a stage that holds cards, or a card with text, asks
- * first in a dialog.
+ * deletes it. Deleting a stage or a card always asks first in a dialog.
  *
  * With `fill` (full screen) the stages share the width equally and take the
  * full height, each scrolling its own cards above a pinned Add card button.
  * `readOnly` keeps everything readable and hides the controls.
  */
 import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { ArrowLeft, ArrowRight, Ban, GripVertical, Plus, Trash2 } from 'lucide-react'
 import { kanbanColumns } from '../../lib/kanban'
 import { SPACE_COLORS, getColorPreset, softColorValue } from '../../lib/spaceColors'
 import { ActionMenu } from '../ui/ActionMenu'
-import { ConfirmDialog } from '../ui/UI'
+import { useConfirm, quoted } from '../../hooks/useConfirm'
 
 /**
  * Grow a textarea to fit its text. A hidden one (an empty description) has no
@@ -45,8 +43,6 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
   // The card being dragged, and where it would land.
   const [dragging, setDragging] = useState(null)
   const [dropAt, setDropAt] = useState(null) // { colId, index }
-  // A stage or card whose delete is waiting for confirmation: { colId, cardId? }.
-  const [confirmDelete, setConfirmDelete] = useState(null)
   // Focus to restore after a card or column moves (keyboard moves).
   const refocus = useRef(null)
   const [focusCard, setFocusCard] = useState(null)
@@ -84,16 +80,14 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
     setFocusCard(card.id)
   }
 
-  /** Delete a card; one with any text asks first. */
-  const removeCard = (colId, cardId, confirmed = false) => {
-    const card = columns.find(c => c.id === colId)?.cards.find(c => c.id === cardId)
-    if (!card) return
-    if ((card.title.trim() || card.description.trim()) && !confirmed) {
-      setConfirmDelete({ colId, cardId })
-      return
-    }
-    setConfirmDelete(null)
-    push(columns.map(col => (col.id === colId ? { ...col, cards: col.cards.filter(c => c.id !== cardId) } : col)))
+  const [confirm, confirmDialog] = useConfirm()
+
+  const removeCard = async (colId, card) => {
+    const ok = await confirm({
+      title: 'Delete this card?',
+      message: `${quoted(card.title || card.description, 'This empty card')} will be removed.`,
+    })
+    if (ok) push(columns.map(col => (col.id === colId ? { ...col, cards: col.cards.filter(c => c.id !== card.id) } : col)))
   }
 
   const addColumn = () => {
@@ -102,16 +96,13 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
     refocus.current = `[data-column-title="${col.id}"]`
   }
 
-  /** Delete a stage; one that still holds cards asks first. */
-  const removeColumn = (colId, confirmed = false) => {
-    const col = columns.find(c => c.id === colId)
-    if (!col) return
-    if (col.cards.length > 0 && !confirmed) {
-      setConfirmDelete({ colId })
-      return
-    }
-    setConfirmDelete(null)
-    push(columns.filter(c => c.id !== colId))
+  const removeColumn = async (col) => {
+    const count = col.cards.length
+    const ok = await confirm({
+      title: 'Delete this stage?',
+      message: `${quoted(col.title, 'This untitled stage')}${count ? ` and its ${count} ${count === 1 ? 'card' : 'cards'}` : ''} will be removed.`,
+    })
+    if (ok) push(columns.filter(c => c.id !== col.id))
   }
 
   const moveColumn = (index, delta) => {
@@ -183,7 +174,7 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
       active: col.color === c.id,
       onClick: () => updateColumn(col.id, { color: c.id }),
     })),
-    { id: 'delete', label: 'Delete stage', icon: Trash2, variant: 'danger', onClick: () => removeColumn(col.id) },
+    { id: 'delete', label: 'Delete stage', icon: Trash2, variant: 'danger', onClick: () => removeColumn(col) },
   ]
 
   const renderCard = (col, colIndex, card, cardIndex) => (
@@ -259,7 +250,7 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
         {!readOnly && (
           <button
             type="button"
-            onClick={() => removeCard(col.id, card.id)}
+            onClick={() => removeCard(col.id, card)}
             aria-label="Delete card"
             title="Delete card"
             className="absolute right-1.5 top-2 p-0.5 rounded text-text-muted hover:text-danger opacity-0 group-hover/card:opacity-100 focus:opacity-100 transition-opacity"
@@ -330,29 +321,6 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
     )
   }
 
-  // Rendered at the page's top level (above a full-screen item), like the
-  // reminder dialog.
-  const deleteDialog = ({ colId, cardId }) => {
-    const col = columns.find(c => c.id === colId)
-    if (!col) return null
-    const count = col.cards.length
-    return createPortal(
-      <div className="relative z-[90]">
-        <ConfirmDialog
-          title={cardId ? 'Delete this card?' : 'Delete this stage?'}
-          message={cardId
-            ? 'Its title and description will be removed.'
-            : `"${col.title || 'Untitled'}" and its ${count} ${count === 1 ? 'card' : 'cards'} will be removed.`}
-          confirmLabel="Delete"
-          destructive
-          onConfirm={() => (cardId ? removeCard(colId, cardId, true) : removeColumn(colId, true))}
-          onClose={() => setConfirmDelete(null)}
-        />
-      </div>,
-      document.body,
-    )
-  }
-
   return (
     <div ref={rootRef} className={`flex flex-col gap-1.5 ${fill ? 'h-full min-h-0' : ''}`}>
       {!readOnly && (
@@ -370,7 +338,7 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
         {columns.map(renderColumn)}
         {readOnly && columns.length === 0 && <p className="text-text-muted text-sm italic">Empty</p>}
       </div>
-      {confirmDelete && deleteDialog(confirmDelete)}
+      {confirmDialog}
     </div>
   )
 }
