@@ -8,7 +8,8 @@ import { Copy, Check, RefreshCw } from 'lucide-react'
 import { useAuth } from '../context/AuthContextCore'
 import { useToast } from '../context/ToastCore'
 import { Modal } from './ui/UI'
-import { rowButtonClass, rowDangerButtonClass } from './settings/settingStyles'
+import { SettingRow } from './settings/SettingRow'
+import { rowButtonClass, rowDangerButtonClass, primaryButtonClass } from './settings/settingStyles'
 import { buttonClass } from './ui/buttonStyles'
 import { supabase } from '../lib/supabase'
 import {
@@ -24,6 +25,7 @@ export default function MfaSettings() {
   const [enabled, setEnabled] = useState(false)
   const [remaining, setRemaining] = useState(0)
   const [checking, setChecking] = useState(true)
+  const [open, setOpen] = useState(false)
 
   // Enrolment modal state.
   const [enroll, setEnroll] = useState(null) // { factorId, qrCode, secret }
@@ -156,52 +158,48 @@ export default function MfaSettings() {
     setTimeout(() => setCopied(false), 1500)
   }
 
+  // One element, so it sits as a single row in the settings group's list.
   return (
-    <div className="px-4 py-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-text-primary">Two-factor authentication</h3>
-          <p className="text-xs text-text-muted mt-0.5 leading-relaxed">
-            {enabled
-              ? `On. You'll enter a code from your authenticator app when you sign in.${remaining === 0 ? ' No backup code left - regenerate one so you can get back in if you lose your authenticator.' : ''}`
-              : 'Require a one-time code from an authenticator app (Google Authenticator, Authy, 1Password) each time you sign in, on top of your password.'}
-          </p>
-        </div>
-        {/* Off: the Set up action. On: its status in the same place, with
-            the actions for a running 2FA below. */}
-        {!checking && (
-          enabled ? (
-            <span className="shrink-0 self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-muted text-accent text-xs font-semibold">
-              <Check size={13} strokeWidth={2.5} /> On
-            </span>
-          ) : (
-            <button
-              type="button"
-              onClick={startEnroll}
-              disabled={busy}
-              className={`shrink-0 ${rowButtonClass}`}
-            >
-              Set up
-            </button>
-          )
+    <div>
+      {/* The row stays the same whatever the status, which loads in the
+          background; the status and its actions show once it's opened. */}
+      <SettingRow
+        title="Two-factor authentication"
+        description="Asks for a one-time code from an authenticator app (Google Authenticator, Authy, 1Password) each time you sign in, on top of your password."
+        open={open}
+        action={!open && (
+          <button type="button" onClick={() => setOpen(true)} className={rowButtonClass}>Manage</button>
         )}
-      </div>
-
-      {enabled && (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <button type="button" onClick={regenerate} disabled={busy} className={rowButtonClass}>
-            <RefreshCw size={14} /> Regenerate backup code
-          </button>
-          <button
-            type="button"
-            onClick={() => setConfirmDisable(true)}
-            disabled={busy}
-            className={rowDangerButtonClass}
-          >
-            Turn off
-          </button>
-        </div>
-      )}
+      >
+        {checking ? (
+          <p className="text-xs text-text-muted">Checking...</p>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-xs leading-relaxed text-text-secondary">
+              {enabled
+                ? `On. You'll enter a code from your authenticator app when you sign in.${remaining === 0 ? ' No backup code left - regenerate one so you can get back in if you lose your authenticator.' : ''}`
+                : 'Off. Signing in needs only your password.'}
+            </p>
+            <div className="flex flex-wrap justify-end gap-2">
+              <button type="button" onClick={() => setOpen(false)} className={rowButtonClass}>Close</button>
+              {enabled ? (
+                <>
+                  <button type="button" onClick={regenerate} disabled={busy} className={rowButtonClass}>
+                    <RefreshCw size={14} /> Regenerate backup code
+                  </button>
+                  <button type="button" onClick={() => setConfirmDisable(true)} disabled={busy} className={rowDangerButtonClass}>
+                    Turn off
+                  </button>
+                </>
+              ) : (
+                <button type="button" onClick={startEnroll} disabled={busy} className={primaryButtonClass}>
+                  Set up
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </SettingRow>
 
       {/* Enrolment modal: scan QR, enter a code */}
       {enroll && (
