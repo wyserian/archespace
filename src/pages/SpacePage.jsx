@@ -6,8 +6,10 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Plus, CheckSquare, ListChecks, FileDown, Search, SearchX, X, PencilOff, PencilLine, Shield, ShieldCheck, ShieldOff,
-  ChevronRight, MoreHorizontal, MoreVertical, Folder,
+  ChevronRight, MoreHorizontal, MoreVertical, Folder, Pin, PinOff, Star, StarOff, Tag, Pencil, Copy, MoveRight, Archive, Trash2,
 } from 'lucide-react'
+import { ItemTags } from '../components/ItemTags'
+import { parseTags } from '../lib/spaceColors'
 import { useDragReorder } from '../hooks/useDragReorder'
 import { useDualEntitySelection } from '../hooks/useDualEntitySelection'
 import { useSpaces } from '../hooks/useSpaces'
@@ -24,7 +26,7 @@ import { MoveSpacesDialog } from '../components/space/MoveSpacesDialog'
 import { exportSpaceToPdf } from '../lib/pdfExport'
 import BulkSelectionBar from '../components/BulkSelectionBar'
 import { BULK_ICONS } from '../components/BulkSelectionIcons'
-import { ConfirmDialog } from '../components/ui/UI'
+import { ConfirmDialog, Modal } from '../components/ui/UI'
 import { SortMenu } from '../components/ui/SortMenu'
 import { ActionMenu } from '../components/ui/ActionMenu'
 import { Button, IconButton } from '../components/ui/Button'
@@ -160,12 +162,34 @@ export default function SpacePage() {
     { id: 'new-item', label: 'New item', hint: 'I', icon: Plus, run: () => { closePalette(); openAddItem() } },
   ])), [registerCommands, closePalette, openAddItem, readOnly])
 
-  const handleToggleReadOnly = () => {
-    // Turning it on would strand unsaved edits, so they go first.
-    if (!readOnly && board.dirtyItems.size > 0) {
-      toast.error('Save or discard unsaved changes first')
-      return
+  // Unsaved edits would be stranded (or lost) by locking, archiving or deleting
+  // the space, so they go first.
+  const blockedByUnsaved = () => {
+    if (board.dirtyItems.size === 0) return false
+    toast.error('Save or discard unsaved changes first')
+    return true
+  }
+  const leaveSpace = () => navigate(parentSpace ? `/space/${parentSpace.id}` : '/app')
+
+  const [editingTags, setEditingTags] = useState(false)
+  const saveSpaceTags = (next) => setSpaceTags.mutate({ id, tags: parseTags(next) }, {
+    onError: () => toast.error("Couldn't update the tags."),
+  })
+
+  // Archiving this space leaves it, for the space above (or the dashboard).
+  const handleArchiveSpace = async () => {
+    if (blockedByUnsaved()) return
+    leaveSpace()
+    try {
+      await archiveSpace.mutateAsync(id)
+      toast.success('Space archived')
+    } catch {
+      toast.error("Couldn't archive the space.")
     }
+  }
+
+  const handleToggleReadOnly = () => {
+    if (!readOnly && blockedByUnsaved()) return
     toggleSpaceReadOnly.mutate({ id, read_only: readOnly }, {
       onSuccess: () => toast.success(readOnly ? 'Editing allowed' : 'Space is now read-only'),
       onError: () => toast.error("Couldn't change read-only."),
@@ -197,10 +221,7 @@ export default function SpacePage() {
   // Protecting is instant and hides the space. Removing protection asks for the
   // PIN unless the space was opened with it (it always is, on this page).
   const handleToggleLock = async () => {
-    if (!locked && board.dirtyItems.size > 0) {
-      toast.error('Save or discard unsaved changes first')
-      return
-    }
+    if (!locked && blockedByUnsaved()) return
     if (locked && !isItemRevealed(id)) {
       const ok = await askVaultPin({
         title: 'Remove protection',
@@ -589,8 +610,41 @@ export default function SpacePage() {
                 label="Space actions"
                 bordered={false}
                 icon={MoreVertical}
+                // The same actions as the space's card, in the same order.
                 actions={[
-                  items.length > 0 && {
+                  {
+                    id: 'pin',
+                    group: 'mark',
+                    label: space.pinned ? 'Unpin' : 'Pin',
+                    icon: space.pinned ? PinOff : Pin,
+                    active: space.pinned,
+                    disabled: !online,
+                    onClick: () => toggleSpacePin.mutate({ id, pinned: space.pinned }),
+                  },
+                  {
+                    id: 'star',
+                    group: 'mark',
+                    label: space.starred ? 'Unstar' : 'Star',
+                    icon: space.starred ? StarOff : Star,
+                    active: space.starred,
+                    disabled: !online,
+                    onClick: () => toggleSpaceStar.mutate({ id, starred: space.starred }),
+                  },
+                  !readOnly && { id: 'tag', group: 'mark', label: 'Add tag', icon: Tag, disabled: !online, onClick: () => setEditingTags(true) },
+                  !readOnly && { id: 'edit', group: 'content', label: 'Edit', icon: Pencil, disabled: !online, onClick: () => setSpaceModal({ type: 'edit', col: space }) },
+                  {
+                    id: 'duplicate',
+                    group: 'content',
+                    label: 'Duplicate',
+                    icon: Copy,
+                    disabled: !online,
+                    onClick: () => duplicateSpace.mutate(id, {
+                      onSuccess: () => toast.success('Space duplicated'),
+                      onError: () => toast.error("Couldn't duplicate the space."),
+                    }),
+                  },
+                  !readOnly && { id: 'move', group: 'content', label: 'Move', icon: MoveRight, disabled: !online, onClick: () => setSpaceMoveRequest({ ids: [id] }) },
+                  {
                     id: 'export-pdf',
                     group: 'content',
                     label: 'Export PDF',
@@ -612,6 +666,16 @@ export default function SpacePage() {
                     icon: locked ? ShieldOff : Shield,
                     disabled: !online,
                     onClick: handleToggleLock,
+                  },
+                  { id: 'archive', group: 'keep', label: 'Archive', icon: Archive, disabled: !online, onClick: handleArchiveSpace },
+                  {
+                    id: 'delete',
+                    group: 'delete',
+                    label: 'Delete',
+                    icon: Trash2,
+                    variant: 'danger',
+                    disabled: !online,
+                    onClick: () => { if (!blockedByUnsaved()) setSpaceDeleteConfirm(id) },
                   },
                 ]}
               />
@@ -921,14 +985,30 @@ export default function SpacePage() {
           confirmLabel="Move to the bin"
           destructive
           onConfirm={() => {
-            removeSpace.mutate(spaceDeleteConfirm, {
-              onSuccess: () => toast.success('Space moved to the bin'),
-              onError: () => toast.error("Couldn't delete space."),
-            })
+            const sid = spaceDeleteConfirm
             setSpaceDeleteConfirm(null)
+            // Deleting this space (not a sub-space) leaves it.
+            if (sid === id) leaveSpace()
+            removeSpace.mutateAsync(sid).then(
+              () => toast.success('Space moved to the bin'),
+              () => toast.error("Couldn't delete space."),
+            )
           }}
           onClose={() => setSpaceDeleteConfirm(null)}
         />
+      )}
+
+      {/* This space's tags (its card shows them): add, or remove with × */}
+      {editingTags && space && (
+        <Modal title="Tags" onClose={() => setEditingTags(false)}>
+          <div className="space-y-4">
+            <ItemTags tags={space.tags || []} onChange={saveSpaceTags} adding onAddingChange={() => {}} />
+            <p className="text-xs text-text-muted">Type a tag and press Enter. Separate several with commas.</p>
+            <div className="flex justify-end">
+              <Button variant="primary" onClick={() => setEditingTags(false)}>Done</Button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {bulkDeleteConfirm && (

@@ -7,7 +7,11 @@
  * coloured by name inline with the item count, and a 3-dot menu.
  */
 import { useState } from 'react'
-import { Pin, PinOff, Star, StarOff, Pencil, PencilOff, PencilLine, Trash2, Copy, MoveRight, Archive, MoreVertical, Shield, ShieldCheck, ShieldOff, Tag, X } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { Pin, PinOff, Star, StarOff, Pencil, PencilOff, PencilLine, Trash2, Copy, MoveRight, FileDown, Archive, MoreVertical, Shield, ShieldCheck, ShieldOff, Tag, X } from 'lucide-react'
+import { useFetchSpaceItems } from '../../hooks/useSpaceItems'
+import { exportSpaceToPdf } from '../../lib/pdfExport'
+import { queryKeys } from '../../lib/queryKeys'
 import { getColorPreset, parseTags, softColorValue, tagColorValue } from '../../lib/spaceColors'
 import { ActionMenu } from '../ui/ActionMenu'
 import { SelectCheck } from '../ui/SelectCheck'
@@ -137,6 +141,19 @@ export function SpaceCard({
       onError: () => toast.error(col.locked ? "Couldn't remove protection." : "Couldn't protect the space."),
     })
   }
+  // The card has no items of its own, so they load (or come from the cache)
+  // on demand; sub-spaces are listed by name, as from inside the space.
+  const qc = useQueryClient()
+  const fetchSpaceItems = useFetchSpaceItems()
+  const handleExportPdf = async () => {
+    try {
+      const subSpaces = (qc.getQueryData(queryKeys.spaces()) || []).filter(s => s.parent_id === col.id)
+      await exportSpaceToPdf(col, await fetchSpaceItems(col.id), subSpaces)
+    } catch {
+      toast.error("Couldn't export the space.")
+    }
+  }
+
   const colorPreset = getColorPreset(col.color)
   // Softer, thinner space-colour strip (~50% alpha) than the picker's vivid value.
   const softColor = softColorValue(col.color, '80')
@@ -214,6 +231,7 @@ export function SpaceCard({
     // A read-only space stays where it is; a hidden one opens first (moving it
     // out of a protected space would show it without the PIN).
     onMove && !col.read_only && !hidden && { id: 'move', group: 'content', label: 'Move', icon: MoveRight, disabled: !online, onClick: () => onMove(col.id) },
+    !hidden && { id: 'export-pdf', group: 'content', label: 'Export PDF', icon: FileDown, onClick: handleExportPdf },
     // Read-only locks the space's content (its details and items); managing
     // the space itself (pin, duplicate, archive, delete) stays available.
     toggleReadOnly && {

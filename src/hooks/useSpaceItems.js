@@ -5,7 +5,7 @@
  * with `REMINDER_ITEMS`, the items with a reminder (the Reminders view).
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { EMPTY_RICH_DOC } from '../lib/richText/doc'
 import { useAuth } from '../context/AuthContextCore'
@@ -69,13 +69,62 @@ function whereSpace(q, spaceId) {
   return spaceId ? q.eq('space_id', spaceId) : q.is('space_id', null)
 }
 
+/** The decrypted items of one space (see whereSpace), as its list shows them. */
+async function loadItems(spaceId, userId, cryptoKey) {
+  const cacheKey = `items:${spaceId ?? DASHBOARD_ITEMS_KEY}`
+  try {
+    const { data, error } = await whereSpace(
+      supabase.from('space_items').select('*'),
+      spaceId
+    )
+      .is('deleted_at', null)
+      .is('archived_at', null)
+      .order('pinned', { ascending: false })
+      .order('position', { ascending: true })
+      // Items can share a position (one added after a delete), so ties
+      // break the same way here and on mobile.
+      .order('created_at', { ascending: true })
+      .order('id', { ascending: true })
+    if (error) throw error
+    const rows = data || []
+    setReachable(true)
+    saveRows(userId, cacheKey, rows) // cache ciphertext for offline reads
+    return decryptItems(rows, cryptoKey)
+  } catch (err) {
+    // Fall back to the encrypted cache on any network failure (navigator
+    // .onLine can wrongly report "online"), not just when the interface is
+    // reported down.
+    if (isNetworkError(err)) {
+      setReachable(false)
+      const cached = await loadRows(userId, cacheKey)
+      if (cached) return decryptItems(cached, cryptoKey)
+    }
+    throw err
+  }
+}
+
+/**
+ * Loads a space's items when needed (e.g. to export a space from its card):
+ * from the query cache if fresh, otherwise as its page would.
+ */
+export function useFetchSpaceItems() {
+  const qc = useQueryClient()
+  const { user } = useAuth()
+  const { cryptoKey } = useEncryption()
+  const userId = user?.id
+  return useCallback((spaceId) => qc.fetchQuery({
+    queryKey: queryKeys.items(spaceId),
+    networkMode: 'always',
+    queryFn: () => loadItems(spaceId, userId, cryptoKey),
+  }), [qc, userId, cryptoKey])
+}
+
 export function useSpaceItems(spaceId) {
   const qc = useQueryClient()
   const { user } = useAuth()
   const { cryptoKey } = useEncryption()
   const userId = user?.id
   const itemsKey = spaceId ?? DASHBOARD_ITEMS_KEY
-  const cacheKey = `items:${itemsKey}`
 
   const query = useQuery({
     queryKey: queryKeys.items(itemsKey),
@@ -83,37 +132,7 @@ export function useSpaceItems(spaceId) {
     // 'always' so the queryFn still runs while offline and can fall back to the
     // encrypted cache (the default 'online' mode would pause it with no data).
     networkMode: 'always',
-    queryFn: async () => {
-      try {
-        const { data, error } = await whereSpace(
-          supabase.from('space_items').select('*'),
-          spaceId
-        )
-          .is('deleted_at', null)
-          .is('archived_at', null)
-          .order('pinned', { ascending: false })
-          .order('position', { ascending: true })
-          // Items can share a position (one added after a delete), so ties
-          // break the same way here and on mobile.
-          .order('created_at', { ascending: true })
-          .order('id', { ascending: true })
-        if (error) throw error
-        const rows = data || []
-        setReachable(true)
-        saveRows(userId, cacheKey, rows) // cache ciphertext for offline reads
-        return decryptItems(rows, cryptoKey)
-      } catch (err) {
-        // Fall back to the encrypted cache on any network failure (navigator
-        // .onLine can wrongly report "online"), not just when the interface is
-        // reported down.
-        if (isNetworkError(err)) {
-          setReachable(false)
-          const cached = await loadRows(userId, cacheKey)
-          if (cached) return decryptItems(cached, cryptoKey)
-        }
-        throw err
-      }
-    },
+    queryFn: () => loadItems(spaceId, userId, cryptoKey),
   })
 
   useEffect(() => {
