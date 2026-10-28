@@ -246,7 +246,7 @@ function SpaceItem({
     document.body.style.overflow = 'hidden'
 
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape') setIsFullscreen(false)
+      if (event.key === 'Escape' && !event.defaultPrevented) setIsFullscreen(false)
     }
 
     window.addEventListener('keydown', handleKeyDown)

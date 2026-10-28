@@ -10,7 +10,7 @@ import { getColorPreset } from './spaceColors'
 /** A new Kanban's columns. */
 export function defaultKanban() {
   return {
-    columns: ['To do', 'Doing', 'Done'].map(title => ({ id: crypto.randomUUID(), title, color: null, cards: [] })),
+    columns: ['To do', 'In Progress', 'Done'].map(title => ({ id: crypto.randomUUID(), title, color: null, cards: [] })),
   }
 }
 

@@ -10,9 +10,9 @@ const board = {
 }
 
 describe('kanban', () => {
-  it('starts with To do, Doing and Done', () => {
+  it('starts with To do, In Progress and Done', () => {
     const { columns } = defaultKanban()
-    expect(columns.map(c => c.title)).toEqual(['To do', 'Doing', 'Done'])
+    expect(columns.map(c => c.title)).toEqual(['To do', 'In Progress', 'Done'])
     expect(new Set(columns.map(c => c.id)).size).toBe(3)
   })
 

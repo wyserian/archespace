@@ -55,7 +55,7 @@ export const ITEM_TYPE_OPTIONS = [
   { type: 'checkbox_list', label: 'Checklist', desc: 'Items with checkboxes', icon: CheckSquare, color: 'text-green-400', bg: 'bg-green-400/10' },
   { type: 'card_list', label: 'Cards', desc: 'Title + description pairs', icon: LayoutList, color: 'text-amber-400', bg: 'bg-amber-400/10' },
   { type: 'table', label: 'Table', desc: 'Rows and columns of text', icon: Table, color: 'text-sky-400', bg: 'bg-sky-400/10' },
-  { type: 'kanban', label: 'Kanban', desc: 'Cards in columns, from to do to done', icon: SquareKanban, color: 'text-teal-400', bg: 'bg-teal-400/10' },
+  { type: 'kanban', label: 'Kanban', desc: 'Cards in stages, from to do to done', icon: SquareKanban, color: 'text-teal-400', bg: 'bg-teal-400/10' },
   { type: 'whiteboard', label: 'Whiteboard', desc: 'Shapes, arrows, text and sketches', icon: Shapes, color: 'text-fuchsia-400', bg: 'bg-fuchsia-400/10' },
   { type: 'code', label: 'Code', desc: 'Code snippet with syntax highlighting', icon: Code, color: 'text-orange-400', bg: 'bg-orange-400/10' },
 ]

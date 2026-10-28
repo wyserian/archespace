@@ -1,21 +1,25 @@
 /**
- * KanbanEditor.jsx - The Kanban type: cards in columns (see lib/kanban.js).
+ * KanbanEditor.jsx - The Kanban type: cards in stages (see lib/kanban.js;
+ * stored as `columns`).
  *
- * Columns sit side by side and scroll sideways, under a compact Add column
- * button. A card moves by dragging its handle, within a column or to another;
+ * Stages sit side by side and scroll sideways, under a compact Add stage
+ * button. A card moves by dragging its handle, within a stage or to another;
  * with the handle focused, the arrow keys move it too (up / down within the
- * column, left / right across). A column's menu moves it, sets its colour, or
- * deletes it (asking first when it still holds cards).
+ * stage, left / right across). A stage's menu moves it, sets its colour, or
+ * deletes it. Deleting a stage that holds cards, or a card with text, asks
+ * first in a dialog.
  *
- * With `fill` (full screen) the columns share the width equally and take the
+ * With `fill` (full screen) the stages share the width equally and take the
  * full height, each scrolling its own cards above a pinned Add card button.
  * `readOnly` keeps everything readable and hides the controls.
  */
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { ArrowLeft, ArrowRight, Ban, GripVertical, Plus, Trash2 } from 'lucide-react'
 import { kanbanColumns } from '../../lib/kanban'
-import { SPACE_COLORS, getColorPreset } from '../../lib/spaceColors'
+import { SPACE_COLORS, getColorPreset, softColorValue } from '../../lib/spaceColors'
 import { ActionMenu } from '../ui/ActionMenu'
+import { ConfirmDialog } from '../ui/UI'
 
 /**
  * Grow a textarea to fit its text. A hidden one (an empty description) has no
@@ -41,7 +45,7 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
   // The card being dragged, and where it would land.
   const [dragging, setDragging] = useState(null)
   const [dropAt, setDropAt] = useState(null) // { colId, index }
-  // A column whose delete is waiting for confirmation.
+  // A stage or card whose delete is waiting for confirmation: { colId, cardId? }.
   const [confirmDelete, setConfirmDelete] = useState(null)
   // Focus to restore after a card or column moves (keyboard moves).
   const refocus = useRef(null)
@@ -53,12 +57,6 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
     rootRef.current?.querySelector(refocus.current)?.focus()
     refocus.current = null
   })
-
-  useEffect(() => {
-    if (!confirmDelete) return undefined
-    const timer = setTimeout(() => setConfirmDelete(null), 4000)
-    return () => clearTimeout(timer)
-  }, [confirmDelete])
 
   const push = (next) => {
     setColumns(next)
@@ -86,8 +84,17 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
     setFocusCard(card.id)
   }
 
-  const removeCard = (colId, cardId) =>
+  /** Delete a card; one with any text asks first. */
+  const removeCard = (colId, cardId, confirmed = false) => {
+    const card = columns.find(c => c.id === colId)?.cards.find(c => c.id === cardId)
+    if (!card) return
+    if ((card.title.trim() || card.description.trim()) && !confirmed) {
+      setConfirmDelete({ colId, cardId })
+      return
+    }
+    setConfirmDelete(null)
     push(columns.map(col => (col.id === colId ? { ...col, cards: col.cards.filter(c => c.id !== cardId) } : col)))
+  }
 
   const addColumn = () => {
     const col = { id: crypto.randomUUID(), title: '', color: null, cards: [] }
@@ -95,11 +102,12 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
     refocus.current = `[data-column-title="${col.id}"]`
   }
 
-  /** Delete a column; one that still holds cards asks first. */
+  /** Delete a stage; one that still holds cards asks first. */
   const removeColumn = (colId, confirmed = false) => {
     const col = columns.find(c => c.id === colId)
+    if (!col) return
     if (col.cards.length > 0 && !confirmed) {
-      setConfirmDelete(colId)
+      setConfirmDelete({ colId })
       return
     }
     setConfirmDelete(null)
@@ -175,7 +183,7 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
       active: col.color === c.id,
       onClick: () => updateColumn(col.id, { color: c.id }),
     })),
-    { id: 'delete', label: 'Delete column', icon: Trash2, variant: 'danger', onClick: () => removeColumn(col.id) },
+    { id: 'delete', label: 'Delete stage', icon: Trash2, variant: 'danger', onClick: () => removeColumn(col.id) },
   ]
 
   const renderCard = (col, colIndex, card, cardIndex) => (
@@ -208,7 +216,7 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
               }}
               onDragEnd={() => { setDragging(null); setDropAt(null) }}
               onKeyDown={e => handleCardKey(e, colIndex, cardIndex, card.id)}
-              aria-label="Move card. Arrow keys move it up, down, or to the next column."
+              aria-label="Move card. Arrow keys move it up, down, or to the next stage."
               title="Drag to move. Arrow keys move it while focused."
               className="-ml-1 mt-0.5 p-0.5 rounded text-text-muted cursor-grab active:cursor-grabbing hover:text-accent opacity-40 group-hover/card:opacity-100 focus:opacity-100"
             >
@@ -268,10 +276,10 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
     return (
       <section
         key={col.id}
-        aria-label={col.title || 'Untitled column'}
-        // A faint tint sets the column apart; a colour adds a strip along the
-        // top and tints it.
-        style={color ? { backgroundColor: `${color}14`, boxShadow: `inset 0 3px 0 ${color}` } : undefined}
+        aria-label={col.title || 'Untitled stage'}
+        // A faint tint sets the stage apart; a colour tints it and adds a thin,
+        // soft strip along the top, like a space card's.
+        style={color ? { backgroundColor: `${color}14`, boxShadow: `inset 0 2px 0 ${softColorValue(col.color, '80')}` } : undefined}
         className={`flex flex-col rounded-xl px-2 pb-2 ${color ? 'pt-3' : 'bg-text-primary/[0.04] pt-2'} ${
           fill ? 'h-full min-h-0 min-w-[220px] flex-1 basis-0' : 'w-60 shrink-0'
         }`}
@@ -284,35 +292,23 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
             value={col.title}
             onChange={e => updateColumn(col.id, { title: e.target.value })}
             readOnly={readOnly}
-            placeholder={readOnly ? 'Untitled' : 'Column name'}
-            aria-label="Column name"
+            placeholder={readOnly ? 'Untitled' : 'Stage name'}
+            aria-label="Stage name"
             className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-text-primary placeholder-text-muted focus:outline-none"
           />
-          {confirmDelete === col.id ? (
-            <button
-              type="button"
-              onClick={() => removeColumn(col.id, true)}
-              className="shrink-0 rounded-md bg-danger px-1.5 py-0.5 text-[11px] font-semibold text-white"
-            >
-              Delete {col.cards.length} {col.cards.length === 1 ? 'card' : 'cards'}?
-            </button>
-          ) : (
-            <>
-              <span
-                className="shrink-0 rounded-full bg-bg-elevated px-1.5 text-[11px] font-medium tabular-nums leading-5 text-text-muted"
-                aria-label={`${col.cards.length} ${col.cards.length === 1 ? 'card' : 'cards'}`}
-              >
-                {col.cards.length}
-              </span>
-              {!readOnly && (
-                <ActionMenu
-                  label="Column actions"
-                  bordered={false}
-                  compact
-                  actions={columnActions(col, colIndex)}
-                />
-              )}
-            </>
+          <span
+            className="shrink-0 rounded-full bg-bg-elevated px-1.5 text-[11px] font-medium tabular-nums leading-5 text-text-muted"
+            aria-label={`${col.cards.length} ${col.cards.length === 1 ? 'card' : 'cards'}`}
+          >
+            {col.cards.length}
+          </span>
+          {!readOnly && (
+            <ActionMenu
+              label="Stage actions"
+              bordered={false}
+              compact
+              actions={columnActions(col, colIndex)}
+            />
           )}
         </div>
 
@@ -325,25 +321,48 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
           <button
             type="button"
             onClick={() => addCard(col.id)}
-            className="mt-2 flex shrink-0 items-center gap-1.5 rounded-lg px-1.5 py-1 text-xs font-medium text-text-muted hover:text-accent hover:bg-bg-hover transition-colors"
+            className="mt-2 flex shrink-0 self-start items-center gap-2 px-1 py-1 text-sm text-text-muted hover:text-accent transition-colors"
           >
-            <Plus size={13} /> Add card
+            <Plus size={14} /> Add card
           </button>
         )}
       </section>
     )
   }
 
+  // Rendered at the page's top level (above a full-screen item), like the
+  // reminder dialog.
+  const deleteDialog = ({ colId, cardId }) => {
+    const col = columns.find(c => c.id === colId)
+    if (!col) return null
+    const count = col.cards.length
+    return createPortal(
+      <div className="relative z-[90]">
+        <ConfirmDialog
+          title={cardId ? 'Delete this card?' : 'Delete this stage?'}
+          message={cardId
+            ? 'Its title and description will be removed.'
+            : `"${col.title || 'Untitled'}" and its ${count} ${count === 1 ? 'card' : 'cards'} will be removed.`}
+          confirmLabel="Delete"
+          destructive
+          onConfirm={() => (cardId ? removeCard(colId, cardId, true) : removeColumn(colId, true))}
+          onClose={() => setConfirmDelete(null)}
+        />
+      </div>,
+      document.body,
+    )
+  }
+
   return (
     <div ref={rootRef} className={`flex flex-col gap-1.5 ${fill ? 'h-full min-h-0' : ''}`}>
       {!readOnly && (
-        <div className="-mt-1 flex shrink-0 justify-end">
+        <div className="mt-1 flex shrink-0 justify-end">
           <button
             type="button"
             onClick={addColumn}
-            className="flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium text-text-muted hover:text-accent hover:bg-bg-hover transition-colors"
+            className="flex items-center gap-2 px-1 py-1 text-sm text-text-muted hover:text-accent transition-colors"
           >
-            <Plus size={13} /> Add column
+            <Plus size={14} /> Add stage
           </button>
         </div>
       )}
@@ -351,6 +370,7 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
         {columns.map(renderColumn)}
         {readOnly && columns.length === 0 && <p className="text-text-muted text-sm italic">Empty</p>}
       </div>
+      {confirmDelete && deleteDialog(confirmDelete)}
     </div>
   )
 }

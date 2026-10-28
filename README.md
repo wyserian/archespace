@@ -54,7 +54,7 @@ A companion Mobile/Flutter app lives in a [separate repository](https://github.c
 | Checklist | Checkboxes with progress tracking. |
 | Cards | Title and description pairs for planning. |
 | Table | Rows and columns; copies as tab-separated values for spreadsheets. |
-| Kanban | Cards in columns (To do, Doing, Done to start): drag a card between columns, or move it with the arrow keys; rename, move and delete columns. |
+| Kanban | Cards in stages (To do, In Progress, Done to start): drag a card between stages, or move it with the arrow keys; rename, move and delete stages. |
 | Whiteboard | An Excalidraw board: shapes, arrows, text and freehand drawing on a canvas you can pan and zoom. |
 | Code | Monospace snippet with automatic syntax highlighting. |
 

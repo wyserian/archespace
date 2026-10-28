@@ -77,7 +77,8 @@ export function Modal({ title, onClose, children, footer, onSubmit, size = 'md',
     }
 
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') { onCloseRef.current?.(); return }
+      // Marked handled, so it closes only the dialog (not the full-screen item under it).
+      if (e.key === 'Escape') { e.preventDefault(); onCloseRef.current?.(); return }
       if (e.key !== 'Tab') return
       const items = getFocusable()
       if (items.length === 0) { e.preventDefault(); panel?.focus(); return }
