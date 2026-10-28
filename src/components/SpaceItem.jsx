@@ -4,14 +4,14 @@
  *
  * It keeps a local copy of `title` and `content` so edits feel instant; they
  * are marked unsaved and saved with the Save button or automatically after
- * AUTO_SAVE_DELAY_MS, and collapsing with unsaved edits asks first.
+ * AUTO_SAVE_DELAY_MS.
  */
 
 import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo, memo, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Trash2, ChevronDown, ChevronUp, Pencil, Check, X, Star, StarOff,
-  Pin, PinOff, Save, AlertTriangle, Copy, Archive,
+  Pin, PinOff, Save, Copy, Archive,
   Maximize2, Minimize2, MoveRight, MoreVertical,
   ClipboardCopy, ClipboardCheck, FileDown, PencilOff, Shield, ShieldCheck, ShieldOff, EyeOff, Loader2,
   Bell, Tag,
@@ -55,9 +55,8 @@ import { exportItemToPdf } from '../lib/pdfExport'
 import { TypeBadge } from './ui/TypeBadge'
 import { AUTO_SAVE_DELAY_MS } from '../lib/constants'
 
-// When an item's content is taller than this (px), it collapses to a fixed
-// preview of this height by default. Collapsing clamps the card to this height
-// (with a fade) rather than hiding the content; expanding restores full height.
+// When an item's content is taller than this (px), it shows as a fixed preview
+// of this height (with a fade) by default; Show more restores full height.
 const COLLAPSED_MAX_PX = 640
 
 // Show more / Show less: plain text links, no fill.
@@ -85,16 +84,12 @@ function SpaceItem({
   onDragStart,
   onDragEnd,
   dragDisabled = false,
-  forcedCollapsed = false,
   // A card for an item just added opens with its title ready to type.
   editTitleOnMount = false,
-  onCollapsedChange,
   selectMode = false,
   selected = false,
   onSelectedChange,
   dense = false,
-  // In grid view: no collapse chevron, and the body always shows.
-  grid = false,
   // Where the item lives, shown beside the title outside its space (Starred).
   contextLabel,
   // In a read-only space: content stays readable and copyable, but every edit
@@ -124,16 +119,14 @@ function SpaceItem({
   const [localContent, setLocalContent]   = useState(item.content)
   const [isDirty, setIsDirty]             = useState(false)
   const [saving, setSaving]               = useState(false)
-  const [collapseGuard, setCollapseGuard] = useState(false)
   const [savedFlash, setSavedFlash] = useState(false)
   const [pendingSync, setPendingSync] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [editorVersion, setEditorVersion] = useState(0)
-  // Measured: is the content taller than the collapse threshold? Drives both the
-  // auto-collapse default and whether the collapse/expand control is shown.
+  // Measured: is the content taller than the clamp threshold? Drives the
+  // clamped preview and its Show more / Show less.
   const [overflowing, setOverflowing] = useState(false)
-  // Local tap-to-reveal for a long, clamped body. Independent of the header
-  // collapse chevron (which hides the body entirely).
+  // A long, clamped body shown in full (Show more).
   const [expanded, setExpanded] = useState(false)
   const contentRef = useRef(null)
   const [copied, setCopied] = useState(false)
@@ -192,17 +185,9 @@ function SpaceItem({
     onDirtyChange?.(item.id, isDirty)
   }, [isDirty, item.id, onDirtyChange])
 
-  // Header collapse (the chevron): an explicit, header-only collapse that hides
-  // the body entirely - only the header (and tags) stay visible. Never applies
-  // in fullscreen or select mode. Defined here (above the measure effect) so
-  // that re-expanding a card re-measures its body.
-  const headerCollapsed = !isFullscreen && !selectMode && !grid && forcedCollapsed
-
-  // Measure content height to decide if the card is "long"
-  // scrollHeight reports the full natural height even while the card is clamped,
-  // so this stays correct whether the card is collapsed or expanded. While the
-  // header is collapsed the body isn't rendered, so this simply re-runs (and
-  // re-measures) when the card is expanded again.
+  // Measure content height to decide if the card is "long". scrollHeight
+  // reports the full natural height even while the card is clamped, so this
+  // stays correct whether the card is clamped or expanded.
   useLayoutEffect(() => {
     const el = contentRef.current
     if (!el) return
@@ -214,7 +199,7 @@ function SpaceItem({
     const observer = new ResizeObserver(measure)
     observer.observe(el)
     return () => observer.disconnect()
-  }, [localContent, editorVersion, headerCollapsed])
+  }, [localContent, editorVersion])
 
   // Cleanup timers on unmount
   useEffect(() => {
@@ -284,7 +269,6 @@ function SpaceItem({
       const latest = latestState.current
       if (latest.title !== payload.title || latest.content !== payload.content) return
       setIsDirty(false)
-      setCollapseGuard(false)
       clearTimeout(autoSaveTimer.current)
     }
 
@@ -396,31 +380,10 @@ function SpaceItem({
     setLocalContent(item.content)
     setEditorVersion(version => version + 1)
     setIsDirty(false)
-    setCollapseGuard(false)
     clearTimeout(autoSaveTimer.current)
   }
 
-  /**
-   * Collapse toggle with guard:
-   * If the user tries to collapse while dirty, show a warning
-   * instead of losing their edits.
-   */
-  const handleCollapseClick = () => {
-    if (!headerCollapsed && isDirty) {
-      setCollapseGuard(true)
-      return
-    }
-    setCollapseGuard(false)
-    onCollapsedChange?.(item.id, !headerCollapsed)
-  }
-
-  const handleFullscreenClick = () => {
-    if (!isFullscreen && headerCollapsed) {
-      onCollapsedChange?.(item.id, false)
-      setCollapseGuard(false)
-    }
-    setIsFullscreen(v => !v)
-  }
+  const handleFullscreenClick = () => setIsFullscreen(v => !v)
 
   // In grid view on small screens the card is shown denser (smaller text and
   // padding) so its full content still fits in a narrow two-column cell.
@@ -432,21 +395,18 @@ function SpaceItem({
   // title is being edited (so its text can be selected).
   const canDrag = !selectMode && !readOnly && !isFullscreen && !denseView && !editingTitle
   // Long-content clamp: a body taller than the threshold shows as a fixed-height
-  // preview (with a fade) until tapped to reveal in full. Independent of the
-  // header collapse, and never while editing (unsaved) so typing can't clamp the
-  // card out from under the user.
-  const clamped = canClamp && !headerCollapsed && overflowing && !isDirty && !expanded
-  // The collapse/expand chevron: list view only (not fullscreen or grid).
-  const showCollapseToggle = !isFullscreen && !grid
+  // preview (with a fade) until tapped to reveal in full, never while editing
+  // (unsaved) so typing can't clamp the card out from under the user.
+  const clamped = canClamp && overflowing && !isDirty && !expanded
   // Whether the tags row (with the reminder) is shown (drives content top
   // padding so the two don't stack into a large gap).
   const showTags = !selectMode && ((item.tags?.length ?? 0) > 0 || !!item.reminder || addingTag)
   const canSetReminder = !!onSetReminder && online
   // The Rich text toolbar: a bar across the top of the note, always shown
-  // (it scrolls sideways when narrow) - except read-only, collapsed or select
-  // mode. On a clamped preview it expands the note first; on a dense grid card
-  // it opens full screen (how those cards edit).
-  const showRichToolbar = item.type === 'richtext' && !readOnly && !headerCollapsed && !selectMode && !hidden
+  // (it scrolls sideways when narrow) - except read-only or select mode. On a
+  // clamped preview it expands the note first; on a dense grid card it opens
+  // full screen (how those cards edit).
+  const showRichToolbar = item.type === 'richtext' && !readOnly && !selectMode && !hidden
   // Copy and Export PDF release the content, so a hidden protected item has none.
   const canCopy = !hidden && item.type !== 'whiteboard'
 
@@ -620,17 +580,6 @@ function SpaceItem({
                 </>
               ) : (
                 <>
-                  {showCollapseToggle && (
-                  <button
-                    type="button"
-                    onClick={handleCollapseClick}
-                    className="touch-target p-1.5 rounded-full text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors"
-                    aria-label={headerCollapsed ? 'Expand item' : 'Collapse item'}
-                    title={headerCollapsed ? 'Expand' : 'Collapse'}
-                  >
-                    {headerCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-                  </button>
-                  )}
                   {/* Full screen opens from the menu; leaving it is a button. */}
                   {isFullscreen && (
                   <button
@@ -780,43 +729,11 @@ function SpaceItem({
         </div>
       )}
 
-      {/* Unsaved collapse warning */}
-      {collapseGuard && (
-        <div className="px-3 py-3 bg-amber-400/8 border-b border-amber-400/20 flex items-center gap-3 flex-wrap">
-          <AlertTriangle size={16} className="text-amber-400 shrink-0" />
-          <span className="text-sm text-amber-400 flex-1">You have unsaved changes.</span>
-          <div className="flex gap-2">
-            <button
-              onClick={handleSave}
-              className={buttonClass({ variant: 'primary', size: 'xs' })}
-            >
-              <Save size={14} /> Save & collapse
-            </button>
-            <button
-              onClick={() => { handleDiscard(); onCollapsedChange?.(item.id, true) }}
-              className={buttonClass({ variant: 'secondary', size: 'xs' })}
-            >
-              Discard & collapse
-            </button>
-            <button
-              type="button"
-              onClick={() => setCollapseGuard(false)}
-              aria-label="Dismiss warning"
-              title="Dismiss"
-              className="p-1.5 rounded-full text-text-muted hover:text-text-primary hover:bg-bg-hover transition-all"
-            >
-              <X size={14} />
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Content editor
-          The header chevron hides the body entirely (only the header and tags
-          stay). When shown, a long body is clamped to a fixed preview height
-          (with a fade and Show more) that expands to full height. A protected item
-          shows a Protected panel instead until the vault PIN opens it. */}
-      {!headerCollapsed && hidden && (
+          A long body is clamped to a fixed preview height (with a fade and Show
+          more) that expands to full height. A protected item shows a Protected
+          panel instead until the vault PIN opens it. */}
+      {hidden && (
         <div className={`${denseView ? 'px-2.5 pb-3' : 'px-3 pb-3'} ${showTags ? 'pt-0' : denseView ? 'pt-3' : 'pt-1'}`}>
           <button
             type="button"
@@ -832,7 +749,7 @@ function SpaceItem({
           </button>
         </div>
       )}
-      {!headerCollapsed && !hidden && (
+      {!hidden && (
       <div
         ref={contentRef}
         onClick={
@@ -916,7 +833,7 @@ function SpaceItem({
       </div>
       )}
       {/* An expanded long body can go back to its preview. */}
-      {!headerCollapsed && !hidden && canClamp && overflowing && expanded && !isDirty && !selectMode && (
+      {!hidden && canClamp && overflowing && expanded && !isDirty && !selectMode && (
         <div className="flex justify-center px-3 pb-3 -mt-1">
           <button
             type="button"

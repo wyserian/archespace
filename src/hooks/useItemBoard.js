@@ -3,8 +3,8 @@
  *
  * Wraps useSpaceItems for one space (or the dashboard's items, `spaceId ===
  * null`) with everything a page of item cards needs: stable, memo-friendly card
- * callbacks, unsaved-edit tracking (with the leave-page guard), per-card
- * collapse, the add / delete / move dialogs' state, and the brief highlight of
+ * callbacks, unsaved-edit tracking (with the leave-page guard), the add /
+ * delete / move dialogs' state, and the brief highlight of
  * an item opened from global search or just added. Render the dialogs with
  * ItemBoardModals.
  *
@@ -34,8 +34,6 @@ export function useItemBoard(spaceId) {
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(null)
   const [moveRequest, setMoveRequest] = useState(null)
   const [dirtyItems, setDirtyItems] = useState(new Set())
-  // Items the user has collapsed to header-only via the card chevron.
-  const [collapsedIds, setCollapsedIds] = useState(() => new Set())
   const [flashItemId, setFlashItemId] = useState(null)
 
   const openAddItem = useCallback(() => setAddModal(true), [])
@@ -45,23 +43,6 @@ export function useItemBoard(spaceId) {
     setDeleteConfirm(null)
     setBulkDeleteConfirm(null)
     setMoveRequest(null)
-  }, [])
-
-  const setItemCollapsed = useCallback((id, collapsed) => {
-    setCollapsedIds(prev => {
-      const next = new Set(prev)
-      if (collapsed) next.add(id)
-      else next.delete(id)
-      return next
-    })
-  }, [])
-
-  const setManyCollapsed = useCallback((ids, collapsed) => {
-    setCollapsedIds(prev => {
-      const next = new Set(prev)
-      ids.forEach(id => (collapsed ? next.add(id) : next.delete(id)))
-      return next
-    })
   }, [])
 
   // Track dirty state per item for beforeunload
@@ -191,7 +172,6 @@ export function useItemBoard(spaceId) {
   const cardProps = useMemo(() => ({
     quickNoteId,
     onQuickNoteOpened: clearQuickNote,
-    onCollapsedChange: setItemCollapsed,
     onUpdate: handleItemUpdate,
     onSetTags: handleSetTags,
     onSetReminder: handleSetReminder,
@@ -205,7 +185,7 @@ export function useItemBoard(spaceId) {
     onArchive: handleArchiveItem,
     onDirtyChange: handleDirtyChange,
   }), [
-    quickNoteId, clearQuickNote, setItemCollapsed, handleItemUpdate, handleSetTags, handleSetReminder, handleSetListNumbered, handleTogglePin, handleToggleStar,
+    quickNoteId, clearQuickNote, handleItemUpdate, handleSetTags, handleSetReminder, handleSetListNumbered, handleTogglePin, handleToggleStar,
     handleToggleLock, handleDuplicateItem, handleMoveOne, handleArchiveItem, handleDirtyChange,
   ])
 
@@ -291,8 +271,6 @@ export function useItemBoard(spaceId) {
     api: itemsApi,
     dirtyItems,
     hasDirty,
-    collapsedIds,
-    setManyCollapsed,
     flashItemId,
     addedItemId,
     cardProps,

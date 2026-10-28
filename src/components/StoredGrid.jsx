@@ -59,7 +59,6 @@ export default function StoredGrid({
                   item={item}
                   index={i}
                   readOnly
-                  grid
                   selectMode={selectMode}
                   selected={selectedItemIds.has(item.id)}
                   onSelectedChange={onToggleItem}

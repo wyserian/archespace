@@ -74,7 +74,6 @@ export default function RemindersPage() {
       <SpaceItem
         item={item}
         index={index}
-        forcedCollapsed={board.collapsedIds.has(item.id)}
         {...board.cardProps}
         // In reminder order, so not draggable.
         dragDisabled

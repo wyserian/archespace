@@ -474,14 +474,12 @@ export default function SpacePage() {
         selectMode={selectMode}
         selected={selectedItemIds.has(item.id)}
         onSelectedChange={toggleItem}
-        forcedCollapsed={board.collapsedIds.has(item.id)}
         editTitleOnMount={board.addedItemId === item.id}
         {...board.cardProps}
         onDragStart={handleItemDragStart}
         onDragEnd={handleDragEnd}
         dragDisabled={reorderDisabled}
         dense={denseItems}
-        grid={viewMode === 'grid'}
         readOnly={readOnly}
       />
     </div>
@@ -875,25 +873,6 @@ export default function SpacePage() {
                     `Unpinned ${selectionLabel}`,
                     "Couldn't unpin the selection.",
                   ),
-                },
-                // Collapse / expand only apply to item cards.
-                hasSelectedItems && {
-                  id: 'collapse',
-                  label: 'Collapse',
-                  icon: BULK_ICONS.collapse,
-                  onClick: () => {
-                    board.setManyCollapsed([...selectedItemIds], true)
-                    toast.info(`Collapsed ${selectedItemIds.size} items`)
-                  },
-                },
-                hasSelectedItems && {
-                  id: 'expand',
-                  label: 'Expand',
-                  icon: BULK_ICONS.expand,
-                  onClick: () => {
-                    board.setManyCollapsed([...selectedItemIds], false)
-                    toast.info('Expanded items')
-                  },
                 },
                 !readOnly && {
                   id: 'duplicate',

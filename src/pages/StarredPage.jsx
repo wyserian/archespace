@@ -116,7 +116,6 @@ export default function StarredPage() {
       <SpaceItem
         item={item}
         index={index}
-        forcedCollapsed={board.collapsedIds.has(item.id)}
         {...board.cardProps}
         // Starred items come from many spaces, so there's no one order to drag.
         dragDisabled

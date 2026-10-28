@@ -1,4 +1,4 @@
-import { Pin, PinOff, Copy, Trash2, Archive, RotateCcw, ChevronsDownUp, ChevronsUpDown, MoveRight } from 'lucide-react'
+import { Pin, PinOff, Copy, Trash2, Archive, RotateCcw, MoveRight } from 'lucide-react'
 
 export const BULK_ICONS = {
   pin: Pin,
@@ -8,6 +8,4 @@ export const BULK_ICONS = {
   archive: Archive,
   move: MoveRight,
   restore: RotateCcw,
-  collapse: ChevronsDownUp,
-  expand: ChevronsUpDown,
 }
