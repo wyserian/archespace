@@ -49,9 +49,11 @@ const FOCUSABLE =
  *   - `dismissible={false}`: no close button, and the backdrop and Escape
  *     don't close it; only its own actions do
  *
- * @param {{ title: string, onClose?: Function, children: React.ReactNode, footer?: React.ReactNode, onSubmit?: Function, size?: 'md'|'lg', dismissible?: boolean }} props
+ *   - `borderless`: no outline around the panel (the shadow sets it apart)
+ *
+ * @param {{ title: string, onClose?: Function, children: React.ReactNode, footer?: React.ReactNode, onSubmit?: Function, size?: 'md'|'lg', dismissible?: boolean, borderless?: boolean }} props
  */
-export function Modal({ title, onClose, children, footer, onSubmit, size = 'md', dismissible = true }) {
+export function Modal({ title, onClose, children, footer, onSubmit, size = 'md', dismissible = true, borderless = false }) {
   const titleId = useId()
   const panelRef = useRef(null)
   const close = dismissible ? onClose : undefined
@@ -122,7 +124,7 @@ export function Modal({ title, onClose, children, footer, onSubmit, size = 'md',
         aria-modal="true"
         aria-labelledby={titleId}
         onSubmit={onSubmit}
-        className={`bg-bg-surface border border-bg-border rounded-t-2xl sm:rounded-2xl w-full ${size === 'lg' ? 'sm:max-w-2xl' : 'sm:max-w-md'} shadow-2xl flex flex-col max-h-[90svh] outline-none`}
+        className={`bg-bg-surface ${borderless ? '' : 'border border-bg-border'} rounded-t-2xl sm:rounded-2xl w-full ${size === 'lg' ? 'sm:max-w-2xl' : 'sm:max-w-md'} shadow-2xl flex flex-col max-h-[90svh] outline-none`}
       >
         {/* Header - always visible */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-bg-border shrink-0">

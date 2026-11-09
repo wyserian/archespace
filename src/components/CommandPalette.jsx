@@ -94,7 +94,7 @@ export default function CommandPalette({ onNewSpace, onOpenSearch }) {
         role="dialog"
         aria-modal="true"
         aria-label="Command palette"
-        className="w-full max-w-lg bg-bg-surface border border-bg-border rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-lg bg-bg-surface rounded-2xl shadow-2xl overflow-hidden"
       >
         <input
           autoFocus

@@ -35,7 +35,7 @@ function Kbd({ children }) {
 
 export default function ShortcutsHelp({ onClose }) {
   return (
-    <Modal title="Keyboard shortcuts" onClose={onClose}>
+    <Modal title="Keyboard shortcuts" onClose={onClose} borderless>
       <ul className="space-y-2.5">
         {SHORTCUTS.map(({ keys, label }) => (
           <li key={label} className="flex items-center justify-between gap-4">
