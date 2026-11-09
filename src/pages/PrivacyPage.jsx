@@ -62,6 +62,17 @@ export default function PrivacyPage() {
       </ul>
       <p>These providers process data on our behalf under data processing agreements and never receive your decrypted content.</p>
 
+      <h2>App updates (Android)</h2>
+      <p>
+        The Android app can check <strong>GitHub</strong>, where its source code and releases are
+        published, for a newer version. It does this at most once a day after you unlock, and when you
+        tap <strong>Check for updates</strong> in Settings. Updates you choose to install are downloaded
+        from GitHub too. Each check or download is a plain request to GitHub: it sends no account details
+        or content, but GitHub receives standard request information such as your IP address, under
+        GitHub's own privacy statement. You can turn the daily check off in <strong>Settings &gt;
+        About &gt; Check automatically</strong>.
+      </p>
+
       <h2>International data transfers</h2>
       <p>
         Our providers may store and process data on infrastructure located outside your country, including
