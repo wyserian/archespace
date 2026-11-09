@@ -13,11 +13,11 @@
  * `readOnly` keeps everything readable and hides the controls.
  */
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, ArrowRight, Ban, GripVertical, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, GripVertical, Plus, Trash2 } from 'lucide-react'
 import { kanbanColumns } from '../../lib/kanban'
-import { SPACE_COLORS, getColorPreset, softColorValue } from '../../lib/spaceColors'
 import { ActionMenu } from '../ui/ActionMenu'
 import { useConfirm, quoted } from '../../hooks/useConfirm'
+import { colorActions, colorTint } from './colorActions'
 
 /**
  * Grow a textarea to fit its text. A hidden one (an empty description) has no
@@ -29,14 +29,6 @@ function fit(el) {
   el.style.height = 'auto'
   el.style.height = el.scrollHeight ? `${el.scrollHeight}px` : ''
 }
-
-// A colour swatch as a menu icon, one per preset.
-const SWATCHES = Object.fromEntries(SPACE_COLORS.map(c => [
-  c.id,
-  function Swatch({ className = '' }) {
-    return <span className={`h-3 w-3 rounded-full ${className}`} style={{ backgroundColor: c.value }} />
-  },
-]))
 
 export function KanbanEditor({ content, onChange, readOnly = false, fill = false }) {
   const [columns, setColumns] = useState(() => kanbanColumns(content))
@@ -166,15 +158,8 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
   const columnActions = (col, colIndex) => [
     colIndex > 0 && { id: 'left', label: 'Move left', icon: ArrowLeft, onClick: () => moveColumn(colIndex, -1) },
     colIndex < columns.length - 1 && { id: 'right', label: 'Move right', icon: ArrowRight, onClick: () => moveColumn(colIndex, 1) },
-    { id: 'color-none', label: 'No color', icon: Ban, active: !col.color, onClick: () => updateColumn(col.id, { color: null }) },
-    ...SPACE_COLORS.map(c => ({
-      id: `color-${c.id}`,
-      label: c.label,
-      icon: SWATCHES[c.id],
-      active: col.color === c.id,
-      onClick: () => updateColumn(col.id, { color: c.id }),
-    })),
-    { id: 'delete', label: 'Delete stage', icon: Trash2, variant: 'danger', onClick: () => removeColumn(col) },
+    ...colorActions(col.color, color => updateColumn(col.id, { color })),
+    { id: 'delete', group: 'delete', label: 'Delete stage', icon: Trash2, variant: 'danger', onClick: () => removeColumn(col) },
   ]
 
   const renderCard = (col, colIndex, card, cardIndex) => (
@@ -263,15 +248,14 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
   )
 
   const renderColumn = (col, colIndex) => {
-    const color = getColorPreset(col.color)?.value
+    const tint = colorTint(col.color)
     return (
       <section
         key={col.id}
         aria-label={col.title || 'Untitled stage'}
-        // A faint tint sets the stage apart; a colour tints it and adds a thin,
-        // soft strip along the top, like a space card's.
-        style={color ? { backgroundColor: `${color}14`, boxShadow: `inset 0 2px 0 ${softColorValue(col.color, '80')}` } : undefined}
-        className={`flex flex-col rounded-xl px-2 pb-2 ${color ? 'pt-3' : 'bg-text-primary/[0.04] pt-2'} ${
+        // A faint fill sets the stage apart; a colour tints it instead.
+        style={tint}
+        className={`flex flex-col rounded-xl px-2 pb-2 ${tint ? 'pt-3' : 'bg-text-primary/[0.04] pt-2'} ${
           fill ? 'h-full min-h-0 min-w-[220px] flex-1 basis-0' : 'w-60 shrink-0'
         }`}
         onDragOver={readOnly ? undefined : e => onDragOver(e, col.id, col.cards.length)}

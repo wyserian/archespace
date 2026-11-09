@@ -10,6 +10,8 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { Plus, Trash2, CheckSquare, Square, GripVertical, Pencil, Eye } from 'lucide-react'
 import MarkdownPreview from './MarkdownPreview'
 import { useConfirm, quoted } from '../../hooks/useConfirm'
+import { ActionMenu } from '../ui/ActionMenu'
+import { colorActions, colorTint } from './colorActions'
 
 /** Small icon-only delete button, visible only when the row is hovered. */
 function DelBtn({ onClick, label = 'Delete item' }) {
@@ -375,7 +377,8 @@ export function ListItemsEditor({ numbered = false, ...props }) {
 }
 
 /**
- * The Cards type: each card has a title and a description.
+ * The Cards type: each card has a title, a description, and an optional
+ * colour (a space colour preset id; none by default), set from its menu.
  *
  * @param {{ content: { items: Array }, onChange: Function }} props
  */
@@ -442,7 +445,8 @@ export function CardListEditor({ content, onChange, readOnly = false }) {
       {items.map((item, idx) => (
         <div
           key={item.id}
-          className="group bg-bg-sunken border border-bg-border-faint rounded-xl p-3 space-y-2"
+          style={colorTint(item.color)}
+          className={`group border border-bg-border-faint rounded-xl p-3 space-y-2 ${colorTint(item.color) ? '' : 'bg-bg-sunken'}`}
           onDragOver={readOnly ? undefined : e => e.preventDefault()}
           onDrop={readOnly ? undefined : e => handleDrop(e, idx)}
         >
@@ -461,7 +465,17 @@ export function CardListEditor({ content, onChange, readOnly = false }) {
                   onDragEnd={() => { dragFromIndex.current = null }}
                   onKeyDown={e => handleReorderKeyDown(e, idx)}
                 />
-                <DelBtn onClick={() => removeItem(item)} label="Delete card" />
+                <span className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                  <ActionMenu
+                    label="Card actions"
+                    bordered={false}
+                    compact
+                    actions={[
+                      ...colorActions(item.color, color => updateItem(item.id, 'color', color)),
+                      { id: 'delete', group: 'delete', label: 'Delete card', icon: Trash2, variant: 'danger', onClick: () => removeItem(item) },
+                    ]}
+                  />
+                </span>
               </>
             )}
           </div>
