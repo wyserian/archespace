@@ -46,8 +46,9 @@ export default function AppChrome() {
     const onExpired = () => {
       toast.info('Session expired after one week. Please sign in again.')
     }
-    const onVaultLocked = () => {
-      toast.info('Vault locked after inactivity. Enter your PIN to unlock.')
+    const onVaultLocked = (e) => {
+      const why = e.detail?.reason === 'screen' ? 'when the screen locked' : 'after inactivity'
+      toast.info(`Vault locked ${why}. Enter your PIN to unlock.`)
     }
     window.addEventListener('arche:session-expired', onExpired)
     window.addEventListener('arche:vault-auto-locked', onVaultLocked)

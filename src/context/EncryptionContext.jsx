@@ -33,7 +33,10 @@ import {
 } from '../lib/crypto/passkeyVault'
 import { VAULT_PIN_LOCKOUT_MS, VAULT_PIN_MAX_ATTEMPTS } from '../lib/constants'
 import { createWelcomeSpace } from '../lib/welcomeSpace'
-import { getAutoLockId, setAutoLockId, autoLockMs } from '../lib/crypto/vaultAutoLock'
+import {
+  getAutoLockId, setAutoLockId, autoLockMs,
+  screenLockSupported, getLockOnScreenLock, setLockOnScreenLock as storeLockOnScreenLock,
+} from '../lib/crypto/vaultAutoLock'
 import {
   getClientRateLimitStatus,
   recordClientRateLimitFailure,
@@ -71,6 +74,13 @@ export function EncryptionProvider({ children }) {
   const setAutoLock = useCallback((id) => {
     setAutoLockId(id)
     setAutoLockIdState(id)
+  }, [])
+
+  const [lockOnScreenLock, setLockOnScreenLockState] = useState(getLockOnScreenLock)
+
+  const setLockOnScreenLock = useCallback((on) => {
+    storeLockOnScreenLock(on)
+    setLockOnScreenLockState(on)
   }, [])
 
   const refreshVaultStatus = useCallback(async () => {
@@ -473,6 +483,23 @@ export function EncryptionProvider({ children }) {
     }
   }, [cryptoKey, autoLockId])
 
+  // Lock when the OS screen locks (opt-in; needs the idle-detection
+  // permission, asked for when it's turned on in Settings).
+  useEffect(() => {
+    if (!cryptoKey || !lockOnScreenLock || !screenLockSupported) return
+    const controller = new AbortController()
+    const detector = new window.IdleDetector()
+    detector.addEventListener('change', () => {
+      if (detector.screenState !== 'locked') return
+      lockRef.current('screen_lock')
+      window.dispatchEvent(new CustomEvent('arche:vault-auto-locked', { detail: { reason: 'screen' } }))
+    })
+    // 60s is the smallest idle threshold allowed; only screenState is used.
+    // Rejects when the permission was revoked: the idle timer still applies.
+    detector.start({ threshold: 60000, signal: controller.signal }).catch(() => {})
+    return () => controller.abort()
+  }, [cryptoKey, lockOnScreenLock])
+
   const isUnlocked = !!cryptoKey && !!user
 
   return (
@@ -497,6 +524,8 @@ export function EncryptionProvider({ children }) {
         refreshVaultStatus,
         autoLockId,
         setAutoLock,
+        lockOnScreenLock,
+        setLockOnScreenLock,
         passkeySupported,
         passkeys,
         unlockWithPasskey,

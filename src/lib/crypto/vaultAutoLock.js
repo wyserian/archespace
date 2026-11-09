@@ -36,6 +36,30 @@ export function setAutoLockId(id) {
   }
 }
 
+const SCREEN_LOCK_KEY = 'arche:vault-lock-on-screen-lock'
+
+/** Whether this browser can tell when the OS screen locks (Chromium only). */
+export const screenLockSupported = typeof window !== 'undefined' && 'IdleDetector' in window
+
+/** @returns {boolean} whether to lock the vault when the screen locks (off by default). */
+export function getLockOnScreenLock() {
+  try {
+    return localStorage.getItem(SCREEN_LOCK_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+/** Persist the lock-on-screen-lock choice. */
+export function setLockOnScreenLock(on) {
+  try {
+    if (on) localStorage.setItem(SCREEN_LOCK_KEY, '1')
+    else localStorage.removeItem(SCREEN_LOCK_KEY)
+  } catch {
+    // Storage unavailable; the in-memory choice still applies this session.
+  }
+}
+
 /**
  * Resolve an option id to its duration in ms.
  * @param {string} [id]

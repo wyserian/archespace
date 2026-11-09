@@ -25,6 +25,7 @@ import MfaSettings from '../components/MfaSettings'
 import { validateVaultPin, getWeakPinWarning } from '../lib/crypto/vaultPin'
 import WeakPinWarning from '../components/WeakPinWarning'
 import { VAULT_PIN_MIN_LENGTH, VAULT_AUTO_LOCK_OPTIONS } from '../lib/constants'
+import { screenLockSupported } from '../lib/crypto/vaultAutoLock'
 import { validatePassword } from '../lib/passwordPolicy'
 import { PasswordRules } from '../components/PasswordRules'
 import { logAudit } from '../lib/auditLog'
@@ -104,7 +105,7 @@ function SettingsSection({ id, active, children }) {
 export default function SettingsPage() {
   const navigate = useNavigate()
   const { user, signIn, signOut, requestPasswordReset, reauthenticate, updateEmail, deleteAccount, updatePasswordAndSignOut } = useAuth()
-  const { cryptoKey, unlock, updatePin, setupRecoveryCode, updatePinWithRecoveryCode, unlocking, lock, autoLockId, setAutoLock } = useEncryption()
+  const { cryptoKey, unlock, updatePin, setupRecoveryCode, updatePinWithRecoveryCode, unlocking, lock, autoLockId, setAutoLock, lockOnScreenLock, setLockOnScreenLock } = useEncryption()
   const askVaultPin = useVaultPinPrompt()
 
   // Local mode: erasing deletes everything kept in this browser, so it asks
@@ -485,6 +486,22 @@ export default function SettingsPage() {
   const handleLockVault = () => {
     lock()
     navigate('/app')
+  }
+
+  const handleScreenLockToggle = async () => {
+    if (lockOnScreenLock) {
+      setLockOnScreenLock(false)
+      toast.success('Lock when screen locks turned off.')
+      return
+    }
+    // Asked from the click itself: browsers only show the prompt on a user gesture.
+    const permission = await window.IdleDetector.requestPermission().catch(() => 'denied')
+    if (permission !== 'granted') {
+      toast.error('Permission was not given. Allow "Idle detection" for this site in your browser, then try again.')
+      return
+    }
+    setLockOnScreenLock(true)
+    toast.success('The vault will lock when the screen locks.')
   }
 
   const passwordToggle = (shown, toggle, label) => (
@@ -895,6 +912,24 @@ export default function SettingsPage() {
                       </select>
                     }
                   />
+                  {screenLockSupported && (
+                    <SettingRow
+                      title="Lock when screen locks"
+                      description="Lock the vault as soon as this computer's screen locks. Your browser will ask for permission. Applies to this device only."
+                      action={
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={lockOnScreenLock}
+                          aria-label="Lock when screen locks"
+                          onClick={handleScreenLockToggle}
+                          className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${lockOnScreenLock ? 'bg-accent' : 'bg-bg-border'}`}
+                        >
+                          <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${lockOnScreenLock ? 'left-[18px]' : 'left-0.5'}`} />
+                        </button>
+                      }
+                    />
+                  )}
                   <SettingRow
                     title="Lock now"
                     description="Your PIN or passkey will be needed again to see your data."
