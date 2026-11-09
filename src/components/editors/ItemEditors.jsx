@@ -225,7 +225,8 @@ function ListEditor({ content, onChange, variant, readOnly = false, onNumberedCh
 
   const [confirm, confirmDialog] = useConfirm()
   const removeItem = async (item) => {
-    const ok = await confirm({
+    // A done checklist item goes without asking; it's already finished.
+    const ok = (isChecklist && item.checked) || await confirm({
       title: 'Delete this item?',
       message: `${quoted(item.text, 'This empty item')} will be removed from the list.`,
     })
