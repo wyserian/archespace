@@ -8,6 +8,7 @@ import { useToast } from '../../context/ToastCore'
 import { useCommandPalette } from '../../context/CommandPaletteCore'
 import { useShortcut } from '../../context/ShortcutsCore'
 import { useOfflineSync } from '../../hooks/useOfflineSync'
+import { useExpirySweep } from '../../hooks/useExpirySweep'
 import CommandPalette from '../CommandPalette'
 import ShortcutsHelp from '../ShortcutsHelp'
 import { usePageActions } from '../../context/PageActionsCore'
@@ -26,6 +27,7 @@ export default function AppChrome() {
   }, [pageActions])
 
   useOfflineSync()
+  useExpirySweep(!!user && isUnlocked)
 
   useShortcut('palette', () => openPalette(), !!user)
   useShortcut('search', () => pageActionsRef.current.onOpenSearch?.(), !!user)

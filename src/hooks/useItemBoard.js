@@ -25,7 +25,7 @@ export function useItemBoard(spaceId) {
   const { toast } = useToast()
   const itemsApi = useSpaceItems(spaceId)
   const { data: items = [], isLoading } = itemsApi
-  const { update, togglePin, toggleStar, toggleLock, setTags, setReminder, setListNumbered, duplicate, archive, create, move } = itemsApi
+  const { update, togglePin, toggleStar, toggleLock, setTags, setReminder, setExpiry, setListNumbered, duplicate, archive, create, move } = itemsApi
   const askVaultPin = useVaultPinPrompt()
 
   // Dialog + card state
@@ -89,6 +89,14 @@ export function useItemBoard(spaceId) {
       onError: () => toastRef.current.error("Couldn't save the reminder."),
     }),
     [setReminderMutate]
+  )
+  const setExpiryMutate = setExpiry.mutate
+  const handleSetExpiry = useCallback(
+    (itemId, expiresAt) => setExpiryMutate({ id: itemId, expiresAt }, {
+      onSuccess: () => toastRef.current.success(expiresAt ? 'Self-destruct set' : 'Self-destruct cancelled'),
+      onError: () => toastRef.current.error("Couldn't save the self-destruct time."),
+    }),
+    [setExpiryMutate]
   )
   const setListNumberedMutate = setListNumbered.mutate
   const handleSetListNumbered = useCallback(
@@ -175,6 +183,7 @@ export function useItemBoard(spaceId) {
     onUpdate: handleItemUpdate,
     onSetTags: handleSetTags,
     onSetReminder: handleSetReminder,
+    onSetExpiry: handleSetExpiry,
     onSetListNumbered: handleSetListNumbered,
     onTogglePin: handleTogglePin,
     onToggleStar: handleToggleStar,
@@ -185,7 +194,7 @@ export function useItemBoard(spaceId) {
     onArchive: handleArchiveItem,
     onDirtyChange: handleDirtyChange,
   }), [
-    quickNoteId, clearQuickNote, handleItemUpdate, handleSetTags, handleSetReminder, handleSetListNumbered, handleTogglePin, handleToggleStar,
+    quickNoteId, clearQuickNote, handleItemUpdate, handleSetTags, handleSetReminder, handleSetExpiry, handleSetListNumbered, handleTogglePin, handleToggleStar,
     handleToggleLock, handleDuplicateItem, handleMoveOne, handleArchiveItem, handleDirtyChange,
   ])
 

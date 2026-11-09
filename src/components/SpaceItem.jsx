@@ -14,7 +14,7 @@ import {
   Pin, PinOff, Save, Copy, Archive,
   Maximize2, Minimize2, MoveRight, MoreVertical,
   ClipboardCopy, ClipboardCheck, FileDown, PencilOff, Shield, ShieldCheck, ShieldOff, EyeOff, Loader2,
-  Bell, Tag,
+  Bell, Tag, Hourglass,
 } from 'lucide-react'
 import { TextboxEditor, MarkdownEditor, ChecklistEditor, ListItemsEditor, CardListEditor } from './editors/ItemEditors'
 // The Rich text editor (Tiptap) is its own download, kept out of the first
@@ -39,6 +39,8 @@ import { CodeEditor } from './editors/CodeEditor'
 import { ItemTags } from './ItemTags'
 import { ReminderChip } from './ReminderChip'
 import { ReminderDialog } from './ReminderDialog'
+import { ExpiryChip } from './ExpiryChip'
+import { ExpiryDialog } from './ExpiryDialog'
 import { ActionMenu } from './ui/ActionMenu'
 import { buttonClass } from './ui/buttonStyles'
 import { getChecklistProgress } from '../lib/checklistProgress'
@@ -71,6 +73,7 @@ function SpaceItem({
   onUpdate,
   onSetTags,
   onSetReminder,
+  onSetExpiry,
   onSetListNumbered,
   onTogglePin,
   onToggleStar,
@@ -94,7 +97,7 @@ function SpaceItem({
   contextLabel,
   // In a read-only space: content stays readable and copyable, but every edit
   // (content, title, tags, pin, order, move, archive, delete) is off. A
-  // reminder, like a star, can still be set.
+  // reminder, like a star, can still be set, and so can self-destruct.
   readOnly = false,
   // Quick note (see useItemBoard): the card for this item opens in full
   // screen with the cursor in the text, then reports back.
@@ -133,6 +136,7 @@ function SpaceItem({
   // The Rich text editor instance, for its toolbar on the tags row.
   const [richEditor, setRichEditor] = useState(null)
   const [reminderOpen, setReminderOpen] = useState(false)
+  const [expiryOpen, setExpiryOpen] = useState(false)
   const [addingTag, setAddingTag] = useState(false)
   const online = useOnlineStatus()
 
@@ -400,8 +404,9 @@ function SpaceItem({
   const clamped = canClamp && overflowing && !isDirty && !expanded
   // Whether the tags row (with the reminder) is shown (drives content top
   // padding so the two don't stack into a large gap).
-  const showTags = !selectMode && ((item.tags?.length ?? 0) > 0 || !!item.reminder || addingTag)
+  const showTags = !selectMode && ((item.tags?.length ?? 0) > 0 || !!item.reminder || !!item.expires_at || addingTag)
   const canSetReminder = !!onSetReminder && online
+  const canSetExpiry = !!onSetExpiry && online
   // The Rich text toolbar: a bar across the top of the note, always shown
   // (it scrolls sideways when narrow) - except read-only or select mode. On a
   // clamped preview it expands the note first; on a dense grid card it opens
@@ -659,6 +664,14 @@ function SpaceItem({
                         onClick: () => onToggleLock(item.id, !!item.locked),
                       },
                       !readOnly && onArchive && { id: 'archive', group: 'keep', label: 'Archive', icon: Archive, disabled: !online, onClick: () => onArchive(item.id) },
+                      onSetExpiry && {
+                        id: 'expiry',
+                        group: 'keep',
+                        label: item.expires_at ? 'Change self-destruct' : 'Self-destruct',
+                        icon: Hourglass,
+                        disabled: !online,
+                        onClick: () => setExpiryOpen(true),
+                      },
                       !readOnly && { id: 'delete', group: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', disabled: !online, onClick: () => onDelete(item.id) },
                     ]}
                   />
@@ -692,6 +705,12 @@ function SpaceItem({
               onClick={canSetReminder ? () => setReminderOpen(true) : undefined}
             />
           )}
+          {item.expires_at && (
+            <ExpiryChip
+              expiresAt={item.expires_at}
+              onClick={canSetExpiry ? () => setExpiryOpen(true) : undefined}
+            />
+          )}
           <ItemTags
             tags={item.tags || []}
             onChange={(tags) => onSetTags?.(item.id, tags)}
@@ -707,6 +726,15 @@ function SpaceItem({
           onSave={(reminder) => onSetReminder(item.id, reminder)}
           onRemove={() => onSetReminder(item.id, null)}
           onClose={() => setReminderOpen(false)}
+        />
+      )}
+      {expiryOpen && (
+        <ExpiryDialog
+          kind="item"
+          initial={item.expires_at}
+          onSave={(at) => onSetExpiry(item.id, at)}
+          onRemove={() => onSetExpiry(item.id, null)}
+          onClose={() => setExpiryOpen(false)}
         />
       )}
 

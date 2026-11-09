@@ -30,7 +30,7 @@ export default function PrivacyPage() {
       <ul>
         <li><strong>Account email</strong> - to sign you in, send security and account emails, and recover access to your login (not your vault).</li>
         <li><strong>Encrypted content</strong> - stored only as ciphertext, as described above.</li>
-        <li><strong>Minimal metadata</strong> - timestamps, ordering, and non-content fields needed to sync and display your data.</li>
+        <li><strong>Minimal metadata</strong> - timestamps, ordering, and non-content fields needed to sync and display your data. This includes any self-destruct time you set, so the server can delete that space or item on time even when none of your devices is open.</li>
         <li><strong>Security logs</strong> - a limited audit log of authentication events (e.g. sign-in, password change) to protect your account.</li>
         <li><strong>Technical data</strong> - standard request information (such as IP address) processed transiently by our hosting/CDN for security and delivery.</li>
       </ul>

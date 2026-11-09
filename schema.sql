@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS spaces (
   read_only   boolean     NOT NULL DEFAULT false, -- enforced by trg_spaces_read_only (section 3)
   deleted_at  timestamptz DEFAULT NULL,          -- soft-delete; NULL = active
   archived_at timestamptz DEFAULT NULL,
+  expires_at  timestamptz DEFAULT NULL,          -- self-destruct; see section 3b
   created_at  timestamptz NOT NULL DEFAULT now(),
   updated_at  timestamptz NOT NULL DEFAULT now()
 );
@@ -48,6 +49,7 @@ CREATE TABLE IF NOT EXISTS space_items (
   locked      boolean     NOT NULL DEFAULT false, -- Protect
   deleted_at  timestamptz DEFAULT NULL,
   archived_at timestamptz DEFAULT NULL,
+  expires_at  timestamptz DEFAULT NULL,  -- self-destruct; see section 3b
   created_at  timestamptz NOT NULL DEFAULT now(),
   updated_at  timestamptz NOT NULL DEFAULT now()
 );
@@ -148,6 +150,10 @@ ALTER TABLE user_encryption DROP COLUMN IF EXISTS vault_format;
 -- Item reminders (encrypted; the server only sees that one is set).
 ALTER TABLE space_items ADD COLUMN IF NOT EXISTS reminder jsonb DEFAULT NULL;
 
+-- Self-destruct (section 3b): a plain time, so the server can enforce it.
+ALTER TABLE spaces      ADD COLUMN IF NOT EXISTS expires_at timestamptz DEFAULT NULL;
+ALTER TABLE space_items ADD COLUMN IF NOT EXISTS expires_at timestamptz DEFAULT NULL;
+
 -- 2. INDEXES
 
 -- Spaces
@@ -172,6 +178,8 @@ CREATE INDEX IF NOT EXISTS items_reminder_idx     ON space_items(user_id) WHERE 
 CREATE INDEX IF NOT EXISTS space_items_pinned_idx ON space_items(pinned)      WHERE pinned = true;
 CREATE INDEX IF NOT EXISTS items_deleted_at_idx   ON space_items(deleted_at)  WHERE deleted_at IS NOT NULL;
 CREATE INDEX IF NOT EXISTS items_archived_at_idx  ON space_items(archived_at) WHERE archived_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS spaces_expires_at_idx  ON spaces(expires_at)      WHERE expires_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS items_expires_at_idx   ON space_items(expires_at) WHERE expires_at IS NOT NULL;
 
 -- Audit log
 CREATE INDEX IF NOT EXISTS audit_log_user_id_idx       ON audit_log(user_id);
@@ -324,6 +332,36 @@ BEGIN
 END $$;
 DROP FUNCTION IF EXISTS purge_old_deleted_records();
 
+-- 3b. SELF-DESTRUCT
+-- A space or item with an expires_at in the past is gone: hidden at once by
+-- the "Hide expired" policies (section 4), then deleted for good by
+-- purge_expired() - a space with its items and sub-spaces (ON DELETE CASCADE).
+-- Unlike the bin, nothing is kept: the user chose this when setting the time.
+-- pg_cron runs it every five minutes where the extension is enabled; the apps
+-- also call it after unlock, so it happens without pg_cron too. A signed-in
+-- caller only ever removes their own rows; pg_cron (no auth.uid()) removes all.
+CREATE OR REPLACE FUNCTION purge_expired()
+RETURNS void
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  DELETE FROM space_items
+   WHERE expires_at <= now() AND (auth.uid() IS NULL OR user_id = auth.uid());
+  DELETE FROM spaces
+   WHERE expires_at <= now() AND (auth.uid() IS NULL OR user_id = auth.uid());
+$$;
+REVOKE ALL ON FUNCTION purge_expired() FROM public, anon;
+GRANT EXECUTE ON FUNCTION purge_expired() TO authenticated;
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
+    PERFORM cron.unschedule(jobid) FROM cron.job WHERE jobname = 'purge-expired';
+    PERFORM cron.schedule('purge-expired', '*/5 * * * *', 'SELECT public.purge_expired()');
+  END IF;
+END $$;
+
 -- 4. ROW LEVEL SECURITY (RLS)
 
 ALTER TABLE spaces          ENABLE ROW LEVEL SECURITY;
@@ -354,6 +392,22 @@ DO $$ BEGIN
     CREATE POLICY "Users can manage their own items"
       ON space_items FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
   END IF;
+END $$;
+
+-- Self-destruct (section 3b): an expired space or item can't be read, changed
+-- or deleted any more, only purged. Restrictive => ANDs with the policies
+-- above. Re-runnable: drops then recreates.
+DO $$
+DECLARE t text;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['spaces','space_items'] LOOP
+    EXECUTE format('DROP POLICY IF EXISTS "Hide expired" ON %I', t);
+    EXECUTE format($f$
+      CREATE POLICY "Hide expired" ON %I
+        AS RESTRICTIVE FOR SELECT TO authenticated
+        USING (expires_at IS NULL OR expires_at > now())
+    $f$, t);
+  END LOOP;
 END $$;
 
 -- User encryption metadata: full CRUD for the owning user only.

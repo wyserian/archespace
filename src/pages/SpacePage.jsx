@@ -7,12 +7,15 @@ import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Plus, CheckSquare, ListChecks, FileDown, Search, SearchX, X, PencilOff, PencilLine, Shield, ShieldCheck, ShieldOff,
   ChevronRight, MoreHorizontal, MoreVertical, Folder, Pin, PinOff, Star, StarOff, Tag, Pencil, Copy, MoveRight, Archive, Trash2,
+  Hourglass,
 } from 'lucide-react'
 import { ItemTags } from '../components/ItemTags'
 import { parseTags } from '../lib/spaceColors'
 import { useDragReorder } from '../hooks/useDragReorder'
 import { useDualEntitySelection } from '../hooks/useDualEntitySelection'
-import { useSpaces } from '../hooks/useSpaces'
+import { useSpaces, useSetSpaceExpiry } from '../hooks/useSpaces'
+import { ExpiryChip } from '../components/ExpiryChip'
+import { ExpiryDialog } from '../components/ExpiryDialog'
 import { useItemBoard } from '../hooks/useItemBoard'
 import ItemBoardModals from '../components/ItemBoardModals'
 import { useToast } from '../context/ToastCore'
@@ -115,6 +118,14 @@ export default function SpacePage() {
     bulkSetPinned: bulkSetSpacesPinned,
     bulkDuplicate: bulkDuplicateSpaces,
   } = useSpaces()
+
+  // Self-destruct (see SpaceCard): from the menu or the header chip.
+  const setSpaceExpiry = useSetSpaceExpiry()
+  const [expiryOpen, setExpiryOpen] = useState(false)
+  const saveExpiry = (expiresAt) => setSpaceExpiry.mutate({ id, expiresAt }, {
+    onSuccess: () => toast.success(expiresAt ? 'Self-destruct set' : 'Self-destruct cancelled'),
+    onError: () => toast.error("Couldn't save the self-destruct time."),
+  })
 
   // Items, their card callbacks, unsaved-edit guard and item dialogs.
   const board = useItemBoard(id)
@@ -589,6 +600,9 @@ export default function SpacePage() {
                   <PencilOff size={11} aria-hidden="true" /> Read-only
                 </span>
               )}
+              {space?.expires_at && (
+                <ExpiryChip expiresAt={space.expires_at} onClick={online ? () => setExpiryOpen(true) : undefined} />
+              )}
             </div>
             {space?.description && (
               <p className="text-xs text-text-muted truncate mt-0.5">{space.description}</p>
@@ -684,6 +698,14 @@ export default function SpacePage() {
                   },
                   { id: 'archive', group: 'keep', label: 'Archive', icon: Archive, disabled: !online, onClick: handleArchiveSpace },
                   {
+                    id: 'expiry',
+                    group: 'keep',
+                    label: space.expires_at ? 'Change self-destruct' : 'Self-destruct',
+                    icon: Hourglass,
+                    disabled: !online,
+                    onClick: () => setExpiryOpen(true),
+                  },
+                  {
                     id: 'delete',
                     group: 'delete',
                     label: 'Delete',
@@ -698,6 +720,15 @@ export default function SpacePage() {
           </div>
         </div>
       </header>
+      {expiryOpen && space && (
+        <ExpiryDialog
+          kind="space"
+          initial={space.expires_at}
+          onSave={saveExpiry}
+          onRemove={() => saveExpiry(null)}
+          onClose={() => setExpiryOpen(false)}
+        />
+      )}
 
       {/* Main content */}
       <main

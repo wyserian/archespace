@@ -42,6 +42,32 @@ describe('local client', () => {
     expect(items[0].space_id).toBeNull()
   })
 
+  it('hides expired rows, and purge_expired removes them with what they hold', async () => {
+    const db = client()
+    const past = new Date(Date.now() - 1000).toISOString()
+    const future = new Date(Date.now() + 60 * 60 * 1000).toISOString()
+    const { data: gone } = await db.from('spaces').insert({ name: 'Gone', expires_at: past }).select().single()
+    await db.from('spaces').insert([{ name: 'Child', parent_id: gone.id }, { name: 'Later', expires_at: future }])
+    await db.from('space_items').insert([
+      { space_id: gone.id, type: 'textbox' },
+      { space_id: null, type: 'textbox', expires_at: past },
+      { space_id: null, type: 'textbox' },
+    ])
+    const names = async () => (await db.from('spaces').select('name')).data.map(s => s.name).sort()
+
+    // As the "Hide expired" policies: the expired rows themselves are out of reach.
+    expect(await names()).toEqual(['Child', 'Later'])
+    expect((await db.from('space_items').select()).data).toHaveLength(2)
+    await db.from('space_items').update({ title: 'x' }).not('expires_at', 'is', null)
+    expect((await db.from('space_items').select().eq('title', 'x')).data).toHaveLength(0)
+
+    expect((await db.rpc('purge_expired')).error).toBeNull()
+    expect(await names()).toEqual(['Later'])
+    const { data: items } = await db.from('space_items').select()
+    expect(items).toHaveLength(1)
+    expect(items[0].expires_at).toBeNull()
+  })
+
   it('guards read-only spaces like the database', async () => {
     const db = client()
     const { data: space } = await db.from('spaces').insert({ name: 'R' }).select().single()

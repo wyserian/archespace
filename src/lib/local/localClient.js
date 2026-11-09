@@ -6,12 +6,14 @@
  *
  * It mirrors what the database does for these tables (see schema.sql):
  * column defaults, `updated_at`, cascading deletes, the read-only space
- * guards and the vault PIN lockout. Like the server, it never empties the
- * recycle bin by itself. Rows hold the same encrypted values the server would.
+ * guards, self-destruct (expired rows hidden, removed by purge_expired) and
+ * the vault PIN lockout. Like the server, it never empties the recycle bin by
+ * itself. Rows hold the same encrypted values the server would.
  */
 import { LOCAL_USER, leaveLocalMode } from '../localMode'
 import { TABLES } from './localStore'
 import { descendantsOf } from '../spaceTree'
+import { isExpired } from '../expiry'
 
 const PIN_MAX_ATTEMPTS = 5
 const PIN_LOCK_MS = 5 * 60 * 1000
@@ -28,11 +30,11 @@ const UNAVAILABLE = fail('Not available in local mode.')
 const DEFAULTS = {
   spaces: () => ({
     description: '', position: 0, pinned: false, color: null, tags: [], parent_id: null,
-    starred: false, locked: false, read_only: false, deleted_at: null, archived_at: null,
+    starred: false, locked: false, read_only: false, deleted_at: null, archived_at: null, expires_at: null,
   }),
   space_items: () => ({
     space_id: null, title: '', content: {}, tags: [], reminder: null, position: 0, pinned: false,
-    starred: false, locked: false, deleted_at: null, archived_at: null,
+    starred: false, locked: false, deleted_at: null, archived_at: null, expires_at: null,
   }),
   user_encryption: () => ({
     wrapped_key: null, recovery_salt: null, recovery_wrapped_key: null,
@@ -134,8 +136,12 @@ class LocalEngine {
     }
   }
 
+  // Expired spaces and items are out of reach, as the "Hide expired" policies
+  // make them on the server, until purge_expired removes them.
   matching(query) {
-    return [...this.tables[query.table].values()].filter(row => query.filters.every(f => f(row)))
+    const hideExpired = query.table === 'spaces' || query.table === 'space_items'
+    return [...this.tables[query.table].values()]
+      .filter(row => !(hideExpired && isExpired(row)) && query.filters.every(f => f(row)))
   }
 
   shape(query, rows) {
@@ -211,18 +217,19 @@ class LocalEngine {
   async delete(query) {
     const { table } = query
     const rows = this.matching(query)
-    if (table === 'spaces') {
-      // ON DELETE CASCADE: sub-spaces at every level, and the items of every
-      // space removed.
-      const roots = rows.map(r => r.id)
-      const ids = new Set([...roots, ...descendantsOf(roots, [...this.tables.spaces.values()])])
-      const items = [...this.tables.space_items.values()].filter(i => ids.has(i.space_id))
-      await this.erase('space_items', items)
-      await this.erase('spaces', [...ids].map(id => this.tables.spaces.get(id)))
-    } else {
-      await this.erase(table, rows)
-    }
+    if (table === 'spaces') await this.eraseSpaces(rows)
+    else await this.erase(table, rows)
     return rows
+  }
+
+  // ON DELETE CASCADE: sub-spaces at every level, and the items of every
+  // space removed.
+  async eraseSpaces(rows) {
+    const roots = rows.map(r => r.id)
+    const ids = new Set([...roots, ...descendantsOf(roots, [...this.tables.spaces.values()])])
+    const items = [...this.tables.space_items.values()].filter(i => ids.has(i.space_id))
+    await this.erase('space_items', items)
+    await this.erase('spaces', [...ids].map(id => this.tables.spaces.get(id)))
   }
 
   async write(table, rows) {
@@ -302,6 +309,12 @@ class LocalEngine {
         case 'log_client_event':
           // Nothing is logged in local mode.
           return { data: null, error: null }
+        case 'purge_expired': {
+          // As schema.sql: expired items, then expired spaces with what they hold.
+          await this.erase('space_items', [...this.tables.space_items.values()].filter(r => isExpired(r)))
+          await this.eraseSpaces([...this.tables.spaces.values()].filter(r => isExpired(r)))
+          return { data: null, error: null }
+        }
         default:
           return { data: null, error: UNAVAILABLE }
       }

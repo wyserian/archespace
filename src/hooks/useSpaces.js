@@ -24,6 +24,35 @@ import {
   makeReorder,
 } from './entityMutations'
 
+/**
+ * A space's self-destruct time (lib/expiry.js), or `expiresAt: null` to
+ * cancel it. Plain metadata, so a read-only space allows it, like a delete;
+ * when it passes, its items and sub-spaces go too. Optimistic so the chip
+ * shows at once.
+ */
+export function useSetSpaceExpiry() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, expiresAt }) => {
+      assertOnline()
+      const { error } = await supabase.from('spaces').update({ expires_at: expiresAt }).eq('id', id)
+      if (error) throw error
+    },
+    onMutate: async ({ id, expiresAt }) => {
+      await qc.cancelQueries({ queryKey: queryKeys.spaces() })
+      const previous = qc.getQueryData(queryKeys.spaces())
+      qc.setQueryData(queryKeys.spaces(), (old) =>
+        old?.map(s => (s.id === id ? { ...s, expires_at: expiresAt } : s))
+      )
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(queryKeys.spaces(), context.previous)
+    },
+    onSettled: () => invalidateSpaceList(qc),
+  })
+}
+
 export function useSpaces() {
   const qc = useQueryClient()
   const { user } = useAuth()

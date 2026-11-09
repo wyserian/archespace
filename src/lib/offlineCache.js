@@ -11,6 +11,7 @@
  * (and another account could not decrypt them anyway).
  */
 import { isLocalMode } from './localMode'
+import { withoutExpired } from './expiry'
 
 const DB_NAME = 'arche-offline-cache'
 const STORE = 'rows'
@@ -54,7 +55,10 @@ export async function saveRows(userId, key, rows) {
   }
 }
 
-/** Return the cached encrypted rows for a query key, or null if none. */
+/**
+ * Return the cached encrypted rows for a query key, or null if none. Rows
+ * whose self-destruct time has passed are left out, as the server hides them.
+ */
 export async function loadRows(userId, key) {
   try {
     const db = await openDb()
@@ -65,7 +69,7 @@ export async function loadRows(userId, key) {
       req.onerror = () => reject(req.error)
     })
     db.close()
-    return value?.rows ?? null
+    return value?.rows ? withoutExpired(value.rows) : null
   } catch {
     return null
   }

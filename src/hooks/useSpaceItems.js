@@ -309,6 +309,31 @@ export function useSpaceItems(spaceId) {
     onSettled: () => invalidateSpaceItems(qc, itemsKey),
   })
 
+  // Self-destruct time (lib/expiry.js), or `expiresAt: null` to cancel it. A
+  // plain time, not content, so a read-only space allows it, like a delete.
+  const setExpiry = useMutation({
+    mutationFn: async ({ id, expiresAt }) => {
+      assertOnline()
+      const { error } = await supabase
+        .from('space_items')
+        .update({ expires_at: expiresAt })
+        .eq('id', id)
+      if (error) throw error
+    },
+    onMutate: async ({ id, expiresAt }) => {
+      await qc.cancelQueries({ queryKey: queryKeys.items(itemsKey) })
+      const previous = qc.getQueryData(queryKeys.items(itemsKey))
+      qc.setQueryData(queryKeys.items(itemsKey), (old) =>
+        old?.map(it => (it.id === id ? { ...it, expires_at: expiresAt } : it))
+      )
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(queryKeys.items(itemsKey), context.previous)
+    },
+    onSettled: () => invalidateSpaceItems(qc, itemsKey),
+  })
+
   // A List's numbering: bullets and numbers hold the same content, so turning
   // numbers on or off only switches the item's type (plain metadata, nothing
   // to re-encrypt). Optimistic so the list re-numbers at once.
@@ -493,6 +518,7 @@ export function useSpaceItems(spaceId) {
     toggleLock,
     setTags,
     setReminder,
+    setExpiry,
     setListNumbered,
     remove,
     reorder,

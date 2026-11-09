@@ -8,8 +8,11 @@
  */
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Pin, PinOff, Star, StarOff, Pencil, PencilOff, PencilLine, Trash2, Copy, MoveRight, FileDown, Archive, MoreVertical, Shield, ShieldCheck, ShieldOff, Tag, X } from 'lucide-react'
+import { Pin, PinOff, Star, StarOff, Pencil, PencilOff, PencilLine, Trash2, Copy, MoveRight, FileDown, Archive, MoreVertical, Shield, ShieldCheck, ShieldOff, Tag, X, Hourglass } from 'lucide-react'
 import { useFetchSpaceItems } from '../../hooks/useSpaceItems'
+import { useSetSpaceExpiry } from '../../hooks/useSpaces'
+import { ExpiryChip } from '../ExpiryChip'
+import { ExpiryDialog } from '../ExpiryDialog'
 import { exportSpaceToPdf } from '../../lib/pdfExport'
 import { queryKeys } from '../../lib/queryKeys'
 import { getColorPreset, parseTags, softColorValue, tagColorValue } from '../../lib/spaceColors'
@@ -186,6 +189,41 @@ export function SpaceCard({
     <TagInput onCommit={addTags} onCancel={() => setAddingTag(false)} />
   )
 
+  // Self-destruct: plain metadata, so a read-only or protected space allows
+  // it, like a delete.
+  const setExpiry = useSetSpaceExpiry()
+  const [expiryOpen, setExpiryOpen] = useState(false)
+  const saveExpiry = (expiresAt) => setExpiry.mutate({ id: col.id, expiresAt }, {
+    onSuccess: () => toast.success(expiresAt ? 'Self-destruct set' : 'Self-destruct cancelled'),
+    onError: () => toast.error("Couldn't save the self-destruct time."),
+  })
+  // The chip and dialog sit inside the card (the dialog through a portal,
+  // whose events still bubble here), so their clicks and keys stop short of it.
+  const stop = e => e.stopPropagation()
+  const expiry = (
+    <>
+      {col.expires_at && (
+        <span onClick={stop} className="inline-flex">
+          <ExpiryChip
+            expiresAt={col.expires_at}
+            onClick={online && !selectMode && !actions ? () => setExpiryOpen(true) : undefined}
+          />
+        </span>
+      )}
+      {expiryOpen && (
+        <div onClick={stop} onKeyDown={stop}>
+          <ExpiryDialog
+            kind="space"
+            initial={col.expires_at}
+            onSave={saveExpiry}
+            onRemove={() => saveExpiry(null)}
+            onClose={() => setExpiryOpen(false)}
+          />
+        </div>
+      )}
+    </>
+  )
+
   const activate = () => {
     if (selectMode) onToggleSelect?.()
     else if (!actions) navigate(`/space/${col.id}`)
@@ -261,6 +299,14 @@ export function SpaceCard({
       onClick: handleToggleLock,
     },
     { id: 'archive', group: 'keep', label: 'Archive', icon: Archive, disabled: !online, onClick: () => onArchive?.(col.id) },
+    {
+      id: 'expiry',
+      group: 'keep',
+      label: col.expires_at ? 'Change self-destruct' : 'Self-destruct',
+      icon: Hourglass,
+      disabled: !online,
+      onClick: () => setExpiryOpen(true),
+    },
     { id: 'delete', group: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', disabled: !online, onClick: () => setDeleteConfirm(col.id) },
   ]
 
@@ -333,6 +379,7 @@ export function SpaceCard({
           </div>
         )}
 
+        {expiry}
         <p className="text-text-muted text-xs shrink-0 whitespace-nowrap tabular-nums">{itemLabel}</p>
 
         {/* The check box sits where the menu is, as on the grid card. */}
@@ -397,6 +444,7 @@ export function SpaceCard({
       {/* Tags (all of them, as the card is where they're removed) and the
           item count, separated by a dot. */}
       <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1">
+        {expiry}
         {tags.map(tag => (
           <TagPill key={tag} tag={tag} active={activeTags.includes(tag)} onClick={onTagClick} onRemove={removeTag} />
         ))}
