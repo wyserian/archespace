@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { expiresSoon, formatExpiresIn, isExpired, withoutExpired } from './expiry'
-import { holdsExpired } from '../hooks/useExpirySweep'
+import { expiresSoon, formatExpiresIn, holdsExpired, isExpired, withoutExpired } from './expiry'
 
 const NOW = Date.parse('2026-11-10T12:00:00Z')
 const at = ms => new Date(NOW + ms).toISOString()

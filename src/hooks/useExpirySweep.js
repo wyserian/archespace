@@ -9,16 +9,9 @@
 import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import { isExpired } from '../lib/expiry'
+import { holdsExpired } from '../lib/expiry'
 
 const SWEEP_MS = 30 * 1000
-
-/** Whether cached query `data` (rows, or an object of row lists) holds an expired row. */
-export function holdsExpired(data, now = Date.now()) {
-  const some = rows => Array.isArray(rows) && rows.some(row => isExpired(row, now))
-  if (Array.isArray(data)) return some(data)
-  return !!data && typeof data === 'object' && Object.values(data).some(some)
-}
 
 export function useExpirySweep(enabled) {
   const qc = useQueryClient()

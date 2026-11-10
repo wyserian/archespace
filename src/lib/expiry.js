@@ -24,6 +24,13 @@ export function isExpired(row, now = Date.now()) {
 /** `rows` without the expired ones. */
 export const withoutExpired = (rows, now = Date.now()) => rows.filter(row => !isExpired(row, now))
 
+/** Whether cached query `data` (rows, or an object of row lists) holds an expired row. */
+export function holdsExpired(data, now = Date.now()) {
+  const some = rows => Array.isArray(rows) && rows.some(row => isExpired(row, now))
+  if (Array.isArray(data)) return some(data)
+  return !!data && typeof data === 'object' && Object.values(data).some(some)
+}
+
 /**
  * How long until `iso`, in short words: "in 45 min", "in 5 h", "in 3 days",
  * or the day ("on 12 Dec") beyond a month. "now" once it's due.
