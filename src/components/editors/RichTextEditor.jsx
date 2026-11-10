@@ -26,6 +26,7 @@ import { toRichDoc } from '../../lib/richText/convert'
 import { registerSearchOpener } from '../../lib/richText/searchReplace'
 import { LINE_HEIGHTS } from '../../lib/richText/lineHeight'
 import { buttonClass } from '../ui/buttonStyles'
+import { Switch } from '../ui/Switch'
 import { useConfirm } from '../../hooks/useConfirm'
 import { MENU_PANEL, menuItemClass } from '../ui/menuStyles'
 
@@ -574,15 +575,7 @@ function SearchPanel({ editor, anchorRef, count, index, invalid, onClose }) {
         <label className="flex cursor-pointer items-center gap-2 text-sm text-text-secondary">
           <Regex size={16} className="text-text-muted" />
           <span className="flex-1">Use regular expression</span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={options.regex}
-            onClick={() => toggle('regex')}
-            className={`relative h-5 w-9 rounded-full transition-colors ${options.regex ? 'bg-accent' : 'bg-bg-border'}`}
-          >
-            <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${options.regex ? 'left-[18px]' : 'left-0.5'}`} />
-          </button>
+          <Switch checked={options.regex} onChange={() => toggle('regex')} />
         </label>
       </div>
 

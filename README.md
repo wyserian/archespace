@@ -29,13 +29,14 @@ A companion Mobile/Flutter app lives in a [separate repository](https://github.c
 ## Features
 
 - **Zero-knowledge encryption**: the server only ever stores ciphertext ([Security](#security))
-- **Vault PIN** with a recovery code, auto-lock and passkey / biometric unlock
+- **Vault PIN** with a recovery code, auto-lock (optionally when the screen locks, in Chrome and Edge) and passkey / biometric unlock
 - **Protected** items and spaces, and **read-only** spaces
+- **Self-destruct**: a space or item deletes itself for good at a time you set
 - **Spaces** with sub-spaces nested to any depth, tags and colours
-- **Item types**: notes, rich text, lists, checklists, cards, tables, Kanban boards, whiteboards and code ([Item types](#item-types))
+- **Item types**: notes, rich text, lists, checklists, cards, tables, Kanban boards, whiteboards and code ([Item types](#item-types)), each with an optional card colour
 - **Reminders** that repeat or stay until turned off, each with or without a sound, all listed in one view
 - **Search** across spaces, tags and content
-- **Starred**, **archive** and **bin**
+- **Starred**, **Self-destruct** (soonest first), **archive** and **bin** views
 - **Realtime sync** with the [mobile app](https://github.com/wyserian/archespace-mobile), and **offline mode**
 - **Encrypted backups** and **PDF export**
 - **Local mode**: no account, nothing leaves the browser
@@ -51,10 +52,10 @@ A companion Mobile/Flutter app lives in a [separate repository](https://github.c
 | Note | Free-form plain text. |
 | Rich text | A full document editor: headings, bullet, numbered and task lists, quotes, code blocks, tables, links, highlight, text alignment, superscript and subscript, line spacing, and find and replace (with regular expressions). Pasted Markdown is converted to formatting as you paste. |
 | List | Bullet or numbered list (a Numbered checkbox switches between them). |
-| Checklist | Checkboxes with progress tracking. |
+| Checklist | Checkboxes with progress tracking. A done item deletes without asking. |
 | Cards | Title and description pairs for planning. |
 | Table | Rows and columns; copies as tab-separated values for spreadsheets. |
-| Kanban | Cards in stages (To do, In Progress, Done to start): drag a card between stages, or move it with the arrow keys; rename, move and delete stages. |
+| Kanban | Cards in stages (To do, In Progress, Done to start): drag a card between stages, or move it with the arrow keys; rename, colour, move and delete stages. |
 | Whiteboard | An Excalidraw board: shapes, arrows, text and freehand drawing on a canvas you can pan and zoom. |
 | Code | Monospace snippet with automatic syntax highlighting. |
 
@@ -66,7 +67,8 @@ Two separate secrets: a **login password** for the account and a **vault PIN** (
 
 - **Encrypted in the browser.** Content is encrypted with AES-256-GCM before it leaves the device; the server stores only ciphertext and non-sensitive metadata (IDs, timestamps, positions, flags).
 - **PIN never stored.** A random vault key is wrapped with a key derived from the PIN by Argon2id.
-- **Unlock.** The vault auto-locks when idle. Passkey / biometric unlock keeps its wrapped key on the device, never on the server.
+- **Unlock.** The vault auto-locks when idle, and can lock when the computer's screen locks (Chrome and Edge, after a browser permission). Passkey / biometric unlock keeps its wrapped key on the device, never on the server.
+- **Self-destruct.** Its time is plain metadata, so the server hides an expired space or item at once and deletes it (with what it holds) for good: on a schedule where `pg_cron` is enabled, and after each unlock.
 - **Server-side guards.** Row Level Security limits each user to their own data, and optional two-factor sign-in is enforced by the database, not just the app. Repeated wrong PINs pause unlocking for a few minutes.
 - **Protected items and spaces** need the PIN again inside an unlocked vault, as does erasing a local-mode vault: a guard against someone using your unlocked device.
 - **Encrypted backups** open in the same vault, or anywhere with the PIN used when exporting.
@@ -168,15 +170,15 @@ archespace/
 
 Key areas:
 
-- `src/pages/` contains the public home page, login, password reset, dashboard, space view, starred, reminders, archive, bin, settings, and the terms and privacy pages.
+- `src/pages/` contains the public home page, login, password reset, dashboard, space view, starred and self-destruct (one page, two views), reminders, archive, bin, settings, and the terms and privacy pages.
 - `src/components/` contains reusable UI (shared buttons, menus, type badges, dialogs), item editors, layout shell, vault unlock gate, and space components.
 - `src/context/` contains auth, encryption, vault PIN prompt, appearance/theme, toast, shortcuts, command palette, and page action providers.
-- `src/hooks/` contains data hooks for spaces, items, starred, reminders, archive, bin, global search, offline sync, online status, drag reordering, and session timeout.
+- `src/hooks/` contains data hooks for spaces, items, starred and self-destruct counts, reminders, archive, bin, global search, offline sync, the self-destruct sweep, online status, drag reordering, and session timeout.
 - `src/lib/richText/` contains the Tiptap editor setup (extensions, find and replace, line spacing), conversion of older notes, and `webview/`, the source of the offline editor bundled into the mobile app (`npm run build:mobile-editor`).
 - `src/lib/whiteboard/` contains the Whiteboard's Excalidraw setup, its saved format (with a PNG preview for cards and PDFs), conversion of older drawings, and `webview/`, the source of the mobile app's offline whiteboard (built by the same command).
 - `src/lib/crypto/` contains AES-GCM encryption, Argon2id key derivation, vault setup and unlock, non-extractable session key storage, PIN recovery code, and WebAuthn PRF passkey wrapping/unlock with a local (IndexedDB) passkey store.
 - `src/lib/` contains the Supabase client, data protection helpers, item type definitions, protected-content state, clipboard serialization, encrypted backup import/export, offline queue and encrypted cache, connectivity detection, rate limiting, audit logging, two-factor (TOTP) and backup-code helpers, PDF export, password policy, and build info.
-- `schema.sql` contains tables, indexes, RLS policies, triggers (including read-only spaces), RPC functions, realtime setup, vault recovery and PIN lockout, the `mfa_backup_codes` table with AAL2 enforcement for two-factor auth, the account-deletion email trigger, and the auth audit log. (Passkey unlock stores its wrapped key on each client, so there is no passkey table.)
+- `schema.sql` contains tables, indexes, RLS policies, triggers (including read-only spaces), RPC functions, self-destruct (the "Hide expired" policies and `purge_expired`, scheduled with `pg_cron` when enabled), realtime setup, vault recovery and PIN lockout, the `mfa_backup_codes` table with AAL2 enforcement for two-factor auth, the account-deletion email trigger, and the auth audit log. (Passkey unlock stores its wrapped key on each client, so there is no passkey table.)
 - `schema.test.sql` checks the two-factor rules: run it on a test project after `schema.sql`; it rolls back everything it does.
 - `email-templates/` contains ready-to-paste Supabase auth email templates; `scripts/generate-icons.mjs` renders the PWA icons and social image; `public/_headers` holds deployment headers for hosts such as Cloudflare Pages.
 

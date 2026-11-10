@@ -1,5 +1,5 @@
 /**
- * useStarredItemCount.js - How many active items are starred, or set to
+ * useItemCounts.js - How many active items are starred, or set to
  * self-destruct (for the sidebar counts). Head-only counts: no rows are
  * fetched or decrypted.
  */

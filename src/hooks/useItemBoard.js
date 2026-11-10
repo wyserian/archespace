@@ -91,7 +91,8 @@ export function useItemBoard(spaceId) {
     [setReminderMutate]
   )
   const setPlainMutate = setPlain.mutate
-  // A self-destruct time is final, so it says so; a colour shows for itself.
+  // Setting a self-destruct time is confirmed with a toast, as it deletes for
+  // good; a colour change shows on the card itself.
   const handleSetExpiry = useCallback(
     (itemId, expiresAt) => setPlainMutate({ id: itemId, fields: { expires_at: expiresAt } }, {
       onSuccess: () => toastRef.current.success(expiresAt ? 'Self-destruct set' : 'Self-destruct cancelled'),

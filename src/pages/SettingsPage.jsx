@@ -26,6 +26,7 @@ import { validateVaultPin, getWeakPinWarning } from '../lib/crypto/vaultPin'
 import WeakPinWarning from '../components/WeakPinWarning'
 import { VAULT_PIN_MIN_LENGTH, VAULT_AUTO_LOCK_OPTIONS } from '../lib/constants'
 import { screenLockSupported } from '../lib/crypto/vaultAutoLock'
+import { Switch } from '../components/ui/Switch'
 import { validatePassword } from '../lib/passwordPolicy'
 import { PasswordRules } from '../components/PasswordRules'
 import { logAudit } from '../lib/auditLog'
@@ -917,16 +918,11 @@ export default function SettingsPage() {
                       title="Lock when screen locks"
                       description="Lock the vault as soon as this computer's screen locks. Your browser will ask for permission. Applies to this device only."
                       action={
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={lockOnScreenLock}
-                          aria-label="Lock when screen locks"
-                          onClick={handleScreenLockToggle}
-                          className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${lockOnScreenLock ? 'bg-accent' : 'bg-bg-border'}`}
-                        >
-                          <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${lockOnScreenLock ? 'left-[18px]' : 'left-0.5'}`} />
-                        </button>
+                        <Switch
+                          checked={lockOnScreenLock}
+                          onChange={handleScreenLockToggle}
+                          label="Lock when screen locks"
+                        />
                       }
                     />
                   )}

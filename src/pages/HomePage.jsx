@@ -69,15 +69,15 @@ const navSections = [
 // Every feature worth knowing about, each in a line.
 const features = [
   { icon: FolderTree, title: 'Spaces', desc: 'Group everything into spaces with sub-spaces as deep as you like, with colours, tags and pins.' },
-  { icon: Layers, title: 'Item types', desc: 'Notes, rich text, lists, checklists, cards, tables, Kanban boards, code and whiteboards; star, copy, duplicate or move any of them.' },
+  { icon: Layers, title: 'Item types', desc: 'Notes, rich text, lists, checklists, cards, tables, Kanban boards, code and whiteboards; colour, star, copy, duplicate or move any of them.' },
   { icon: Search, title: 'Search', desc: 'Find anything across all your spaces, and filter by tag.' },
   { icon: BellRing, title: 'Reminders', desc: 'Once, repeating, or until you turn them off, with notifications (sound or silent) and a list of them all.' },
   { icon: HardDrive, title: 'No account needed', desc: 'Use it without signing up; everything stays encrypted on your device, with no server at all.' },
-  { icon: ShieldCheck, title: 'Protected and read-only', desc: 'Hide sensitive items and spaces until your vault PIN opens them, and freeze a space against edits.' },
-  { icon: Fingerprint, title: 'Biometrics and two-factor', desc: 'Unlock with a fingerprint, face or passkey, and add authenticator codes at sign-in.' },
+  { icon: ShieldCheck, title: 'Protected, read-only, self-destruct', desc: 'Hide sensitive items and spaces until your vault PIN opens them, freeze a space against edits, or set one to delete itself for good at a set time.' },
+  { icon: Fingerprint, title: 'Biometrics and two-factor', desc: 'Unlock with a fingerprint, face or passkey, lock when your screen locks, and add authenticator codes at sign-in.' },
   { icon: RefreshCw, title: 'Sync and offline', desc: 'Syncs across your devices, and keeps working without a connection.' },
   { icon: FileDown, title: 'Backups and export', desc: 'Encrypted backup files, and PDF export of a space or an item.' },
-  { icon: ArchiveRestore, title: 'Starred, archive and bin', desc: 'Star what matters, archive what is done, and restore what you deleted.' },
+  { icon: ArchiveRestore, title: 'Starred, self-destruct, archive and bin', desc: 'Star what matters, see what is set to self-destruct, archive what is done, and restore what you deleted.' },
   { icon: Palette, title: 'Themes and shortcuts', desc: 'Dark and light themes with accents, a command palette and keyboard shortcuts.' },
   { icon: Server, title: 'Open source and self-hostable', desc: 'MIT licensed; host it yourself on your own Supabase project.' },
 ]
