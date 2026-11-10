@@ -11,7 +11,10 @@ import { Plus, Trash2, CheckSquare, Square, GripVertical, Pencil, Eye } from 'lu
 import MarkdownPreview from './MarkdownPreview'
 import { useConfirm, quoted } from '../../hooks/useConfirm'
 
-/** Small icon-only delete button, visible only when the row is hovered. */
+/**
+ * Small icon-only delete button: shown while the row is hovered or the button
+ * has focus, and always on touch screens (which can't hover).
+ */
 function DelBtn({ onClick, label = 'Delete item' }) {
   return (
     <button
@@ -19,7 +22,7 @@ function DelBtn({ onClick, label = 'Delete item' }) {
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-full text-text-muted hover:text-danger hover:bg-danger/10 transition-all shrink-0"
+      className="opacity-0 group-hover:opacity-100 focus:opacity-100 [@media(hover:none)]:opacity-100 p-1.5 rounded-full text-text-muted hover:text-danger hover:bg-danger/10 transition-all shrink-0"
     >
       <Trash2 size={14} />
     </button>

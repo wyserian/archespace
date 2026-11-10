@@ -238,7 +238,7 @@ export function KanbanEditor({ content, onChange, readOnly = false, fill = false
             onClick={() => removeCard(col.id, card)}
             aria-label="Delete card"
             title="Delete card"
-            className="absolute right-1.5 top-2 p-0.5 rounded text-text-muted hover:text-danger opacity-0 group-hover/card:opacity-100 focus:opacity-100 transition-opacity"
+            className="absolute right-1.5 top-2 p-0.5 rounded text-text-muted hover:text-danger opacity-0 group-hover/card:opacity-100 focus:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity"
           >
             <Trash2 size={13} />
           </button>

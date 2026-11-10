@@ -45,7 +45,7 @@ function moveTo(list, from, to) {
 
 /**
  * A "+" on the line before a row (`side="top"`) or column (`side="left"`),
- * faint while its row or column is hovered.
+ * faint while its row or column is hovered (always, on touch screens).
  */
 function InsertButton({ side, label, onClick }) {
   const place = side === 'top'
@@ -57,7 +57,7 @@ function InsertButton({ side, label, onClick }) {
       onClick={onClick}
       aria-label={label}
       title={label}
-      className={`absolute z-10 ${place} flex h-4 w-4 items-center justify-center rounded-full bg-accent text-bg-base opacity-0 group-hover:opacity-50 hover:!opacity-100 focus:opacity-100 transition-opacity`}
+      className={`absolute z-10 ${place} flex h-4 w-4 items-center justify-center rounded-full bg-accent text-bg-base opacity-0 group-hover:opacity-50 [@media(hover:none)]:opacity-50 hover:!opacity-100 focus:opacity-100 transition-opacity`}
     >
       <Plus size={11} strokeWidth={3} />
     </button>
@@ -175,8 +175,9 @@ export function TableEditor({ content, onChange, readOnly = false }) {
 
   const cellClass =
     'w-full min-w-0 bg-transparent px-2 py-1 text-[13px] leading-5 text-text-primary placeholder-text-muted focus:outline-none focus:bg-accent-muted transition-colors'
-  // Grips show while their row or column is hovered (or focused).
-  const gripClass = 'opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity'
+  // Grips show while their row or column is hovered (or focused), and always
+  // on touch screens (which can't hover).
+  const gripClass = 'opacity-0 group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity'
   const minWidth = columns.length * MIN_COLUMN_WIDTH + (readOnly ? 0 : END_COLUMN_WIDTH)
 
   return (
@@ -217,7 +218,6 @@ export function TableEditor({ content, onChange, readOnly = false }) {
                           actions={columnActions(c)}
                           bordered={false}
                           compact
-                          openOnHover={false}
                           touchTarget={false}
                           triggerProps={gripDragProps('column', c)}
                         />
@@ -273,7 +273,6 @@ export function TableEditor({ content, onChange, readOnly = false }) {
                         actions={rowActions(r)}
                         bordered={false}
                         compact
-                        openOnHover={false}
                         touchTarget={false}
                         triggerProps={gripDragProps('row', r)}
                       />

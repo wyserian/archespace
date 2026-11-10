@@ -1,5 +1,7 @@
 /**
- * ActionMenu.jsx - Compact hover/click menu for row and card actions.
+ * ActionMenu.jsx - Compact menu for row and card actions. It opens on a click
+ * or tap (or Arrow Down / Up on its button), never on hover, and closes on
+ * Escape, a click outside, leaving it with Tab, or picking an action.
  */
 import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -14,7 +16,6 @@ const MENU_GAP = 8
 /**
  * `triggerLabel` turns the trigger into a primary button with that text (the
  * "+ New" menu); otherwise it's a round icon button (`icon`, dots by default).
- * `openOnHover` (default true) opens it on pointer hover as well as click.
  * `triggerProps` go on the trigger button (a table grip makes it draggable).
  * An action's optional `group` names its section: a divider goes above each
  * action whose group differs from the one before it.
@@ -29,7 +30,6 @@ export function ActionMenu({
   compact = false,
   icon: TriggerIcon = MoreHorizontal,
   triggerLabel,
-  openOnHover = true,
   disabled = false,
   triggerProps,
   touchTarget = true,
@@ -40,36 +40,12 @@ export function ActionMenu({
   const rootRef = useRef(null)
   const buttonRef = useRef(null)
   const menuRef = useRef(null)
-  const closeTimer = useRef(null)
-  // Set when the menu is opened via click/keyboard (not hover) so we move
-  // focus into it - hover-open must not steal focus from the pointer.
-  const shouldFocusFirst = useRef(false)
-  // Set while a hover has it open, so the click that follows (or a touch's
-  // tap, which hovers first) keeps it open instead of toggling it shut.
-  const openedByHover = useRef(false)
   const visibleActions = actions.filter(Boolean)
 
   const menuItems = () =>
     Array.from(menuRef.current?.querySelectorAll('[role="menuitem"]:not([disabled])') || [])
 
-  const clearCloseTimer = useCallback(() => {
-    clearTimeout(closeTimer.current)
-  }, [])
-
-  const openMenu = useCallback(() => {
-    clearCloseTimer()
-    setOpen(true)
-  }, [clearCloseTimer])
-
-  const closeMenu = useCallback(() => {
-    clearCloseTimer()
-    setOpen(false)
-  }, [clearCloseTimer])
-
-  const scheduleClose = useCallback(() => {
-    clearCloseTimer()
-    closeTimer.current = setTimeout(() => setOpen(false), 120)
-  }, [clearCloseTimer])
+  const closeMenu = useCallback(() => setOpen(false), [])
 
   const updatePosition = useCallback(() => {
     const button = buttonRef.current
@@ -125,37 +101,18 @@ export function ActionMenu({
     return () => cancelAnimationFrame(frame)
   }, [open, updatePosition])
 
-  useEffect(() => () => clearCloseTimer(), [clearCloseTimer])
-
-  // Move focus into the menu when opened via click/keyboard.
+  // Focus moves into the menu as it opens, for the arrow keys.
   useEffect(() => {
-    if (!open || !shouldFocusFirst.current) return
-    shouldFocusFirst.current = false
-    menuItems()[0]?.focus()
+    if (open) menuItems()[0]?.focus()
   }, [open])
 
-  const openMenuFocused = () => {
-    shouldFocusFirst.current = true
-    openMenu()
-  }
-
-  const openOnPointer = () => {
-    if (disabled) return
-    if (!open) openedByHover.current = true
-    openMenu()
-  }
-
-  const handleTriggerClick = () => {
-    if (open && !openedByHover.current) closeMenu()
-    else openMenuFocused()
-    openedByHover.current = false
-  }
+  const handleTriggerClick = () => setOpen(was => !was)
 
   const handleTriggerKeyDown = (event) => {
     // Alt+Arrow is left to the card around it (moving the card).
     if (!open && !event.altKey && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
       event.preventDefault()
-      openMenuFocused()
+      setOpen(true)
     }
   }
 
@@ -185,15 +142,13 @@ export function ActionMenu({
     if (
       !event.currentTarget.contains(next) &&
       !menuRef.current?.contains(next)
-    ) scheduleClose()
+    ) closeMenu()
   }
 
   return (
     <div
       ref={rootRef}
       className="relative shrink-0"
-      onMouseEnter={openOnHover ? openOnPointer : undefined}
-      onMouseLeave={openOnHover ? scheduleClose : undefined}
       onBlur={handleBlur}
       onClick={(event) => event.stopPropagation()}
     >
@@ -229,8 +184,6 @@ export function ActionMenu({
         id={menuId}
         role="menu"
         onKeyDown={handleMenuKeyDown}
-        onMouseEnter={openMenu}
-        onMouseLeave={scheduleClose}
         className={`fixed z-[1000] w-40 ${MENU_PANEL} transition-all duration-150 opacity-100 scale-100 pointer-events-auto animate-fade-in ${
           position.origin === 'top' ? 'origin-top' : 'origin-bottom'
         }`}
