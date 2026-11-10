@@ -25,7 +25,7 @@ export function useItemBoard(spaceId) {
   const { toast } = useToast()
   const itemsApi = useSpaceItems(spaceId)
   const { data: items = [], isLoading } = itemsApi
-  const { update, togglePin, toggleStar, toggleLock, setTags, setReminder, setExpiry, setListNumbered, duplicate, archive, create, move } = itemsApi
+  const { update, togglePin, toggleStar, toggleLock, setTags, setReminder, setPlain, setListNumbered, duplicate, archive, create, move } = itemsApi
   const askVaultPin = useVaultPinPrompt()
 
   // Dialog + card state
@@ -90,13 +90,20 @@ export function useItemBoard(spaceId) {
     }),
     [setReminderMutate]
   )
-  const setExpiryMutate = setExpiry.mutate
+  const setPlainMutate = setPlain.mutate
+  // A self-destruct time is final, so it says so; a colour shows for itself.
   const handleSetExpiry = useCallback(
-    (itemId, expiresAt) => setExpiryMutate({ id: itemId, expiresAt }, {
+    (itemId, expiresAt) => setPlainMutate({ id: itemId, fields: { expires_at: expiresAt } }, {
       onSuccess: () => toastRef.current.success(expiresAt ? 'Self-destruct set' : 'Self-destruct cancelled'),
       onError: () => toastRef.current.error("Couldn't save the self-destruct time."),
     }),
-    [setExpiryMutate]
+    [setPlainMutate]
+  )
+  const handleSetColor = useCallback(
+    (itemId, color) => setPlainMutate({ id: itemId, fields: { color } }, {
+      onError: () => toastRef.current.error("Couldn't change the color."),
+    }),
+    [setPlainMutate]
   )
   const setListNumberedMutate = setListNumbered.mutate
   const handleSetListNumbered = useCallback(
@@ -184,6 +191,7 @@ export function useItemBoard(spaceId) {
     onSetTags: handleSetTags,
     onSetReminder: handleSetReminder,
     onSetExpiry: handleSetExpiry,
+    onSetColor: handleSetColor,
     onSetListNumbered: handleSetListNumbered,
     onTogglePin: handleTogglePin,
     onToggleStar: handleToggleStar,
@@ -194,7 +202,7 @@ export function useItemBoard(spaceId) {
     onArchive: handleArchiveItem,
     onDirtyChange: handleDirtyChange,
   }), [
-    quickNoteId, clearQuickNote, handleItemUpdate, handleSetTags, handleSetReminder, handleSetExpiry, handleSetListNumbered, handleTogglePin, handleToggleStar,
+    quickNoteId, clearQuickNote, handleItemUpdate, handleSetTags, handleSetReminder, handleSetExpiry, handleSetColor, handleSetListNumbered, handleTogglePin, handleToggleStar,
     handleToggleLock, handleDuplicateItem, handleMoveOne, handleArchiveItem, handleDirtyChange,
   ])
 

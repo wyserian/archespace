@@ -14,7 +14,7 @@ import {
   Pin, PinOff, Save, Copy, Archive,
   Maximize2, Minimize2, MoveRight, MoreVertical,
   ClipboardCopy, ClipboardCheck, FileDown, PencilOff, Shield, ShieldCheck, ShieldOff, EyeOff, Loader2,
-  Bell, Tag, Hourglass,
+  Bell, Tag, Hourglass, Palette,
 } from 'lucide-react'
 import { TextboxEditor, MarkdownEditor, ChecklistEditor, ListItemsEditor, CardListEditor } from './editors/ItemEditors'
 // The Rich text editor (Tiptap) is its own download, kept out of the first
@@ -41,6 +41,9 @@ import { ReminderChip } from './ReminderChip'
 import { ReminderDialog } from './ReminderDialog'
 import { ExpiryChip } from './ExpiryChip'
 import { ExpiryDialog } from './ExpiryDialog'
+import { Modal } from './ui/UI'
+import { ColorSwatches } from './ui/ColorSwatches'
+import { getColorPreset } from '../lib/spaceColors'
 import { ActionMenu } from './ui/ActionMenu'
 import { buttonClass } from './ui/buttonStyles'
 import { getChecklistProgress } from '../lib/checklistProgress'
@@ -74,6 +77,7 @@ function SpaceItem({
   onSetTags,
   onSetReminder,
   onSetExpiry,
+  onSetColor,
   onSetListNumbered,
   onTogglePin,
   onToggleStar,
@@ -137,6 +141,7 @@ function SpaceItem({
   const [richEditor, setRichEditor] = useState(null)
   const [reminderOpen, setReminderOpen] = useState(false)
   const [expiryOpen, setExpiryOpen] = useState(false)
+  const [colorOpen, setColorOpen] = useState(false)
   const [addingTag, setAddingTag] = useState(false)
   const online = useOnlineStatus()
 
@@ -431,6 +436,10 @@ function SpaceItem({
   // pin icon marks it). The space card's press shrink and hover background
   // are left out: this card is an inline editor, so they would fire while
   // typing or clicking into content (and clash with the fade).
+  // Its colour, if set, as a faint tint over the card's surface and its input
+  // areas (in full screen too); see .item-tinted in index.css.
+  const tintColor = getColorPreset(item.color)?.value
+  const colorTint = tintColor ? { '--item-tint': `${tintColor}14` } : undefined
   const itemCard = (
     <div className={`${
       isFullscreen
@@ -438,7 +447,8 @@ function SpaceItem({
         : 'relative rounded-2xl bg-bg-card shadow-sm hover:shadow-md transition-shadow duration-200'
     } ${denseView ? 'text-[13px]' : ''} ${
       !isFullscreen && selected ? 'ring-[1.5px] ring-accent-border' : ''
-    }`}
+    } ${colorTint ? 'item-tinted' : ''}`}
+    style={colorTint}
     >
       {/* Header */}
       {/* The header is the drag area (no handle icon): the cursor turns into a
@@ -632,6 +642,7 @@ function SpaceItem({
                         disabled: !online,
                         onClick: () => onToggleStar(item.id, item.starred),
                       },
+                      !readOnly && onSetColor && { id: 'color', group: 'mark', label: 'Color', icon: Palette, disabled: !online, onClick: () => setColorOpen(true) },
                       !readOnly && onSetTags && { id: 'tag', group: 'mark', label: 'Add tag', icon: Tag, disabled: !online, onClick: () => setAddingTag(true) },
                       onSetReminder && {
                         id: 'reminder',
@@ -727,6 +738,18 @@ function SpaceItem({
           onRemove={() => onSetReminder(item.id, null)}
           onClose={() => setReminderOpen(false)}
         />
+      )}
+      {colorOpen && createPortal(
+        // Above a full-screen item card; a pick saves and closes.
+        <div className="relative z-[90]">
+          <Modal title="Color" onClose={() => setColorOpen(false)}>
+            <ColorSwatches
+              value={item.color}
+              onChange={(color) => { onSetColor(item.id, color); setColorOpen(false) }}
+            />
+          </Modal>
+        </div>,
+        document.body
       )}
       {expiryOpen && (
         <ExpiryDialog

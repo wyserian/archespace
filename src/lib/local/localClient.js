@@ -34,7 +34,7 @@ const DEFAULTS = {
   }),
   space_items: () => ({
     space_id: null, title: '', content: {}, tags: [], reminder: null, position: 0, pinned: false,
-    starred: false, locked: false, deleted_at: null, archived_at: null, expires_at: null,
+    starred: false, locked: false, color: null, deleted_at: null, archived_at: null, expires_at: null,
   }),
   user_encryption: () => ({
     wrapped_key: null, recovery_salt: null, recovery_wrapped_key: null,

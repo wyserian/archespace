@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS space_items (
   pinned      boolean     NOT NULL DEFAULT false,
   starred     boolean     NOT NULL DEFAULT false,
   locked      boolean     NOT NULL DEFAULT false, -- Protect
+  color       text        DEFAULT NULL,  -- card colour, a space colour preset id
   deleted_at  timestamptz DEFAULT NULL,
   archived_at timestamptz DEFAULT NULL,
   expires_at  timestamptz DEFAULT NULL,  -- self-destruct; see section 3b
@@ -153,6 +154,9 @@ ALTER TABLE space_items ADD COLUMN IF NOT EXISTS reminder jsonb DEFAULT NULL;
 -- Self-destruct (section 3b): a plain time, so the server can enforce it.
 ALTER TABLE spaces      ADD COLUMN IF NOT EXISTS expires_at timestamptz DEFAULT NULL;
 ALTER TABLE space_items ADD COLUMN IF NOT EXISTS expires_at timestamptz DEFAULT NULL;
+
+-- An item card's colour (plain, like a space's).
+ALTER TABLE space_items ADD COLUMN IF NOT EXISTS color text DEFAULT NULL;
 
 -- 2. INDEXES
 

@@ -2,11 +2,12 @@
  * useSpaces.js - The spaces list and every change to a space.
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useId } from 'react'
+import { useCallback, useEffect, useId } from 'react'
 import { supabase } from '../lib/supabase'
 import { parseTags } from '../lib/spaceColors'
 import { useAuth } from '../context/AuthContextCore'
 import { useEncryption } from '../context/EncryptionCore'
+import { useToast } from '../context/ToastCore'
 import { assertOnline } from '../lib/offlineQueue'
 import { saveRows, loadRows } from '../lib/offlineCache'
 import { setReachable, isNetworkError } from '../lib/connectivity'
@@ -25,14 +26,16 @@ import {
 } from './entityMutations'
 
 /**
- * A space's self-destruct time (lib/expiry.js), or `expiresAt: null` to
- * cancel it. Plain metadata, so a read-only space allows it, like a delete;
- * when it passes, its items and sub-spaces go too. Optimistic so the chip
- * shows at once.
+ * Set a space's self-destruct time (lib/expiry.js), or null to cancel it,
+ * saying how it went. Plain metadata, so a read-only space allows it, like a
+ * delete; when it passes, its items and sub-spaces go too. Optimistic so the
+ * chip shows at once.
+ * @returns {(id: string, expiresAt: string|null) => void}
  */
 export function useSetSpaceExpiry() {
   const qc = useQueryClient()
-  return useMutation({
+  const { toast } = useToast()
+  const { mutate } = useMutation({
     mutationFn: async ({ id, expiresAt }) => {
       assertOnline()
       const { error } = await supabase.from('spaces').update({ expires_at: expiresAt }).eq('id', id)
@@ -51,6 +54,10 @@ export function useSetSpaceExpiry() {
     },
     onSettled: () => invalidateSpaceList(qc),
   })
+  return useCallback((id, expiresAt) => mutate({ id, expiresAt }, {
+    onSuccess: () => toast.success(expiresAt ? 'Self-destruct set' : 'Self-destruct cancelled'),
+    onError: () => toast.error("Couldn't save the self-destruct time."),
+  }), [mutate, toast])
 }
 
 export function useSpaces() {

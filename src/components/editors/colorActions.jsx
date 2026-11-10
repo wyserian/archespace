@@ -1,5 +1,5 @@
 /**
- * colorActions.jsx - The colour choices a Kanban stage or a card offers in
+ * colorActions.jsx - The colour choices a Kanban stage offers in
  * its menu, and the tint a coloured one takes.
  */
 import { Ban } from 'lucide-react'
@@ -33,7 +33,7 @@ export function colorActions(current, onPick) {
 }
 
 /**
- * The inline style for a coloured stage or card: a faint tint and a thin,
+ * The inline style for a coloured stage: a faint tint and a thin,
  * soft strip along the top, like a space card's. Undefined for no colour.
  */
 export function colorTint(id) {

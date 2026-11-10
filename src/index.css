@@ -354,6 +354,14 @@ body.bulk-bar-active .toast-stack {
 .prose-custom code { background: var(--bg-base); padding: 0.125rem 0.25rem; border-radius: 0.25rem; font-family: monospace; font-size: 0.875em; color: var(--accent); border: 1px solid var(--bg-border); }
 .prose-custom pre code { background: transparent; padding: 0; border: none; color: inherit; }
 
+/* A coloured item card (SpaceItem): the colour's faint tint over the card and
+   over its input areas (notes, lists, code, Cards, Kanban cards), each on top
+   of its own surface. --item-tint is set on the card. */
+.item-tinted,
+.item-tinted :is(.bg-bg-sunken, .bg-bg-card) {
+  background-image: linear-gradient(var(--item-tint), var(--item-tint));
+}
+
 /* Rich text item (Tiptap)
    Base typography comes from .prose-custom; these cover what the editor adds:
    the empty placeholder, task lists, tables and the last block's spacing. */

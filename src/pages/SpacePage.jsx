@@ -122,10 +122,7 @@ export default function SpacePage() {
   // Self-destruct (see SpaceCard): from the menu or the header chip.
   const setSpaceExpiry = useSetSpaceExpiry()
   const [expiryOpen, setExpiryOpen] = useState(false)
-  const saveExpiry = (expiresAt) => setSpaceExpiry.mutate({ id, expiresAt }, {
-    onSuccess: () => toast.success(expiresAt ? 'Self-destruct set' : 'Self-destruct cancelled'),
-    onError: () => toast.error("Couldn't save the self-destruct time."),
-  })
+  const saveExpiry = (expiresAt) => setSpaceExpiry(id, expiresAt)
 
   // Items, their card callbacks, unsaved-edit guard and item dialogs.
   const board = useItemBoard(id)

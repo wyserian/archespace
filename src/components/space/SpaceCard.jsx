@@ -193,10 +193,7 @@ export function SpaceCard({
   // it, like a delete.
   const setExpiry = useSetSpaceExpiry()
   const [expiryOpen, setExpiryOpen] = useState(false)
-  const saveExpiry = (expiresAt) => setExpiry.mutate({ id: col.id, expiresAt }, {
-    onSuccess: () => toast.success(expiresAt ? 'Self-destruct set' : 'Self-destruct cancelled'),
-    onError: () => toast.error("Couldn't save the self-destruct time."),
-  })
+  const saveExpiry = (expiresAt) => setExpiry(col.id, expiresAt)
   // The chip and dialog sit inside the card (the dialog through a portal,
   // whose events still bubble here), so their clicks and keys stop short of it.
   const stop = e => e.stopPropagation()

@@ -309,22 +309,21 @@ export function useSpaceItems(spaceId) {
     onSettled: () => invalidateSpaceItems(qc, itemsKey),
   })
 
-  // Self-destruct time (lib/expiry.js), or `expiresAt: null` to cancel it. A
-  // plain time, not content, so a read-only space allows it, like a delete.
-  const setExpiry = useMutation({
-    mutationFn: async ({ id, expiresAt }) => {
+  // Plain (unencrypted) columns that aren't content: the self-destruct time
+  // (`expires_at`, lib/expiry.js; null cancels it) and the card colour
+  // (`color`, a space colour preset id or null). Optimistic so the chip or
+  // colour shows at once.
+  const setPlain = useMutation({
+    mutationFn: async ({ id, fields }) => {
       assertOnline()
-      const { error } = await supabase
-        .from('space_items')
-        .update({ expires_at: expiresAt })
-        .eq('id', id)
+      const { error } = await supabase.from('space_items').update(fields).eq('id', id)
       if (error) throw error
     },
-    onMutate: async ({ id, expiresAt }) => {
+    onMutate: async ({ id, fields }) => {
       await qc.cancelQueries({ queryKey: queryKeys.items(itemsKey) })
       const previous = qc.getQueryData(queryKeys.items(itemsKey))
       qc.setQueryData(queryKeys.items(itemsKey), (old) =>
-        old?.map(it => (it.id === id ? { ...it, expires_at: expiresAt } : it))
+        old?.map(it => (it.id === id ? { ...it, ...fields } : it))
       )
       return { previous }
     },
@@ -518,7 +517,7 @@ export function useSpaceItems(spaceId) {
     toggleLock,
     setTags,
     setReminder,
-    setExpiry,
+    setPlain,
     setListNumbered,
     remove,
     reorder,

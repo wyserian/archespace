@@ -3,9 +3,8 @@
  * description and colour. Tags are added and removed on the space card.
  */
 import { useState } from 'react'
-import { Ban } from 'lucide-react'
 import { Modal, Spinner } from '../ui/UI'
-import { SPACE_COLORS } from '../../lib/spaceColors'
+import { ColorSwatches } from '../ui/ColorSwatches'
 import { buttonClass } from '../ui/buttonStyles'
 
 export function SpaceModal({ initial, onSave, onClose }) {
@@ -54,34 +53,7 @@ export function SpaceModal({ initial, onSave, onClose }) {
         </div>
         <div>
           <label className="block text-xs font-medium text-text-secondary mb-1.5">Color</label>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setColor(null)}
-              className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center transition-all bg-bg-elevated ${
-                !color ? 'border-accent ring-2 ring-accent/30' : 'border-bg-border'
-              }`}
-              title="No color"
-              aria-label="No color"
-              aria-pressed={!color}
-            >
-              <Ban size={14} className="text-text-muted" />
-            </button>
-            {SPACE_COLORS.map(c => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setColor(c.id)}
-                style={{ backgroundColor: c.value }}
-                className={`w-8 h-8 rounded-lg border-2 transition-all ${
-                  color === c.id ? 'border-white ring-2 ring-accent/40 scale-110' : 'border-transparent'
-                }`}
-                title={c.label}
-                aria-label={`${c.label} color`}
-                aria-pressed={color === c.id}
-              />
-            ))}
-          </div>
+          <ColorSwatches value={color} onChange={setColor} />
         </div>
         <div className="flex gap-2 justify-end pt-1">
           <button
