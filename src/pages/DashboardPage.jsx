@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, Folder, FolderPlus,
   Trash2, Archive, Command, CheckSquare, ListChecks, Settings, Lock, Menu, Keyboard, LogOut,
-  Star, Bell, X,
+  Star, Bell, Hourglass, X,
 } from 'lucide-react'
 import SpaceItem from '../components/SpaceItem'
 import ItemBoardModals from '../components/ItemBoardModals'
@@ -28,7 +28,7 @@ import { useRegisterPageActions } from '../context/PageActionsCore'
 import { useSpaces } from '../hooks/useSpaces'
 import { useRecycleBin } from '../hooks/useRecycleBin'
 import { useArchive } from '../hooks/useArchive'
-import { useStarredItemCount } from '../hooks/useStarredItemCount'
+import { useExpiringItemCount, useStarredItemCount } from '../hooks/useStarredItemCount'
 import { useReminders, useRemindersNowCount } from '../hooks/useReminders'
 import { useSpaceStats } from '../hooks/useSpaceStats'
 import { useGlobalSearchData } from '../hooks/useGlobalSearch'
@@ -71,6 +71,7 @@ export default function DashboardPage() {
   const { total: binTotal } = useRecycleBin()
   const { total: archiveTotal } = useArchive()
   const { data: starredItemCount = 0 } = useStarredItemCount()
+  const { data: expiringItemCount = 0 } = useExpiringItemCount()
   const { data: reminders = NO_REMINDERS } = useReminders()
   const remindersNowTotal = useRemindersNowCount(reminders)
   const { data: stats = {} } = useSpaceStats()
@@ -156,6 +157,7 @@ export default function DashboardPage() {
   const topLevelSpaces = useMemo(() => spaces.filter(s => !s.parent_id), [spaces])
   // Sidebar-style Starred count for the phone menu (the sidebar is hidden there).
   const starredTotal = spaces.filter(s => s.starred).length + starredItemCount
+  const expiringTotal = spaces.filter(s => s.expires_at).length + expiringItemCount
 
   const filtered = useMemo(() => {
     const q = search.trim()
@@ -550,6 +552,17 @@ export default function DashboardPage() {
               Starred
               {starredTotal > 0 && (
                 <span className="ml-auto text-xs tabular-nums text-text-muted">{starredTotal}</span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => { navigate('/self-destruct'); setMobileMenuOpen(false) }}
+              className="relative flex items-center gap-2.5 px-3 h-10 rounded-lg hover:bg-bg-hover text-text-secondary hover:text-text-primary transition-colors text-sm font-medium"
+            >
+              <Hourglass size={16} />
+              Self-destruct
+              {expiringTotal > 0 && (
+                <span className="ml-auto text-xs tabular-nums text-text-muted">{expiringTotal}</span>
               )}
             </button>
             <button

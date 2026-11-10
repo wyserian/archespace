@@ -16,6 +16,9 @@ export const queryKeys = {
   // Starred items across all spaces (the Starred view), and the sidebar count.
   starredItems: () => ['items', 'starred'],
   starredCount: () => ['starred-count'],
+  // Items set to self-destruct (the Self-destruct view), and the sidebar count.
+  expiringItems: () => ['items', 'expiring'],
+  expiringCount: () => ['expiring-count'],
   // Items with a reminder (the Reminders view), and just their reminders (the
   // sidebar badge, and setting them off).
   reminderItems: () => ['items', 'reminders'],

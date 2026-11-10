@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Plus, Home, Archive, Trash2, Search, Settings, SunMoon, Keyboard, Lock, Bell, Star,
+  Plus, Home, Archive, Trash2, Search, Settings, SunMoon, Keyboard, Lock, Bell, Star, Hourglass,
 } from 'lucide-react'
 import { useCommandPalette } from '../context/CommandPaletteCore'
 import { useTheme } from '../context/ThemeCore'
@@ -32,6 +32,7 @@ export default function CommandPalette({ onNewSpace, onOpenSearch }) {
     { id: 'home', label: 'Go to all spaces', icon: Home, run: () => { closePalette(); navigate('/app') } },
     { id: 'reminders', label: 'Go to Reminders', icon: Bell, run: () => { closePalette(); navigate('/reminders') } },
     { id: 'starred', label: 'Go to Starred', icon: Star, run: () => { closePalette(); navigate('/starred') } },
+    { id: 'self-destruct', label: 'Go to Self-destruct', icon: Hourglass, run: () => { closePalette(); navigate('/self-destruct') } },
     { id: 'archive', label: 'Go to Archive', icon: Archive, run: () => { closePalette(); navigate('/archive') } },
     { id: 'bin', label: 'Go to Bin', icon: Trash2, run: () => { closePalette(); navigate('/recycle-bin') } },
     { id: 'settings', label: 'Go to Settings', icon: Settings, run: () => { closePalette(); navigate('/settings') } },

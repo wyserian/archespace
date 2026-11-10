@@ -1,8 +1,9 @@
 /**
  * useSpaceItems.js - Hook for items within a single space; with
  * `spaceId === null`, the dashboard's items, which belong to no space; with
- * `STARRED_ITEMS`, the starred items from every space (the Starred view); or
- * with `REMINDER_ITEMS`, the items with a reminder (the Reminders view).
+ * `STARRED_ITEMS`, the starred items from every space (the Starred view); with
+ * `REMINDER_ITEMS`, the items with a reminder (the Reminders view); or with
+ * `EXPIRING_ITEMS`, those set to self-destruct (the Self-destruct view).
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect } from 'react'
@@ -54,18 +55,22 @@ const DASHBOARD_ITEMS_KEY = 'dashboard'
 export const STARRED_ITEMS = 'starred'
 // Pass as the `spaceId` for the items with a reminder. Also its key.
 export const REMINDER_ITEMS = 'reminders'
+// Pass as the `spaceId` for the items set to self-destruct. Also its key.
+export const EXPIRING_ITEMS = 'expiring'
 
-/** Starred and Reminders gather items from every space. */
-const isCrossSpace = (spaceId) => spaceId === STARRED_ITEMS || spaceId === REMINDER_ITEMS
+/** Starred, Reminders and Self-destruct gather items from every space. */
+const isCrossSpace = (spaceId) =>
+  spaceId === STARRED_ITEMS || spaceId === REMINDER_ITEMS || spaceId === EXPIRING_ITEMS
 
 /**
  * Restrict an items query to one space, to the dashboard for `null`, to the
- * starred items for `STARRED_ITEMS`, or to those with a reminder for
- * `REMINDER_ITEMS`.
+ * starred items for `STARRED_ITEMS`, to those with a reminder for
+ * `REMINDER_ITEMS`, or to those set to self-destruct for `EXPIRING_ITEMS`.
  */
 function whereSpace(q, spaceId) {
   if (spaceId === STARRED_ITEMS) return q.eq('starred', true)
   if (spaceId === REMINDER_ITEMS) return q.not('reminder', 'is', null)
+  if (spaceId === EXPIRING_ITEMS) return q.not('expires_at', 'is', null)
   return spaceId ? q.eq('space_id', spaceId) : q.is('space_id', null)
 }
 

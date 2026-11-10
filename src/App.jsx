@@ -61,6 +61,7 @@ const SpacePage = lazyWithRetry(() => import('./pages/SpacePage'))
 const RecycleBinPage = lazyWithRetry(() => import('./pages/RecycleBinPage'))
 const ArchivePage = lazyWithRetry(() => import('./pages/ArchivePage'))
 const StarredPage = lazyWithRetry(() => import('./pages/StarredPage'))
+const SelfDestructPage = lazyWithRetry(() => import('./pages/StarredPage').then(m => ({ default: m.SelfDestructPage })))
 const RemindersPage = lazyWithRetry(() => import('./pages/RemindersPage'))
 const SettingsPage = lazyWithRetry(() => import('./pages/SettingsPage'))
 const PrivacyPage = lazyWithRetry(() => import('./pages/PrivacyPage'))
@@ -210,6 +211,7 @@ const router = createBrowserRouter([
           { path: '/space/:id', element: <ProtectedRoute><SpacePage /></ProtectedRoute> },
           { path: '/recycle-bin', element: <ProtectedRoute title="Bin"><RecycleBinPage /></ProtectedRoute> },
           { path: '/starred', element: <ProtectedRoute title="Starred"><StarredPage /></ProtectedRoute> },
+          { path: '/self-destruct', element: <ProtectedRoute title="Self-destruct"><SelfDestructPage /></ProtectedRoute> },
           { path: '/reminders', element: <ProtectedRoute title="Reminders"><RemindersPage /></ProtectedRoute> },
           { path: '/archive', element: <ProtectedRoute title="Archive"><ArchivePage /></ProtectedRoute> },
           { path: '/settings', element: <ProtectedRoute title="Settings"><SettingsPage /></ProtectedRoute> },

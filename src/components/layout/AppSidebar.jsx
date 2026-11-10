@@ -12,7 +12,7 @@
 import { useState } from 'react'
 import {
   LayoutGrid, Star, Archive, Trash2, Lock, Settings, Command, Keyboard,
-  ChevronsLeft, ChevronsRight, ChevronRight, Bell,
+  ChevronsLeft, ChevronsRight, ChevronRight, Bell, Hourglass,
 } from 'lucide-react'
 import { MENU_HINT } from '../ui/menuStyles'
 
@@ -97,7 +97,7 @@ function NavItem({ icon: Icon, label, active, count, badge, hint, collapsed, onC
 
 export default function AppSidebar({
   collapsed, onToggleCollapsed, active, activeSpaceId,
-  isUnlocked, spaces, remindersNowTotal, starredTotal, archiveTotal, binTotal,
+  isUnlocked, spaces, remindersNowTotal, starredTotal, expiringTotal, archiveTotal, binTotal,
   onLock, onCommands, onShortcuts, navigate,
 }) {
   const [spacesOpen, setSpacesOpen] = useState(() => {
@@ -172,6 +172,7 @@ export default function AppSidebar({
         <SectionLabel collapsed={collapsed}>Library</SectionLabel>
         <NavItem icon={Bell} label="Reminders" active={active === 'reminders'} badge={remindersNowTotal} collapsed={collapsed} onClick={() => navigate('/reminders')} />
         <NavItem icon={Star} label="Starred" active={active === 'starred'} count={starredTotal} collapsed={collapsed} onClick={() => navigate('/starred')} />
+        <NavItem icon={Hourglass} label="Self-destruct" active={active === 'self-destruct'} count={expiringTotal} collapsed={collapsed} onClick={() => navigate('/self-destruct')} />
         <NavItem icon={Archive} label="Archive" active={active === 'archive'} count={archiveTotal} collapsed={collapsed} onClick={() => navigate('/archive')} />
         <NavItem icon={Trash2} label="Bin" active={active === 'bin'} count={binTotal} collapsed={collapsed} onClick={() => navigate('/recycle-bin')} />
       </nav>

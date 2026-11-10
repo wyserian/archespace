@@ -1,14 +1,15 @@
 /**
- * StarredPage.jsx - Quick access to starred spaces and items from anywhere.
+ * StarredPage.jsx - Spaces and items gathered from anywhere: the starred ones
+ * (Starred), or those set to self-destruct, soonest first (Self-destruct).
  *
- * Starring never moves anything: spaces and items keep their place in their
- * own lists; this view only gathers what's starred. Spaces show as space cards
- * and items as full item cards (editable here, like inside a space), each
- * labelled with where it lives.
+ * Neither moves anything: spaces and items keep their place in their own
+ * lists; these views only gather them. Spaces show as space cards and items
+ * as full item cards (editable here, like inside a space), each labelled with
+ * where it lives.
  */
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Star } from 'lucide-react'
+import { ArrowLeft, Hourglass, Star } from 'lucide-react'
 import { useSpaces } from '../hooks/useSpaces'
 import { useSpaceStats } from '../hooks/useSpaceStats'
 import { useItemBoard } from '../hooks/useItemBoard'
@@ -16,7 +17,7 @@ import { useColumnCount } from '../hooks/useColumnCount'
 import { CardColumns } from '../components/ui/CardColumns'
 import { MIN_SPACE_COLUMN_PX } from '../components/ui/columnFit'
 import { spacePathLabel } from '../lib/spaceTree'
-import { STARRED_ITEMS } from '../hooks/useSpaceItems'
+import { EXPIRING_ITEMS, STARRED_ITEMS } from '../hooks/useSpaceItems'
 import { useToast } from '../context/ToastCore'
 import { useRegisterPageActions } from '../context/PageActionsCore'
 import SpaceItem from '../components/SpaceItem'
@@ -27,7 +28,40 @@ import { SpaceModal } from '../components/space/SpaceModal'
 import { MoveSpacesDialog } from '../components/space/MoveSpacesDialog'
 import { ConfirmDialog, Spinner } from '../components/ui/UI'
 
+const soonestFirst = list => [...list].sort((a, b) => Date.parse(a.expires_at) - Date.parse(b.expires_at))
+
+const VIEWS = {
+  starred: {
+    itemsKey: STARRED_ITEMS,
+    title: 'Starred',
+    subtitle: n => `${n} starred - quick access, kept in place`,
+    pickSpaces: spaces => spaces.filter(s => s.starred),
+    order: list => list,
+    icon: Star,
+    emptyTitle: 'Nothing starred yet',
+    emptyText: 'Star a space or an item from its menu to keep it here for quick access.',
+  },
+  expiring: {
+    itemsKey: EXPIRING_ITEMS,
+    title: 'Self-destruct',
+    subtitle: n => `${n} set to self-destruct - soonest first`,
+    pickSpaces: spaces => spaces.filter(s => s.expires_at),
+    order: soonestFirst,
+    icon: Hourglass,
+    emptyTitle: 'Nothing set to self-destruct',
+    emptyText: 'Set a space or an item to self-destruct from its menu, and it shows here until it goes.',
+  },
+}
+
 export default function StarredPage() {
+  return <GatheredPage view={VIEWS.starred} />
+}
+
+export function SelfDestructPage() {
+  return <GatheredPage view={VIEWS.expiring} />
+}
+
+function GatheredPage({ view }) {
   const navigate = useNavigate()
   const { toast } = useToast()
   const {
@@ -35,16 +69,17 @@ export default function StarredPage() {
     update, setTags, togglePin, toggleStar, toggleReadOnly, toggleLock, remove, archive, duplicate, move,
   } = useSpaces()
   const { data: spaceStats = {} } = useSpaceStats()
-  // Starred items from every space (and the dashboard).
-  const board = useItemBoard(STARRED_ITEMS)
-  const { items, isLoading: itemsLoading } = board
+  // The view's items from every space (and the dashboard).
+  const board = useItemBoard(view.itemsKey)
+  const items = useMemo(() => view.order(board.items), [view, board.items])
+  const { isLoading: itemsLoading } = board
   const cols = useColumnCount()
 
   const [spaceModal, setSpaceModal] = useState(null) // { type: 'edit', col }
   const [spaceDeleteConfirm, setSpaceDeleteConfirm] = useState(null)
   const [moveSpaceId, setMoveSpaceId] = useState(null)
 
-  const starredSpaces = useMemo(() => spaces.filter(s => s.starred), [spaces])
+  const viewSpaces = useMemo(() => view.order(view.pickSpaces(spaces)), [view, spaces])
   // Where each item lives: its space's path.
   const spaceNames = useMemo(() => {
     const byId = new Map(spaces.map(s => [s.id, s]))
@@ -66,7 +101,7 @@ export default function StarredPage() {
   }), [closeItemDialogs])
   useRegisterPageActions(pageActions)
 
-  const total = starredSpaces.length + items.length
+  const total = viewSpaces.length + items.length
   const isLoading = spacesLoading || itemsLoading
 
   const renderSpaceCard = (space, index) => (
@@ -117,7 +152,7 @@ export default function StarredPage() {
         item={item}
         index={index}
         {...board.cardProps}
-        // Starred items come from many spaces, so there's no one order to drag.
+        // These items come from many spaces, so there's no one order to drag.
         dragDisabled
         readOnly={readOnlySpaceIds.has(item.space_id)}
         contextLabel={item.space_id ? spaceNames[item.space_id] || 'Space' : 'Dashboard'}
@@ -127,7 +162,7 @@ export default function StarredPage() {
 
   const renderSection = (nodes, minWidth) => <CardColumns cols={cols} minWidth={minWidth}>{nodes}</CardColumns>
 
-  const showSpaces = starredSpaces.length > 0
+  const showSpaces = viewSpaces.length > 0
   const showItems = items.length > 0
   const sectionLabel = 'mb-3 px-1 text-base font-semibold text-text-primary'
 
@@ -138,9 +173,9 @@ export default function StarredPage() {
           {/* Phones only: from sm up the sidebar is the way around. */}
           <IconButton icon={ArrowLeft} label="Back" size="md" className="-ml-1.5 sm:hidden" onClick={() => navigate('/app')} />
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-semibold text-text-primary">Starred</h1>
+            <h1 className="text-sm font-semibold text-text-primary">{view.title}</h1>
             <p className="text-xs text-text-muted mt-0.5">
-              {total} starred - quick access, kept in place
+              {view.subtitle(total)}
             </p>
           </div>
         </div>
@@ -152,17 +187,15 @@ export default function StarredPage() {
         ) : total === 0 ? (
           <div className="text-center py-20 px-4">
             <div className="w-14 h-14 rounded-2xl bg-bg-elevated flex items-center justify-center mx-auto mb-4">
-              <Star size={20} className="text-text-muted" />
+              <view.icon size={20} className="text-text-muted" />
             </div>
-            <p className="text-text-secondary font-medium">Nothing starred yet</p>
-            <p className="text-text-muted text-sm mt-1">
-              Star a space or an item from its menu to keep it here for quick access.
-            </p>
+            <p className="text-text-secondary font-medium">{view.emptyTitle}</p>
+            <p className="text-text-muted text-sm mt-1">{view.emptyText}</p>
           </div>
         ) : (
           <>
             {showSpaces && showItems && <h2 className={sectionLabel}>Spaces</h2>}
-            {showSpaces && renderSection(starredSpaces.map(renderSpaceCard), MIN_SPACE_COLUMN_PX)}
+            {showSpaces && renderSection(viewSpaces.map(renderSpaceCard), MIN_SPACE_COLUMN_PX)}
             {showSpaces && showItems && <h2 className={`${sectionLabel} mt-4`}>Items</h2>}
             {showItems && renderSection(items.map(renderItemCard))}
           </>
