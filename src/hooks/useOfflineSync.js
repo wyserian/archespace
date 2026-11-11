@@ -87,9 +87,13 @@ export function useOfflineSync() {
       if (flushed > 0) qc.invalidateQueries({ queryKey: queryKeys.items() })
     }
 
-    const onOnline = () => processQueue()
+    // Every tab shares the queue: one sends it at a time, or a second tab
+    // would see the first's save as a change made elsewhere and save a copy.
+    const onOnline = () => (navigator.locks
+      ? navigator.locks.request('arche-offline-queue', processQueue)
+      : processQueue())
     window.addEventListener('online', onOnline)
-    if (navigator.onLine) processQueue()
+    if (navigator.onLine) onOnline()
     return () => window.removeEventListener('online', onOnline)
   }, [qc, toast, userId])
 }

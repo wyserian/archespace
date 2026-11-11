@@ -50,21 +50,19 @@ export async function flushOfflineQueue(processor) {
   const queue = readQueue()
   if (queue.length === 0) return 0
 
-  const remaining = []
-  let flushed = 0
-
+  // Each entry done, as it was sent.
+  const done = new Map()
   for (const entry of queue) {
     try {
-      const ok = await processor(entry)
-      if (ok) flushed++
-      else remaining.push(entry)
+      if (await processor(entry)) done.set(entry.id, JSON.stringify(entry.payload))
     } catch {
-      remaining.push(entry)
+      // Stays queued for the next try.
     }
   }
 
-  writeQueue(remaining)
-  return flushed
+  // Read again: edits queued meanwhile stay, as does one changed meanwhile.
+  writeQueue(readQueue().filter(e => done.get(e.id) !== JSON.stringify(e.payload)))
+  return done.size
 }
 
 export function isOnline() {

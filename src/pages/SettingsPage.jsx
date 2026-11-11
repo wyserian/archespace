@@ -447,8 +447,12 @@ export default function SettingsPage() {
 
   const handleExport = async () => {
     try {
-      await exportSpaces(spaces, cryptoKey)
-      toast.success("Backup exported")
+      const { unreadable } = await exportSpaces(spaces, cryptoKey)
+      if (unreadable) {
+        toast.error(`Backup exported without ${unreadable} item${unreadable === 1 ? '' : 's'} that couldn't be decrypted.`)
+      } else {
+        toast.success("Backup exported")
+      }
     } catch {
       toast.error("Couldn't export backup.")
     }

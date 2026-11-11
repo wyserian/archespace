@@ -9,7 +9,7 @@ vi.mock('./supabase', async () => {
 
 const { supabase } = await import('./supabase')
 const {
-  archiveSpaces, binArchivedSpaces, deleteSpaces, moveSpaces, restoreSpaces, reviveItemSpaces, unarchiveSpaces,
+  archiveSpaces, binArchivedSpaces, deleteSpaces, moveSpaces, purgeSpaces, restoreSpaces, reviveItemSpaces, unarchiveSpaces,
 } = await import('./spaceLifecycle')
 
 // a > b > c > d, with an item in each; e on its own.
@@ -118,6 +118,20 @@ describe('spaceLifecycle', () => {
     const parentOf = Object.fromEntries(data.map(s => [s.id, s.parent_id]))
     expect(parentOf[ids.b]).toBe(ids.e)
     expect(parentOf[ids.c]).toBe(ids.b)
+  })
+
+  it('deleting for good keeps what was archived inside, at the top level', async () => {
+    await archiveSpaces([ids.c])
+    await supabase.from('space_items').update({ archived_at: new Date().toISOString() }).eq('id', ids.bItem)
+    await deleteSpaces([ids.a])
+    await purgeSpaces(null)
+    const { data } = await supabase.from('spaces').select('name, parent_id, archived_at')
+    expect(data.map(s => [s.name, s.parent_id, !!s.archived_at]).sort())
+      .toEqual([['c', null, true], ['d', ids.c, true], ['e', null, false]])
+    const { data: item } = await supabase.from('space_items').select('space_id, archived_at').eq('id', ids.bItem).single()
+    expect(item.space_id).toBeNull()
+    expect(item.archived_at).toBeTruthy()
+    expect((await supabase.from('space_items').select('id').eq('id', ids.aItem)).data).toEqual([])
   })
 
   it('hard-deleting a space removes every level below it', async () => {

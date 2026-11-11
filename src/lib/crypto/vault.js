@@ -361,7 +361,12 @@ async function persistPinWrappedVault(userId, pin, masterKey, { recoveryCode = '
 
   const { error } = await supabase.from('user_encryption').upsert(payload)
   if (error) throw error
-  cacheVaultMeta(userId, payload) // so a freshly set PIN can unlock offline
+  updateCachedVaultMeta(userId, payload) // so a freshly set PIN can unlock offline
+}
+
+/** Merge saved vault fields into the offline copy, keeping the ones not saved. */
+function updateCachedVaultMeta(userId, fields) {
+  cacheVaultMeta(userId, { ...readCachedVaultMeta(userId), ...fields })
 }
 
 async function persistRecoveryWrappedVault(userId, masterKey, recoveryCode) {
@@ -379,6 +384,7 @@ async function persistRecoveryWrappedVault(userId, masterKey, recoveryCode) {
     .update(payload)
     .eq('user_id', userId)
   if (error) throw error
+  updateCachedVaultMeta(userId, payload)
 }
 
 async function unlockRecoveryWrappedVault(meta, recoveryCode) {

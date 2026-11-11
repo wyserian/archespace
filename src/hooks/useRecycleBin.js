@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useEncryption } from '../context/EncryptionCore'
 import { fetchStoredCollection } from '../lib/storedCollectionQuery'
-import { restoreSpaces, reviveItemSpaces } from '../lib/spaceLifecycle'
+import { purgeSpaces, restoreSpaces, reviveItemSpaces } from '../lib/spaceLifecycle'
 import { invalidateRecycleBin } from '../lib/queryInvalidation'
 import { queryKeys } from '../lib/queryKeys'
 
@@ -37,10 +37,7 @@ export function useRecycleBin() {
   })
 
   const purgeSpace = useMutation({
-    mutationFn: async (id) => {
-      const { error } = await supabase.from('spaces').delete().eq('id', id)
-      if (error) throw error
-    },
+    mutationFn: (id) => purgeSpaces([id]),
     onSuccess: () => invalidateRecycleBin(qc),
   })
 
@@ -87,9 +84,7 @@ export function useRecycleBin() {
 
   const bulkPurgeSpaces = useMutation({
     mutationFn: async (ids) => {
-      if (!ids?.length) return
-      const { error } = await supabase.from('spaces').delete().in('id', ids)
-      if (error) throw error
+      if (ids?.length) await purgeSpaces(ids)
     },
     onSuccess: () => invalidateRecycleBin(qc),
   })
@@ -110,12 +105,7 @@ export function useRecycleBin() {
         .delete()
         .not('deleted_at', 'is', null)
       if (e1) throw e1
-
-      const { error: e2 } = await supabase
-        .from('spaces')
-        .delete()
-        .not('deleted_at', 'is', null)
-      if (e2) throw e2
+      await purgeSpaces(null)
     },
     onSuccess: () => invalidateRecycleBin(qc),
   })

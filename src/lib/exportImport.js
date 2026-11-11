@@ -32,6 +32,7 @@ import {
  *
  * @param {Array} spaces - The current (decrypted) spaces array
  * @param {CryptoKey} cryptoKey - Vault key for decrypting items from the DB
+ * @returns {Promise<{ unreadable: number }>} Items left out as undecryptable.
  */
 export async function exportSpaces(spaces, cryptoKey) {
   if (!cryptoKey) throw new Error('Vault must be unlocked to export')
@@ -39,11 +40,15 @@ export async function exportSpaces(spaces, cryptoKey) {
   const userId = session?.user?.id
   if (!userId) throw new Error('Not authenticated')
 
+  // Items that can't be decrypted (e.g. left from an earlier vault key) are
+  // left out; the caller says how many.
+  let unreadable = 0
+
   // Active items of one space, or the dashboard's items (no space) for `null`.
   const loadItems = async (spaceId) => {
     let q = supabase
       .from('space_items')
-      .select('type, title, content, reminder, position, pinned, locked')
+      .select('type, title, content, tags, reminder, position, pinned, starred, locked, color')
     q = spaceId ? q.eq('space_id', spaceId) : q.is('space_id', null)
     const { data, error } = await q
       .is('deleted_at', null)
@@ -51,11 +56,15 @@ export async function exportSpaces(spaces, cryptoKey) {
       .order('position')
     if (error) throw error
     const items = await decryptItems(data || [], cryptoKey)
+    unreadable += (data?.length || 0) - items.length
     return items.map((it) => ({
       type: it.type,
       title: it.title ?? '',
       content: it.content ?? {},
       pinned: !!it.pinned,
+      ...(it.tags?.length ? { tags: it.tags } : {}),
+      ...(it.starred ? { starred: true } : {}),
+      ...(typeof it.color === 'string' ? { color: it.color } : {}),
       ...(it.locked ? { locked: true } : {}),
       ...(it.reminder ? { reminder: it.reminder } : {}),
     }))
@@ -97,6 +106,7 @@ export async function exportSpaces(spaces, cryptoKey) {
     URL.revokeObjectURL(url)
 
     await logAudit({ action: 'export', details: { count: spaces.length } })
+    return { unreadable }
   } catch (error) {
     console.error('Export failed:', error)
     throw error
@@ -200,7 +210,7 @@ async function insertImportedItems(items, spaceId, userId, cryptoKey) {
 
     const title = (typeof item.title === 'string' ? item.title.trim() : '')
       .slice(0, MAX_TITLE_LENGTH)
-    const encryptedItem = await encryptItem({ title, content: item.content }, cryptoKey)
+    const encryptedItem = await encryptItem({ title, content: item.content, tags: item.tags }, cryptoKey)
 
     rows.push({
       space_id: spaceId,
@@ -208,8 +218,11 @@ async function insertImportedItems(items, spaceId, userId, cryptoKey) {
       type,
       title: encryptedItem.title,
       content: encryptedItem.content,
+      tags: encryptedItem.tags,
       position: rows.length,
       pinned: !!item.pinned,
+      starred: item.starred === true,
+      color: typeof item.color === 'string' ? item.color : null,
       locked: item.locked === true,
       reminder: await encryptReminder(item.reminder, cryptoKey),
     })

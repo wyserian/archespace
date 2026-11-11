@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest'
-import { enqueueOffline, getOfflineQueue } from './offlineQueue'
+import { enqueueOffline, flushOfflineQueue, getOfflineQueue } from './offlineQueue'
 
 const edit = (userId, id, title, base) =>
   ({ type: 'item-update', userId, payload: { id, title, base } })
@@ -21,5 +21,30 @@ describe('enqueueOffline', () => {
     enqueueOffline(edit('u1', 'b', 'y', 'v1'))
     enqueueOffline(edit('u2', 'a', 'z', 'v1'))
     expect(getOfflineQueue()).toHaveLength(3)
+  })
+})
+
+describe('flushOfflineQueue', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('removes what it sent, keeping edits queued or changed while sending', async () => {
+    enqueueOffline(edit('u1', 'a', 'first', 'v1'))
+    enqueueOffline(edit('u1', 'b', 'x', 'v1'))
+    const flushed = await flushOfflineQueue(async (entry) => {
+      if (entry.payload.id === 'a') {
+        enqueueOffline(edit('u1', 'c', 'new', 'v1')) // queued while sending
+        enqueueOffline(edit('u1', 'a', 'second', 'v2')) // a changed again
+      }
+      return true
+    })
+    expect(flushed).toBe(2)
+    expect(getOfflineQueue().map(e => e.payload.title).sort()).toEqual(['new', 'second'])
+  })
+
+  it('keeps what failed', async () => {
+    enqueueOffline(edit('u1', 'a', 'x', 'v1'))
+    await flushOfflineQueue(async () => false)
+    await flushOfflineQueue(async () => { throw new Error('offline') })
+    expect(getOfflineQueue()).toHaveLength(1)
   })
 })

@@ -105,6 +105,25 @@ export async function unarchiveSpaces(ids) {
   await reviveAncestors(ids, byId)
 }
 
+/**
+ * Delete spaces in the bin for good (null: every space in the bin). The
+ * database takes everything inside them too, so any sub-space or item kept
+ * inside that isn't in the bin (one archived before) first moves to the top
+ * level or the dashboard, and stays where it is listed.
+ */
+export async function purgeSpaces(ids) {
+  const { tree, byId } = await loadTree()
+  const roots = ids ?? tree.filter(s => s.deleted_at).map(s => s.id)
+  if (!roots.length) return
+  const gone = new Set([...roots, ...descendantsOf(roots, tree, s => !!s.deleted_at)])
+  const kept = descendantsOf(roots, tree)
+    .filter(id => !gone.has(id) && gone.has(byId.get(id).parent_id))
+  if (kept.length) await check(supabase.from('spaces').update({ parent_id: null }).in('id', kept))
+  await check(supabase.from('space_items').update({ space_id: null })
+    .in('space_id', [...gone]).is('deleted_at', null).not('archived_at', 'is', null))
+  await check(supabase.from('spaces').delete().in('id', [...gone]))
+}
+
 /** Move archived spaces (with what was archived along with them) to the bin. */
 export async function binArchivedSpaces(ids) {
   const { tree, byId } = await loadTree()
