@@ -84,7 +84,9 @@ export async function exportSpaces(spaces, cryptoKey) {
         color: typeof c.color === 'string' ? c.color : null,
         tags: parseTags(c.tags),
         pinned: !!c.pinned,
+        ...(c.starred ? { starred: true } : {}),
         ...(c.locked ? { locked: true } : {}),
+        ...(c.read_only ? { readOnly: true } : {}),
         items: await loadItems(c.id),
       }))
     )
@@ -220,7 +222,8 @@ async function insertImportedItems(items, spaceId, userId, cryptoKey) {
       title: encryptedItem.title,
       content: encryptedItem.content,
       tags: encryptedItem.tags,
-      position: rows.length,
+      // Mobile backups carry each item's place; others list them in order.
+      position: Number.isInteger(item.position) ? item.position : rows.length,
       pinned: !!item.pinned,
       starred: item.starred === true,
       color: typeof item.color === 'string' ? item.color : null,
@@ -307,6 +310,16 @@ export async function importSpaces(file, userId, cryptoKey, { askBackupPin } = {
     throw new Error(`Too many dashboard items. The maximum allowed is ${MAX_IMPORT_ITEMS_PER_SPACE}.`)
   }
 
+  // Top-level spaces go after the existing ones, each in its backup order.
+  const { data: existing, error: existingErr } = await supabase
+    .from('spaces')
+    .select('id')
+    .is('parent_id', null)
+    .is('deleted_at', null)
+    .is('archived_at', null)
+  if (existingErr) throw existingErr
+  const placed = new Map() // parent id (or null) -> spaces placed in it so far
+
   let itemsImported = 0
   let itemsSkipped = 0
   // Backup position -> new space id, for the sub-spaces that follow.
@@ -314,6 +327,11 @@ export async function importSpaces(file, userId, cryptoKey, { askBackupPin } = {
 
   for (const [index, parentIndex] of nestingOrder(spacesList)) {
     const col = spacesList[index]
+    const parentId = parentIndex == null ? null : newIds.get(parentIndex) ?? null
+    const nth = placed.get(parentId) ?? 0
+    placed.set(parentId, nth + 1)
+    const position = (parentId == null ? existing.length : 0) +
+      (Number.isInteger(col.position) ? col.position : nth)
 
     const name = (typeof col.name === 'string' && col.name.trim()
       ? col.name.trim()
@@ -335,8 +353,10 @@ export async function importSpaces(file, userId, cryptoKey, { askBackupPin } = {
         tags: encryptedCol.tags,
         color: typeof col.color === 'string' ? col.color : null,
         pinned: !!col.pinned,
+        starred: col.starred === true,
         locked: col.locked === true,
-        parent_id: parentIndex == null ? null : newIds.get(parentIndex) ?? null,
+        parent_id: parentId,
+        position,
         user_id: userId,
       })
       .select()
@@ -348,6 +368,11 @@ export async function importSpaces(file, userId, cryptoKey, { askBackupPin } = {
     const result = await insertImportedItems(items, newCol.id, userId, cryptoKey)
     itemsImported += result.imported
     itemsSkipped += result.skipped
+    // Read-only last: it refuses the items otherwise.
+    if (col.readOnly === true) {
+      const { error } = await supabase.from('spaces').update({ read_only: true }).eq('id', newCol.id)
+      if (error) throw error
+    }
   }
 
   // Dashboard items (outside any space).
