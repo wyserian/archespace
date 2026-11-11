@@ -6,6 +6,7 @@
  * refresh doesn't ask for the PIN again until the vault locks.
  */
 import { useState, useCallback, useEffect, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from './AuthContextCore'
 import { EncryptionContext } from './EncryptionCore'
 import {
@@ -44,6 +45,7 @@ import {
 } from '../lib/rateLimiter'
 import { logAudit } from '../lib/auditLog'
 import { hideAllItems } from '../lib/itemLock'
+import { wipeOnKeyChange } from '../lib/crypto/lockWipe'
 
 const VAULT_STATUS_TIMEOUT_MS = 8000
 const VAULT_SESSION_RESTORE_TIMEOUT_MS = 4000
@@ -70,6 +72,13 @@ export function EncryptionProvider({ children }) {
   const [passkeySupported, setPasskeySupported] = useState(false)
   const [passkeys, setPasskeys] = useState([])
   const [autoLockId, setAutoLockIdState] = useState(getAutoLockId())
+  const queryClient = useQueryClient()
+
+  const heldKey = useRef(null)
+  useEffect(() => {
+    wipeOnKeyChange(heldKey.current, cryptoKey, queryClient)
+    heldKey.current = cryptoKey
+  }, [cryptoKey, queryClient])
 
   const setAutoLock = useCallback((id) => {
     setAutoLockId(id)

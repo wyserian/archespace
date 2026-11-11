@@ -5,6 +5,45 @@ import { bytesFromBase64, bytesToBase64 } from './encoding'
 
 const CIPHER_PREFIX = 'arc1:'
 
+// Decrypted text by ciphertext, kept in memory while unlocked. Every
+// ciphertext has its own random IV, so an entry can never go stale: lists,
+// search and refetches only decrypt values they haven't seen. An entry holds
+// the key it was decrypted with and only answers for that key. Least recently
+// used entries go first past the cap (in characters, ciphertext plus text).
+const DECRYPT_CACHE_MAX_CHARS = 16 * 1024 * 1024
+const decryptCache = new Map()
+let cachedChars = 0
+// Bumped on every clear, so work started before a lock can't refill the cache.
+let generation = 0
+
+function cached(key, ciphertext) {
+  const entry = decryptCache.get(ciphertext)
+  if (entry?.key !== key) return undefined
+  decryptCache.delete(ciphertext)
+  decryptCache.set(ciphertext, entry)
+  return entry.text
+}
+
+function remember(key, ciphertext, text, startedIn) {
+  if (startedIn !== generation) return
+  const size = ciphertext.length + text.length
+  if (size > DECRYPT_CACHE_MAX_CHARS || decryptCache.has(ciphertext)) return
+  decryptCache.set(ciphertext, { key, text })
+  cachedChars += size
+  for (const [oldest, { text: oldText }] of decryptCache) {
+    if (cachedChars <= DECRYPT_CACHE_MAX_CHARS) break
+    decryptCache.delete(oldest)
+    cachedChars -= oldest.length + oldText.length
+  }
+}
+
+/** Forget every decrypted value (the vault locked or the user signed out). */
+export function clearDecryptCache() {
+  decryptCache.clear()
+  cachedChars = 0
+  generation += 1
+}
+
 function isEncrypted(value) {
   return typeof value === 'string' && value.startsWith(CIPHER_PREFIX)
 }
@@ -26,6 +65,7 @@ export async function exportRawAesKey(key) {
 export async function encryptString(plaintext, key) {
   if (plaintext == null) return ''
   const text = String(plaintext)
+  const startedIn = generation
   const iv = crypto.getRandomValues(new Uint8Array(12))
   const encoded = new TextEncoder().encode(text)
   const ciphertext = await crypto.subtle.encrypt(
@@ -33,7 +73,10 @@ export async function encryptString(plaintext, key) {
     key,
     encoded
   )
-  return `${CIPHER_PREFIX}${bytesToBase64(iv)}.${bytesToBase64(ciphertext)}`
+  const value = `${CIPHER_PREFIX}${bytesToBase64(iv)}.${bytesToBase64(ciphertext)}`
+  // A saved value comes straight back from the server; no need to decrypt it.
+  remember(key, value, text, startedIn)
+  return value
 }
 
 /**
@@ -44,6 +87,9 @@ export async function encryptString(plaintext, key) {
 export async function decryptString(value, key) {
   if (value == null || value === '') return ''
   if (!isEncrypted(value)) throw new Error('Not an encrypted value')
+  const hit = cached(key, value)
+  if (hit !== undefined) return hit
+  const startedIn = generation
   const body = value.slice(CIPHER_PREFIX.length)
   const dot = body.indexOf('.')
   if (dot < 0) throw new Error('Invalid encrypted payload')
@@ -54,7 +100,9 @@ export async function decryptString(value, key) {
     key,
     ct
   )
-  return new TextDecoder().decode(plainBuffer)
+  const text = new TextDecoder().decode(plainBuffer)
+  remember(key, value, text, startedIn)
+  return text
 }
 
 /**

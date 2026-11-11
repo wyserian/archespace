@@ -17,6 +17,7 @@ import { defaultKanban } from '../lib/kanban'
 import { parseTags } from '../lib/spaceColors'
 import { assertOnline } from '../lib/offlineQueue'
 import { saveRows, loadRows } from '../lib/offlineCache'
+import { fetchRows } from '../lib/rowSync'
 import { setReachable, isNetworkError } from '../lib/connectivity'
 import { invalidateItemViews, invalidateSpaceItems } from '../lib/queryInvalidation'
 import { queryKeys } from '../lib/queryKeys'
@@ -78,20 +79,20 @@ function whereSpace(q, spaceId) {
 async function loadItems(spaceId, userId, cryptoKey) {
   const cacheKey = `items:${spaceId ?? DASHBOARD_ITEMS_KEY}`
   try {
-    const { data, error } = await whereSpace(
-      supabase.from('space_items').select('*'),
-      spaceId
-    )
-      .is('deleted_at', null)
-      .is('archived_at', null)
-      .order('pinned', { ascending: false })
-      .order('position', { ascending: true })
-      // Items can share a position (one added after a delete), so ties
-      // break the same way here and on mobile.
-      .order('created_at', { ascending: true })
-      .order('id', { ascending: true })
-    if (error) throw error
-    const rows = data || []
+    const rows = await fetchRows({
+      table: 'space_items',
+      userId,
+      cacheKey,
+      query: q => whereSpace(q, spaceId)
+        .is('deleted_at', null)
+        .is('archived_at', null)
+        .order('pinned', { ascending: false })
+        .order('position', { ascending: true })
+        // Items can share a position (one added after a delete), so ties
+        // break the same way here and on mobile.
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true }),
+    })
     setReachable(true)
     saveRows(userId, cacheKey, rows) // cache ciphertext for offline reads
     return decryptItems(rows, cryptoKey)

@@ -5,7 +5,8 @@
  * come back from Supabase (never the decrypted plaintext), so nothing readable
  * sits on disk. On a successful online fetch the rows are cached; when a fetch
  * fails while offline, the caller falls back to these rows and decrypts them
- * with the in-memory vault key.
+ * with the in-memory vault key. Online, a list only downloads the rows that
+ * changed since (rowSync.js).
  *
  * Entries are namespaced by user id so a shared browser never mixes accounts
  * (and another account could not decrypt them anyway).

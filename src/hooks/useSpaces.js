@@ -10,6 +10,7 @@ import { useEncryption } from '../context/EncryptionCore'
 import { useToast } from '../context/ToastCore'
 import { assertOnline } from '../lib/offlineQueue'
 import { saveRows, loadRows } from '../lib/offlineCache'
+import { fetchRows } from '../lib/rowSync'
 import { setReachable, isNetworkError } from '../lib/connectivity'
 import { encryptSpace, decryptSpace, decryptSpaces, encryptTags } from '../lib/dataProtection'
 import { duplicateSpaceWithItems } from '../lib/spaceDuplicate'
@@ -77,18 +78,18 @@ export function useSpaces() {
     networkMode: 'always',
     queryFn: async () => {
       try {
-        const { data, error } = await supabase
-          .from('spaces')
-          .select('*')
-          .is('deleted_at', null)
-          .is('archived_at', null)
-          .order('pinned', { ascending: false })
-          .order('position', { ascending: true })
-          .order('created_at', { ascending: false })
-          .order('id', { ascending: true }) // a stable last tie-break, as on mobile
-
-        if (error) throw error
-        const rows = data || []
+        const rows = await fetchRows({
+          table: 'spaces',
+          userId,
+          cacheKey: 'spaces',
+          query: q => q
+            .is('deleted_at', null)
+            .is('archived_at', null)
+            .order('pinned', { ascending: false })
+            .order('position', { ascending: true })
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: true }), // a stable last tie-break, as on mobile
+        })
         setReachable(true)
         saveRows(userId, 'spaces', rows) // cache ciphertext for offline reads
         setSpaceLocks(rows) // so a locked space's items stay hidden everywhere
