@@ -163,8 +163,7 @@
 
 /* Light mode: the pale -300/-400 palette shades used for item types, status
    badges and marks read fine on dark but fade on white; use deeper shades.
-   (Tints like bg-amber-400/10 stay as they are.) The landing page is always
-   dark, so it keeps its own shades. */
+   (Tints like bg-amber-400/10 stay as they are.) */
 [data-theme-mode="light"] .text-blue-400    { color: #2563eb; }
 [data-theme-mode="light"] .text-rose-400    { color: #e11d48; }
 [data-theme-mode="light"] .text-purple-400  { color: #9333ea; }
@@ -174,8 +173,7 @@
 [data-theme-mode="light"] .text-sky-400     { color: #0369a1; }
 [data-theme-mode="light"] .text-fuchsia-400 { color: #c026d3; }
 [data-theme-mode="light"] .text-orange-400  { color: #c2410c; }
-[data-theme-mode="light"] .text-emerald-300:not(.home-page *),
-[data-theme-mode="light"] .text-emerald-400:not(.home-page *) { color: #047857; }
+[data-theme-mode="light"] .text-teal-400    { color: #0f766e; }
 [data-theme-mode="light"] .text-red-400     { color: #dc2626; }
 
 /* Base body styles */

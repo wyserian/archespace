@@ -10,7 +10,7 @@ import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Pin, PinOff, Star, StarOff, Pencil, PencilOff, PencilLine, Trash2, Copy, MoveRight, FileDown, Archive, MoreVertical, Shield, ShieldCheck, ShieldOff, Tag, X, Hourglass } from 'lucide-react'
 import { useFetchSpaceItems } from '../../hooks/useSpaceItems'
-import { useSetSpaceExpiry } from '../../hooks/useSpaces'
+import { useSetSpaceExpiry, useToggleSpaceProtection } from '../../hooks/useSpaces'
 import { ExpiryChip } from '../ExpiryChip'
 import { ExpiryDialog } from '../ExpiryDialog'
 import { exportSpaceToPdf } from '../../lib/pdfExport'
@@ -20,8 +20,7 @@ import { ActionMenu } from '../ui/ActionMenu'
 import { SelectCheck } from '../ui/SelectCheck'
 import { useOnlineStatus } from '../../hooks/useOnlineStatus'
 import { useToast } from '../../context/ToastCore'
-import { useVaultPinPrompt } from '../../context/VaultPinPromptCore'
-import { useItemRevealed, useSpaceHidden } from '../../lib/itemLock'
+import { useSpaceHidden } from '../../lib/itemLock'
 import { REORDER_KEYSHORTCUTS, reorderKeyStep } from '../../lib/reorderKeys'
 
 /** A tag chip tinted by the tag's own stable colour; brighter when it's an
@@ -128,28 +127,11 @@ export function SpaceCard({
 }) {
   const online = useOnlineStatus()
   const { toast } = useToast()
-  const askVaultPin = useVaultPinPrompt()
   // Protected (itself or its parent) and not opened: the name, tags and count
   // show; the description and editing wait for the PIN (asked on opening).
   const hidden = useSpaceHidden(col.id)
-  const revealed = useItemRevealed(col.id)
-
-  // Protecting is instant and hides the space. Removing protection needs the PIN,
-  // unless the space was already opened with it.
-  const handleToggleLock = async () => {
-    if (col.locked && !revealed) {
-      const ok = await askVaultPin({
-        title: 'Remove protection',
-        message: 'Enter your vault PIN to remove protection. The space will open without the PIN.',
-        confirmLabel: 'Remove protection',
-      })
-      if (!ok) return
-    }
-    toggleLock.mutate({ id: col.id, locked: !!col.locked }, {
-      onSuccess: () => toast.success(col.locked ? 'Protection removed' : 'Space protected'),
-      onError: () => toast.error(col.locked ? "Couldn't remove protection." : "Couldn't protect the space."),
-    })
-  }
+  const toggleProtection = useToggleSpaceProtection(toggleLock)
+  const handleToggleLock = () => toggleProtection(col.id, !!col.locked)
   // The card has no items of its own, so they load (or come from the cache)
   // on demand; sub-spaces are listed by name, as from inside the space.
   const qc = useQueryClient()

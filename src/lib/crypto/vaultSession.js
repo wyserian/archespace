@@ -13,6 +13,7 @@
 import { autoLockMs } from './vaultAutoLock'
 import { bytesFromBase64, bytesToBase64 } from './encoding'
 import { SESSION_ABSOLUTE_MAX_MS } from '../constants'
+import { openIdb, withStore } from '../idb'
 
 export const VAULT_UNLOCKED_AT_KEY = 'arche:vault-unlocked-at'
 const VAULT_SESSION_USER = 'arche:vault-session-user'
@@ -23,31 +24,8 @@ const VAULT_SESSION_ID = 'arche:vault-session-id'
 const DB_NAME = 'arche-vault'
 const STORE = 'session'
 
-function openDb() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1)
-    req.onupgradeneeded = () => req.result.createObjectStore(STORE)
-    req.onsuccess = () => resolve(req.result)
-    req.onerror = () => reject(req.error)
-  })
-}
-
-/** Run `fn(store)` in one transaction; resolves with what `fn` returns. */
-async function withStore(mode, fn) {
-  const db = await openDb()
-  try {
-    return await new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE, mode)
-      let result
-      const req = fn(tx.objectStore(STORE))
-      if (req) req.onsuccess = () => { result = req.result }
-      tx.oncomplete = () => resolve(result)
-      tx.onerror = () => reject(tx.error)
-    })
-  } finally {
-    db.close()
-  }
-}
+const openDb = () => openIdb(DB_NAME, 1, db => db.createObjectStore(STORE))
+const inStore = (mode, fn) => withStore(openDb, STORE, mode, fn)
 
 const importAesKey = (raw) =>
   crypto.subtle.importKey('raw', raw, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt'])
@@ -60,7 +38,7 @@ export function clearVaultSession() {
   sessionStorage.removeItem(VAULT_SESSION_ID)
   // Fire-and-forget: without the wrapping key above the entry is already
   // useless.
-  if (id) withStore('readwrite', store => store.delete(id)).catch(() => {})
+  if (id) inStore('readwrite', store => store.delete(id)).catch(() => {})
 }
 
 export async function saveVaultSession(userId, cryptoKey) {
@@ -71,7 +49,7 @@ export async function saveVaultSession(userId, cryptoKey) {
     const wrapped = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await importAesKey(wrapRaw), raw)
     const id = sessionStorage.getItem(VAULT_SESSION_ID) || crypto.randomUUID()
     const now = Date.now()
-    await withStore('readwrite', store => {
+    await inStore('readwrite', store => {
       // Entries left by closed tabs can't be opened; drop the old ones.
       const cursor = store.openCursor()
       cursor.onsuccess = () => {
@@ -113,7 +91,7 @@ export async function loadVaultSession(userId) {
   }
 
   try {
-    const entry = await withStore('readonly', store => store.get(id))
+    const entry = await inStore('readonly', store => store.get(id))
     if (!entry?.wrapped) {
       clearVaultSession()
       return null

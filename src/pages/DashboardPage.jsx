@@ -14,7 +14,8 @@ import {
 import SpaceItem from '../components/SpaceItem'
 import ItemBoardModals from '../components/ItemBoardModals'
 import { useItemBoard } from '../hooks/useItemBoard'
-import { useDualEntitySelection } from '../hooks/useDualEntitySelection'
+import { describeSelection, useDualEntitySelection } from '../hooks/useDualEntitySelection'
+import { TagFilter } from '../components/TagFilter'
 import { useShortcut } from '../context/ShortcutsCore'
 import GlobalSearchResults from '../components/GlobalSearchResults'
 import { useDragReorder } from '../hooks/useDragReorder'
@@ -218,8 +219,8 @@ export default function DashboardPage() {
   // Selection: spaces and dashboard items together
   const {
     selectMode, setSelectMode, selectedSpaceIds, selectedItemIds,
-    selectedCount, exitSelectMode, selectAll, toggleSpace, toggleItem,
-  } = useDualEntitySelection(sortedSpaces, sortedItems)
+    selectedCount, selectionLabel, runBulkAction, exitSelectMode, selectAll, toggleSpace, toggleItem,
+  } = useDualEntitySelection(sortedSpaces, sortedItems, { hasDirty: board.hasDirty })
   const selectedSpaces = useMemo(
     () => spaces.filter(c => selectedSpaceIds.has(c.id)),
     [spaces, selectedSpaceIds]
@@ -453,28 +454,6 @@ export default function DashboardPage() {
     </div>
   ))
 
-  // "2 spaces", "3 items", or "2 spaces and 3 items" (for bulk-action toasts).
-  const describeSelection = (spaceCount, itemCount) => [
-    spaceCount > 0 && `${spaceCount} ${spaceCount === 1 ? 'space' : 'spaces'}`,
-    itemCount > 0 && `${itemCount} ${itemCount === 1 ? 'item' : 'items'}`,
-  ].filter(Boolean).join(' and ')
-
-  /** Run a bulk action on the selected spaces and items, then leave select mode. */
-  const runBulkAction = async (fn, successMessage, errorMessage) => {
-    if (selectedCount === 0) return
-    if (board.hasDirty([...selectedItemIds])) {
-      toast.error('Save or discard unsaved changes before bulk actions')
-      return
-    }
-    try {
-      await fn([...selectedSpaceIds], [...selectedItemIds])
-      toast.success(successMessage)
-      exitSelectMode()
-    } catch {
-      toast.error(errorMessage)
-    }
-  }
-  const selectionLabel = describeSelection(selectedSpaceIds.size, selectedItemIds.size)
   const hasSelectedItems = selectedItemIds.size > 0
 
   // The page's one main action.
@@ -758,42 +737,13 @@ export default function DashboardPage() {
 
         {/* Tag filter */}
         {allTags.length > 0 && !selectMode && (
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            {(() => {
-              const pill = (active) =>
-                `text-xs font-medium px-2.5 py-1 rounded-full border transition-colors ${
-                  active
-                    ? 'bg-accent-muted border-accent-border text-accent'
-                    : 'bg-bg-elevated border-transparent text-text-secondary hover:text-text-primary hover:bg-bg-hover'
-                }`
-              return (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTags([])}
-                    aria-pressed={activeTags.length === 0}
-                    className={pill(activeTags.length === 0)}
-                  >
-                    All
-                  </button>
-                  {allTags.map(tag => {
-                    const active = activeTags.includes(tag)
-                    return (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => toggleTagFilter(tag)}
-                        aria-pressed={active}
-                        className={pill(active)}
-                      >
-                        {tag}
-                      </button>
-                    )
-                  })}
-                </>
-              )
-            })()}
-          </div>
+          <TagFilter
+            tags={allTags}
+            active={activeTags}
+            onClear={() => setSelectedTags([])}
+            onToggle={toggleTagFilter}
+            className="mb-4"
+          />
         )}
 
         {/* Spaces, then dashboard items */}

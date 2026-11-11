@@ -5,6 +5,7 @@
  * so queries are plain array work. Rows hold the same (encrypted) values the
  * server would.
  */
+import { openIdb } from '../idb'
 
 const DB_NAME = 'archespace-local'
 const DB_VERSION = 1
@@ -18,17 +19,10 @@ export const TABLES = {
 }
 
 function openDb() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION)
-    req.onupgradeneeded = () => {
-      for (const [table, keyPath] of Object.entries(TABLES)) {
-        if (!req.result.objectStoreNames.contains(table)) {
-          req.result.createObjectStore(table, { keyPath })
-        }
-      }
+  return openIdb(DB_NAME, DB_VERSION, (db) => {
+    for (const [table, keyPath] of Object.entries(TABLES)) {
+      if (!db.objectStoreNames.contains(table)) db.createObjectStore(table, { keyPath })
     }
-    req.onsuccess = () => resolve(req.result)
-    req.onerror = () => reject(req.error)
   })
 }
 

@@ -12,6 +12,7 @@ import { MULTI_USER_ENABLED } from '../lib/appConfig'
 import { TERMS_VERSION } from '../lib/legal'
 import { validatePassword } from '../lib/passwordPolicy'
 import { PasswordRules } from '../components/PasswordRules'
+import { useCapsLock } from '../hooks/useCapsLock'
 import { logAudit } from '../lib/auditLog'
 import { setRememberMe } from '../lib/supabase'
 import { peekAuthRedirectError, clearAuthRedirectError } from '../lib/authRedirectError'
@@ -68,7 +69,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [capsLock, setCapsLock] = useState(false)
+  // Caps Lock warning: a common cause of a rejected sign-in that the masked field hides.
+  const [capsLock, capsLockProps] = useCapsLock()
   const [remember, setRemember] = useState(true)
   // Explicit consent to the Terms and Privacy Policy, required before an account
   // can be created (GDPR/DPDP: record affirmative agreement at sign-up).
@@ -89,13 +91,6 @@ export default function LoginPage() {
     if (confirmRef.current && confirmRef.current.value !== confirmPassword) setConfirmPassword(confirmRef.current.value)
   }
 
-  // Warn if Caps Lock is on while typing a password (a common cause of a
-  // rejected sign-in that the masked field hides).
-  const onPasswordKey = e => {
-    if (typeof e.getModifierState === 'function') {
-      setCapsLock(e.getModifierState('CapsLock'))
-    }
-  }
   const [resetSent, setResetSent] = useState(false)
   // A failed email link (e.g. expired sign-up confirmation) captured at startup.
   const [error, setError] = useState(() => peekAuthRedirectError() || '')
@@ -340,9 +335,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={e => { setPassword(e.target.value); if (error) setError('') }}
                   onAnimationStart={syncAutofill}
-                  onKeyUp={onPasswordKey}
-                  onKeyDown={onPasswordKey}
-                  onBlur={() => setCapsLock(false)}
+                  {...capsLockProps}
                   required
                   autoComplete={isSignUp ? 'new-password' : 'current-password'}
                   aria-describedby={isSignUp ? 'signup-password-rules' : undefined}

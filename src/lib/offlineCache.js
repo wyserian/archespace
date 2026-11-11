@@ -13,25 +13,15 @@
  */
 import { isLocalMode } from './localMode'
 import { withoutExpired } from './expiry'
+import { openIdb, withStore } from './idb'
 
 const DB_NAME = 'arche-offline-cache'
 const STORE = 'rows'
-const VERSION = 1
 
-function openDb() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, VERSION)
-    req.onupgradeneeded = () => {
-      const db = req.result
-      if (!db.objectStoreNames.contains(STORE)) {
-        db.createObjectStore(STORE, { keyPath: 'k' })
-      }
-    }
-    req.onsuccess = () => resolve(req.result)
-    req.onerror = () => reject(req.error)
-  })
-}
-
+const openDb = () => openIdb(DB_NAME, 1, (db) => {
+  if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE, { keyPath: 'k' })
+})
+const inStore = (mode, fn) => withStore(openDb, STORE, mode, fn)
 function cacheKey(userId, key) {
   return `${userId || 'anon'}:${key}`
 }
@@ -43,14 +33,7 @@ function cacheKey(userId, key) {
 export async function saveRows(userId, key, rows) {
   if (isLocalMode()) return
   try {
-    const db = await openDb()
-    await new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE, 'readwrite')
-      tx.objectStore(STORE).put({ k: cacheKey(userId, key), rows, savedAt: Date.now() })
-      tx.oncomplete = () => resolve()
-      tx.onerror = () => reject(tx.error)
-    })
-    db.close()
+    await inStore('readwrite', store => { store.put({ k: cacheKey(userId, key), rows, savedAt: Date.now() }) })
   } catch {
     // IndexedDB unavailable or quota exceeded - offline cache is best-effort.
   }
@@ -63,14 +46,7 @@ export async function saveRows(userId, key, rows) {
 export async function loadRows(userId, key) {
   if (isLocalMode()) return null
   try {
-    const db = await openDb()
-    const value = await new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE, 'readonly')
-      const req = tx.objectStore(STORE).get(cacheKey(userId, key))
-      req.onsuccess = () => resolve(req.result)
-      req.onerror = () => reject(req.error)
-    })
-    db.close()
+    const value = await inStore('readonly', store => store.get(cacheKey(userId, key)))
     return value?.rows ? withoutExpired(value.rows) : null
   } catch {
     return null
@@ -80,14 +56,7 @@ export async function loadRows(userId, key) {
 /** Drop the entire offline cache (called on sign-out). */
 export async function clearOfflineCache() {
   try {
-    const db = await openDb()
-    await new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE, 'readwrite')
-      tx.objectStore(STORE).clear()
-      tx.oncomplete = () => resolve()
-      tx.onerror = () => reject(tx.error)
-    })
-    db.close()
+    await inStore('readwrite', store => { store.clear() })
   } catch {
     // Nothing to clear / storage unavailable.
   }

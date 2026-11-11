@@ -12,8 +12,9 @@ import {
 import { ItemTags } from '../components/ItemTags'
 import { parseTags } from '../lib/spaceColors'
 import { useDragReorder } from '../hooks/useDragReorder'
-import { useDualEntitySelection } from '../hooks/useDualEntitySelection'
-import { useSpaces, useSetSpaceExpiry } from '../hooks/useSpaces'
+import { describeSelection, useDualEntitySelection } from '../hooks/useDualEntitySelection'
+import { TagFilter } from '../components/TagFilter'
+import { useSpaces, useSetSpaceExpiry, useToggleSpaceProtection } from '../hooks/useSpaces'
 import { ExpiryChip } from '../components/ExpiryChip'
 import { ExpiryDialog } from '../components/ExpiryDialog'
 import { useItemBoard } from '../hooks/useItemBoard'
@@ -45,7 +46,7 @@ import { useRouteMeta } from '../hooks/useRouteMeta'
 import { sortEntities } from '../lib/sortEntities'
 import { pathOf } from '../lib/spaceTree'
 import { refocusAfterMove, reorderKeyStep } from '../lib/reorderKeys'
-import { isItemRevealed, revealSpace, useSpaceHidden } from '../lib/itemLock'
+import { revealSpace, useSpaceHidden } from '../lib/itemLock'
 import { useVaultPinPrompt } from '../context/VaultPinPromptCore'
 
 /**
@@ -226,22 +227,11 @@ export default function SpacePage() {
     if (hidden) unlockSpace()
   }, [hidden, space, id, unlockSpace])
 
-  // Protecting is instant and hides the space. Removing protection asks for the
-  // PIN unless the space was opened with it (it always is, on this page).
-  const handleToggleLock = async () => {
+  // Protecting hides the space at once, so unsaved edits are saved or dropped first.
+  const toggleProtection = useToggleSpaceProtection(toggleSpaceLock)
+  const handleToggleLock = () => {
     if (!locked && blockedByUnsaved()) return
-    if (locked && !isItemRevealed(id)) {
-      const ok = await askVaultPin({
-        title: 'Remove protection',
-        message: 'Enter your vault PIN to remove protection. The space will open without the PIN.',
-        confirmLabel: 'Remove protection',
-      })
-      if (!ok) return
-    }
-    toggleSpaceLock.mutate({ id, locked }, {
-      onSuccess: () => toast.success(locked ? 'Protection removed' : 'Space protected'),
-      onError: () => toast.error(locked ? "Couldn't remove protection." : "Couldn't protect the space."),
-    })
+    toggleProtection(id, locked)
   }
 
   // Tag filter (within this space: its sub-spaces and items)
@@ -294,8 +284,8 @@ export default function SpacePage() {
   // Selection: sub-spaces and items together, as on the dashboard.
   const {
     selectMode, setSelectMode, selectedSpaceIds, selectedItemIds,
-    selectedCount, exitSelectMode, selectAll, toggleSpace, toggleItem,
-  } = useDualEntitySelection(sortedSubSpaces, sortedItems)
+    selectedCount, selectionLabel, runBulkAction, exitSelectMode, selectAll, toggleSpace, toggleItem,
+  } = useDualEntitySelection(sortedSubSpaces, sortedItems, { hasDirty: board.hasDirty })
   const selectedSpaces = useMemo(
     () => subSpaces.filter(s => selectedSpaceIds.has(s.id)),
     [subSpaces, selectedSpaceIds]
@@ -397,29 +387,7 @@ export default function SpacePage() {
     dragItemRef.current = itemsRef.current[index]
   }, [onDragStart])
 
-  /** "2 spaces", "3 items", or "2 spaces and 3 items". */
-  const describeSelection = (spaceCount, itemCount) => [
-    spaceCount > 0 && `${spaceCount} ${spaceCount === 1 ? 'space' : 'spaces'}`,
-    itemCount > 0 && `${itemCount} ${itemCount === 1 ? 'item' : 'items'}`,
-  ].filter(Boolean).join(' and ')
-  const selectionLabel = describeSelection(selectedSpaceIds.size, selectedItemIds.size)
   const hasSelectedItems = selectedItemIds.size > 0
-
-  /** Run a bulk action on the selected sub-spaces and items, then leave select mode. */
-  const runBulkAction = async (fn, successMessage, errorMessage) => {
-    if (selectedCount === 0) return
-    if (board.hasDirty([...selectedItemIds])) {
-      toast.error('Save or discard unsaved changes before bulk actions')
-      return
-    }
-    try {
-      await fn([...selectedSpaceIds], [...selectedItemIds])
-      if (successMessage) toast.success(successMessage)
-      exitSelectMode()
-    } catch {
-      toast.error(errorMessage || "Couldn't complete that action.")
-    }
-  }
 
   // Not found state
   if (!space && !isLoading) {
@@ -845,42 +813,13 @@ export default function SpacePage() {
               </div>
             )}
             {allTags.length > 0 && (
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                {(() => {
-                  const pill = (active) =>
-                    `text-xs font-medium px-2.5 py-1 rounded-full border transition-colors ${
-                      active
-                        ? 'bg-accent-muted border-accent-border text-accent'
-                        : 'bg-bg-elevated border-transparent text-text-secondary hover:text-text-primary hover:bg-bg-hover'
-                    }`
-                  return (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedTags([])}
-                        aria-pressed={activeTags.length === 0}
-                        className={pill(activeTags.length === 0)}
-                      >
-                        All
-                      </button>
-                      {allTags.map(tag => {
-                        const active = activeTags.includes(tag)
-                        return (
-                          <button
-                            key={tag}
-                            type="button"
-                            onClick={() => toggleTagFilter(tag)}
-                            aria-pressed={active}
-                            className={pill(active)}
-                          >
-                            {tag}
-                          </button>
-                        )
-                      })}
-                    </>
-                  )
-                })()}
-              </div>
+              <TagFilter
+                tags={allTags}
+                active={activeTags}
+                onClear={() => setSelectedTags([])}
+                onToggle={toggleTagFilter}
+                className="mb-3"
+              />
             )}
             {/* A search or tag filter that matches nothing (the search bar above
                 stays usable). */}

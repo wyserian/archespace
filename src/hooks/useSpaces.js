@@ -17,7 +17,8 @@ import { duplicateSpaceWithItems } from '../lib/spaceDuplicate'
 import { archiveSpaces, deleteSpaces, moveSpaces } from '../lib/spaceLifecycle'
 import { invalidateSpaceCollections, invalidateSpaceList } from '../lib/queryInvalidation'
 import { queryKeys } from '../lib/queryKeys'
-import { setSpaceLocks, setSpaceLocked } from '../lib/itemLock'
+import { isItemRevealed, setSpaceLocks, setSpaceLocked } from '../lib/itemLock'
+import { useVaultPinPrompt } from '../context/VaultPinPromptCore'
 import {
   makeBulkSetPinned,
   makeTogglePin,
@@ -59,6 +60,31 @@ export function useSetSpaceExpiry() {
     onSuccess: () => toast.success(expiresAt ? 'Self-destruct set' : 'Self-destruct cancelled'),
     onError: () => toast.error("Couldn't save the self-destruct time."),
   }), [mutate, toast])
+}
+
+/**
+ * Protect a space, or remove its protection, saying how it went, with the
+ * `toggleLock` mutation from useSpaces. Protecting is instant and hides the
+ * space; removing it asks for the vault PIN unless the space is open already.
+ * @returns {(id: string, locked: boolean) => Promise<void>}
+ */
+export function useToggleSpaceProtection(toggleLock) {
+  const { toast } = useToast()
+  const askVaultPin = useVaultPinPrompt()
+  return async (id, locked) => {
+    if (locked && !isItemRevealed(id)) {
+      const ok = await askVaultPin({
+        title: 'Remove protection',
+        message: 'Enter your vault PIN to remove protection. The space will open without the PIN.',
+        confirmLabel: 'Remove protection',
+      })
+      if (!ok) return
+    }
+    toggleLock.mutate({ id, locked }, {
+      onSuccess: () => toast.success(locked ? 'Protection removed' : 'Space protected'),
+      onError: () => toast.error(locked ? "Couldn't remove protection." : "Couldn't protect the space."),
+    })
+  }
 }
 
 export function useSpaces() {

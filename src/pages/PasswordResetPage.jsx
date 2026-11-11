@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContextCore'
 import { useTheme } from '../context/ThemeCore'
 import { validatePassword } from '../lib/passwordPolicy'
 import { PasswordRules } from '../components/PasswordRules'
+import { useCapsLock } from '../hooks/useCapsLock'
 import { logAudit } from '../lib/auditLog'
 import { useRouteMeta } from '../hooks/useRouteMeta'
 import { Spinner } from '../components/ui/UI'
@@ -21,16 +22,10 @@ export default function PasswordResetPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [capsLock, setCapsLock] = useState(false)
+  // Caps Lock warning: the masked field would hide it.
+  const [capsLock, capsLockProps] = useCapsLock()
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
-
-  // Warn if Caps Lock is on while typing (the masked field would hide it).
-  const onPasswordKey = e => {
-    if (typeof e.getModifierState === 'function') {
-      setCapsLock(e.getModifierState('CapsLock'))
-    }
-  }
   const currentThemeName = themeModes.find(option => option.id === themeMode)?.name || 'Theme'
 
   const handleSubmit = async (e) => {
@@ -110,9 +105,7 @@ export default function PasswordResetPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={e => { setPassword(e.target.value); if (error) setError('') }}
-                    onKeyUp={onPasswordKey}
-                    onKeyDown={onPasswordKey}
-                    onBlur={() => setCapsLock(false)}
+                    {...capsLockProps}
                     required
                     autoFocus
                     autoComplete="new-password"
