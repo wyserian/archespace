@@ -9,6 +9,18 @@ import { purgeSpaces, restoreSpaces, reviveItemSpaces } from '../lib/spaceLifecy
 import { invalidateRecycleBin } from '../lib/queryInvalidation'
 import { queryKeys } from '../lib/queryKeys'
 
+/**
+ * Deleting for good needs the server and must not act on an old copy: it runs
+ * once what waits is sent and the offline copy is up to date (offlineCopy.js).
+ * Offline it fails at once, with an error whose code is 'OFFLINE'.
+ */
+async function forGood(fn) {
+  const copy = supabase.offline
+  if (!copy) return fn()
+  const result = await copy.online(fn)
+  if (result?.error) throw result.error
+}
+
 export function useRecycleBin() {
   const qc = useQueryClient()
   const { cryptoKey } = useEncryption()
@@ -37,7 +49,7 @@ export function useRecycleBin() {
   })
 
   const purgeSpace = useMutation({
-    mutationFn: (id) => purgeSpaces([id]),
+    mutationFn: (id) => forGood(() => purgeSpaces([id])),
     onSuccess: () => invalidateRecycleBin(qc),
   })
 
@@ -54,10 +66,10 @@ export function useRecycleBin() {
   })
 
   const purgeItem = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: (id) => forGood(async () => {
       const { error } = await supabase.from('space_items').delete().eq('id', id)
       if (error) throw error
-    },
+    }),
     onSuccess: () => invalidateRecycleBin(qc),
   })
 
@@ -84,7 +96,7 @@ export function useRecycleBin() {
 
   const bulkPurgeSpaces = useMutation({
     mutationFn: async (ids) => {
-      if (ids?.length) await purgeSpaces(ids)
+      if (ids?.length) await forGood(() => purgeSpaces(ids))
     },
     onSuccess: () => invalidateRecycleBin(qc),
   })
@@ -92,21 +104,23 @@ export function useRecycleBin() {
   const bulkPurgeItems = useMutation({
     mutationFn: async (ids) => {
       if (!ids?.length) return
-      const { error } = await supabase.from('space_items').delete().in('id', ids)
-      if (error) throw error
+      await forGood(async () => {
+        const { error } = await supabase.from('space_items').delete().in('id', ids)
+        if (error) throw error
+      })
     },
     onSuccess: () => invalidateRecycleBin(qc),
   })
 
   const emptyBin = useMutation({
-    mutationFn: async () => {
-      const { error: e1 } = await supabase
+    mutationFn: () => forGood(async () => {
+      const { error } = await supabase
         .from('space_items')
         .delete()
         .not('deleted_at', 'is', null)
-      if (e1) throw e1
+      if (error) throw error
       await purgeSpaces(null)
-    },
+    }),
     onSuccess: () => invalidateRecycleBin(qc),
   })
 

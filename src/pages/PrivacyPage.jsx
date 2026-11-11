@@ -48,8 +48,11 @@ export default function PrivacyPage() {
       <h2>Cookies and local storage</h2>
       <p>
         We use your device's local storage for essentials only: your session tokens, your appearance
-        preferences (theme and accent), and an encrypted vault session so you don't have to re-enter your
-        PIN on every reload. We do not use advertising or analytics cookies or cross-site trackers. Because
+        preferences (theme and accent), an encrypted vault session so you don't have to re-enter your
+        PIN on every reload, and an offline copy of your spaces and items so the app works without a
+        connection. The offline copy holds the same encrypted content the server does, along with any
+        changes made offline until they sync, and is deleted from the device when you sign out. We do
+        not use advertising or analytics cookies or cross-site trackers. Because
         this storage is strictly necessary to provide the Service, no cookie-consent banner is required.
       </p>
 

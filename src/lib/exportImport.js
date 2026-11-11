@@ -16,6 +16,7 @@ import { isKanbanContent } from './kanban'
 import { parseTags } from './spaceColors'
 import { isEncryptedBackup, openBackupWithKey, openBackupWithPin, sealBackup } from './backupCrypto'
 import { getVaultBackupMeta } from './crypto/vault'
+import { assertOnline } from './connectivity'
 import {
   MAX_IMPORT_FILE_SIZE,
   MAX_IMPORT_SPACES,
@@ -251,6 +252,8 @@ async function insertImportedItems(items, spaceId, userId, cryptoKey) {
  */
 export async function importSpaces(file, userId, cryptoKey, { askBackupPin } = {}) {
   if (!cryptoKey) throw new Error('Vault must be unlocked to import')
+  // A whole backup waits for a connection rather than the outbox.
+  assertOnline()
   if (file.size > MAX_IMPORT_FILE_SIZE) {
     throw new Error(`File is too large. The maximum size is ${MAX_IMPORT_FILE_SIZE / (1024 * 1024)}MB.`)
   }

@@ -69,10 +69,12 @@ const TermsPage = lazyWithRetry(() => import('./pages/TermsPage'))
 
 const queryClient = new QueryClient({
   // Realtime subscriptions keep the cache fresh, so a refetch on every window
-  // focus is redundant work (each one re-decrypts every space/item). Rely on
-  // staleTime + realtime instead.
+  // focus is redundant work. Data comes from this device's offline copy
+  // (offlineCopy.js), so nothing waits for a connection: queries and changes
+  // run offline too ('always'; the default would pause them).
   defaultOptions: {
-    queries: { staleTime: 1000 * 30, retry: 1, refetchOnWindowFocus: false },
+    queries: { staleTime: 1000 * 30, retry: 1, refetchOnWindowFocus: false, networkMode: 'always' },
+    mutations: { networkMode: 'always' },
   },
 })
 

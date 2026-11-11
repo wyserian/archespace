@@ -2,14 +2,28 @@
  * Shared Supabase client singleton. Configured from the VITE_SUPABASE_* env
  * vars (see `.env.example`); never create a second client.
  *
- * In local mode (lib/localMode.js) it's a stand-in with the same calls,
- * answered from this browser's storage, with no network at all.
+ * Signed in to an account, spaces and items go to this device's offline copy,
+ * which syncs with the server (offlineCopy.js). In local mode
+ * (lib/localMode.js) it's a stand-in with the same calls, answered from this
+ * browser's storage, with no network at all.
  */
 
 import { createClient } from '@supabase/supabase-js'
 import { isLocalMode } from './localMode'
 import { createLocalClient } from './local/localClient'
 import { openIndexedDbStore } from './local/localStore'
+import { createOfflineClient } from './offlineCopy'
+import { openOutbox } from './outbox'
+
+// A request with no answer by then counts as a network failure, so a
+// connection that's up but goes nowhere is noticed quickly.
+const REQUEST_TIMEOUT_MS = 10_000
+
+function fetchWithTimeout(input, init = {}) {
+  const timeout = AbortSignal.timeout?.(REQUEST_TIMEOUT_MS)
+  const signal = timeout && init.signal && AbortSignal.any ? AbortSignal.any([init.signal, timeout]) : timeout ?? init.signal
+  return fetch(input, { ...init, signal })
+}
 
 const supabaseUrl     = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -94,7 +108,13 @@ function createRemoteClient() {
       autoRefreshToken: true,
       detectSessionInUrl: true,
     },
+    global: { fetch: fetchWithTimeout },
   })
 }
 
-export const supabase = isLocalMode() ? createLocalClient(openIndexedDbStore) : createRemoteClient()
+export const supabase = isLocalMode()
+  ? createLocalClient(openIndexedDbStore)
+  : createOfflineClient(createRemoteClient(), {
+    openStore: (userId) => openIndexedDbStore(`archespace-copy-${userId}`),
+    openOutbox,
+  })

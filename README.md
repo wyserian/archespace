@@ -37,7 +37,7 @@ A companion Mobile/Flutter app lives in a [separate repository](https://github.c
 - **Reminders** that repeat or stay until turned off, each with or without a sound, all listed in one view
 - **Search** across spaces, tags and content
 - **Starred**, **Self-destruct** (soonest first), **archive** and **bin** views
-- **Realtime sync** with the [mobile app](https://github.com/wyserian/archespace-mobile), and **offline mode**
+- **Realtime sync** with the [mobile app](https://github.com/wyserian/archespace-mobile), and **full offline use**: an encrypted copy on the device opens everything at once and takes every change, syncing when the connection is back (deleting for good, backup import and account settings need a connection)
 - **Encrypted backups** and **PDF export**
 - **Local mode**: no account, nothing leaves the browser
 - **Two-factor sign-in**
@@ -177,7 +177,7 @@ Key areas:
 - `src/lib/richText/` contains the Tiptap editor setup (extensions, find and replace, line spacing), conversion of older notes, and `webview/`, the source of the offline editor bundled into the mobile app (`npm run build:mobile-editor`).
 - `src/lib/whiteboard/` contains the Whiteboard's Excalidraw setup, its saved format (with a PNG preview for cards and PDFs), conversion of older drawings, and `webview/`, the source of the mobile app's offline whiteboard (built by the same command).
 - `src/lib/crypto/` contains AES-GCM encryption, Argon2id key derivation, vault setup and unlock, non-extractable session key storage, PIN recovery code, and WebAuthn PRF passkey wrapping/unlock with a local (IndexedDB) passkey store.
-- `src/lib/` contains the Supabase client, data protection helpers, item type definitions, protected-content state, clipboard serialization, encrypted backup import/export, offline queue and encrypted cache, connectivity detection, rate limiting, audit logging, two-factor (TOTP) and backup-code helpers, PDF export, password policy, and build info.
+- `src/lib/` contains the Supabase client, data protection helpers, item type definitions, protected-content state, clipboard serialization, encrypted backup import/export, the offline copy and its outbox (`offlineCopy.js`, `outbox.js`), connectivity detection, rate limiting, audit logging, two-factor (TOTP) and backup-code helpers, PDF export, password policy, and build info.
 - `schema.sql` contains tables, indexes, RLS policies, triggers (including read-only spaces), RPC functions, self-destruct (the "Hide expired" policies and `purge_expired`, scheduled with `pg_cron` when enabled), realtime setup, vault recovery and PIN lockout, the `mfa_backup_codes` table with AAL2 enforcement for two-factor auth, the account-deletion email trigger, and the auth audit log. (Passkey unlock stores its wrapped key on each client, so there is no passkey table.)
 - `schema.test.sql` checks the two-factor rules: run it on a test project after `schema.sql`; it rolls back everything it does.
 - `email-templates/` contains ready-to-paste Supabase auth email templates; `scripts/generate-icons.mjs` renders the PWA icons and social image; `public/_headers` holds deployment headers for hosts such as Cloudflare Pages.

@@ -5,13 +5,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useId } from 'react'
 import { supabase } from '../lib/supabase'
 import { parseTags } from '../lib/spaceColors'
-import { useAuth } from '../context/AuthContextCore'
 import { useEncryption } from '../context/EncryptionCore'
 import { useToast } from '../context/ToastCore'
-import { assertOnline } from '../lib/offlineQueue'
-import { saveRows, loadRows } from '../lib/offlineCache'
-import { fetchRows } from '../lib/rowSync'
-import { setReachable, isNetworkError } from '../lib/connectivity'
 import { encryptSpace, decryptSpace, decryptSpaces, encryptTags } from '../lib/dataProtection'
 import { duplicateSpaceWithItems } from '../lib/spaceDuplicate'
 import { archiveSpaces, deleteSpaces, moveSpaces } from '../lib/spaceLifecycle'
@@ -39,7 +34,6 @@ export function useSetSpaceExpiry() {
   const { toast } = useToast()
   const { mutate } = useMutation({
     mutationFn: async ({ id, expiresAt }) => {
-      assertOnline()
       const { error } = await supabase.from('spaces').update({ expires_at: expiresAt }).eq('id', id)
       if (error) throw error
     },
@@ -89,9 +83,7 @@ export function useToggleSpaceProtection(toggleLock) {
 
 export function useSpaces() {
   const qc = useQueryClient()
-  const { user } = useAuth()
   const { cryptoKey } = useEncryption()
-  const userId = user?.id
   // Unique per hook instance so multiple mounts (e.g. the app shell + the
   // dashboard) don't collide on one realtime channel name.
   const instanceId = useId()
@@ -99,47 +91,26 @@ export function useSpaces() {
   const query = useQuery({
     queryKey: queryKeys.spaces(),
     enabled: !!cryptoKey,
-    // 'always' so the queryFn still runs while offline and can fall back to the
-    // encrypted cache (the default 'online' mode would pause it with no data).
-    networkMode: 'always',
     queryFn: async () => {
-      try {
-        const rows = await fetchRows({
-          table: 'spaces',
-          userId,
-          cacheKey: 'spaces',
-          query: q => q
-            .is('deleted_at', null)
-            .is('archived_at', null)
-            .order('pinned', { ascending: false })
-            .order('position', { ascending: true })
-            .order('created_at', { ascending: false })
-            .order('id', { ascending: true }), // a stable last tie-break, as on mobile
-        })
-        setReachable(true)
-        saveRows(userId, 'spaces', rows) // cache ciphertext for offline reads
-        setSpaceLocks(rows) // so a locked space's items stay hidden everywhere
-        return decryptSpaces(rows, cryptoKey)
-      } catch (err) {
-        // Fall back to the encrypted cache on any network failure - navigator
-        // .onLine can wrongly report "online" (LAN with no internet, server
-        // down), so key off the actual failure, not just the interface state.
-        if (isNetworkError(err)) {
-          setReachable(false)
-          const cached = await loadRows(userId, 'spaces')
-          if (cached) {
-            setSpaceLocks(cached)
-            return decryptSpaces(cached, cryptoKey)
-          }
-        }
-        throw err
-      }
+      const { data, error } = await supabase
+        .from('spaces')
+        .select('*')
+        .is('deleted_at', null)
+        .is('archived_at', null)
+        .order('pinned', { ascending: false })
+        .order('position', { ascending: true })
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: true }) // a stable last tie-break, as on mobile
+      if (error) throw error
+      setSpaceLocks(data) // so a locked space's items stay hidden everywhere
+      return decryptSpaces(data, cryptoKey)
     },
   })
 
   useEffect(() => {
-    // Coalesce bursts of row changes (e.g. a reorder updating many rows, or the
-    // realtime echo of our own optimistic writes) into a single invalidation.
+    // Another device changed something: sync the offline copy (which then
+    // refreshes the lists). Bursts (a reorder, the echo of our own changes)
+    // coalesce into one.
     let timer
     const channel = supabase
       .channel(`spaces-realtime-${instanceId}`)
@@ -148,7 +119,7 @@ export function useSpaces() {
         { event: '*', schema: 'public', table: 'spaces' },
         () => {
           clearTimeout(timer)
-          timer = setTimeout(() => invalidateSpaceCollections(qc), 250)
+          timer = setTimeout(() => (supabase.offline ? supabase.offline.sync() : invalidateSpaceCollections(qc)), 250)
         }
       )
       .subscribe()
@@ -160,7 +131,6 @@ export function useSpaces() {
 
   const create = useMutation({
     mutationFn: async ({ name, description, color, tags, parentId = null }) => {
-      assertOnline()
       const { data: { session } } = await supabase.auth.getSession()
       const userId = session?.user?.id
       if (!userId) throw new Error('Not authenticated')
@@ -198,7 +168,6 @@ export function useSpaces() {
 
   const update = useMutation({
     mutationFn: async ({ id, name, description, color, tags }) => {
-      assertOnline()
       const payload = { name, description }
       if (color !== undefined) payload.color = color
       if (tags !== undefined) payload.tags = parseTags(tags)
@@ -223,7 +192,6 @@ export function useSpaces() {
   // chip appears or goes at once.
   const setTags = useMutation({
     mutationFn: async ({ id, tags }) => {
-      assertOnline()
       const encrypted = await encryptTags(tags, cryptoKey)
       const { error } = await supabase
         .from('spaces')
@@ -307,7 +275,6 @@ export function useSpaces() {
   // spaceLifecycle.js).
   const remove = useMutation({
     mutationFn: async (id) => {
-      assertOnline()
       await deleteSpaces([id])
     },
     onSuccess: () => invalidateSpaceCollections(qc),
@@ -315,7 +282,6 @@ export function useSpaces() {
 
   const archive = useMutation({
     mutationFn: async (id) => {
-      assertOnline()
       await archiveSpaces([id])
     },
     onSuccess: () => invalidateSpaceCollections(qc),
@@ -325,7 +291,6 @@ export function useSpaces() {
   const move = useMutation({
     mutationFn: async ({ ids, parentId }) => {
       if (!ids?.length) return
-      assertOnline()
       await moveSpaces(ids, parentId)
     },
     onSuccess: () => invalidateSpaceCollections(qc),
@@ -333,7 +298,6 @@ export function useSpaces() {
 
   const duplicate = useMutation({
     mutationFn: async (id) => {
-      assertOnline()
       const source = query.data?.find(c => c.id === id)
       if (!source) throw new Error('Space not found')
       const newCol = await duplicateSpaceWithItems(source, cryptoKey, siblingCount(source.parent_id))
@@ -345,7 +309,6 @@ export function useSpaces() {
   const bulkRemove = useMutation({
     mutationFn: async (ids) => {
       if (!ids?.length) return
-      assertOnline()
       await deleteSpaces(ids)
     },
     onSuccess: () => invalidateSpaceCollections(qc),
@@ -354,7 +317,6 @@ export function useSpaces() {
   const bulkArchive = useMutation({
     mutationFn: async (ids) => {
       if (!ids?.length) return
-      assertOnline()
       await archiveSpaces(ids)
     },
     onSuccess: () => invalidateSpaceCollections(qc),
@@ -367,7 +329,6 @@ export function useSpaces() {
 
   const bulkDuplicate = useMutation({
     mutationFn: async (cols) => {
-      assertOnline()
       const added = new Map() // parent -> copies made so far
       for (const source of cols) {
         const parent = source.parent_id ?? null

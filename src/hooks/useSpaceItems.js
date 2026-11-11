@@ -15,10 +15,6 @@ import { encryptItem, decryptItem, decryptItems, encryptTags, encryptReminder } 
 import { normalizeReminder } from '../lib/reminder'
 import { defaultKanban } from '../lib/kanban'
 import { parseTags } from '../lib/spaceColors'
-import { assertOnline } from '../lib/offlineQueue'
-import { saveRows, loadRows } from '../lib/offlineCache'
-import { fetchRows } from '../lib/rowSync'
-import { setReachable, isNetworkError } from '../lib/connectivity'
 import { invalidateItemViews, invalidateSpaceItems } from '../lib/queryInvalidation'
 import { queryKeys } from '../lib/queryKeys'
 import {
@@ -76,37 +72,18 @@ function whereSpace(q, spaceId) {
 }
 
 /** The decrypted items of one space (see whereSpace), as its list shows them. */
-async function loadItems(spaceId, userId, cryptoKey) {
-  const cacheKey = `items:${spaceId ?? DASHBOARD_ITEMS_KEY}`
-  try {
-    const rows = await fetchRows({
-      table: 'space_items',
-      userId,
-      cacheKey,
-      query: q => whereSpace(q, spaceId)
-        .is('deleted_at', null)
-        .is('archived_at', null)
-        .order('pinned', { ascending: false })
-        .order('position', { ascending: true })
-        // Items can share a position (one added after a delete), so ties
-        // break the same way here and on mobile.
-        .order('created_at', { ascending: true })
-        .order('id', { ascending: true }),
-    })
-    setReachable(true)
-    saveRows(userId, cacheKey, rows) // cache ciphertext for offline reads
-    return decryptItems(rows, cryptoKey)
-  } catch (err) {
-    // Fall back to the encrypted cache on any network failure (navigator
-    // .onLine can wrongly report "online"), not just when the interface is
-    // reported down.
-    if (isNetworkError(err)) {
-      setReachable(false)
-      const cached = await loadRows(userId, cacheKey)
-      if (cached) return decryptItems(cached, cryptoKey)
-    }
-    throw err
-  }
+async function loadItems(spaceId, cryptoKey) {
+  const { data, error } = await whereSpace(supabase.from('space_items').select('*'), spaceId)
+    .is('deleted_at', null)
+    .is('archived_at', null)
+    .order('pinned', { ascending: false })
+    .order('position', { ascending: true })
+    // Items can share a position (one added after a delete), so ties break
+    // the same way here and on mobile.
+    .order('created_at', { ascending: true })
+    .order('id', { ascending: true })
+  if (error) throw error
+  return decryptItems(data, cryptoKey)
 }
 
 /**
@@ -115,14 +92,11 @@ async function loadItems(spaceId, userId, cryptoKey) {
  */
 export function useFetchSpaceItems() {
   const qc = useQueryClient()
-  const { user } = useAuth()
   const { cryptoKey } = useEncryption()
-  const userId = user?.id
   return useCallback((spaceId) => qc.fetchQuery({
     queryKey: queryKeys.items(spaceId),
-    networkMode: 'always',
-    queryFn: () => loadItems(spaceId, userId, cryptoKey),
-  }), [qc, userId, cryptoKey])
+    queryFn: () => loadItems(spaceId, cryptoKey),
+  }), [qc, cryptoKey])
 }
 
 export function useSpaceItems(spaceId) {
@@ -135,10 +109,7 @@ export function useSpaceItems(spaceId) {
   const query = useQuery({
     queryKey: queryKeys.items(itemsKey),
     enabled: spaceId !== undefined && !!cryptoKey,
-    // 'always' so the queryFn still runs while offline and can fall back to the
-    // encrypted cache (the default 'online' mode would pause it with no data).
-    networkMode: 'always',
-    queryFn: () => loadItems(spaceId, userId, cryptoKey),
+    queryFn: () => loadItems(spaceId, cryptoKey),
   })
 
   useEffect(() => {
@@ -149,8 +120,9 @@ export function useSpaceItems(spaceId) {
     const inOneSpace = spaceId && !isCrossSpace(spaceId)
     const filter = inOneSpace ? `space_id=eq.${spaceId}` : userId ? `user_id=eq.${userId}` : null
     if (!filter) return
-    // Coalesce bursts of row changes (e.g. a reorder updating many rows, or the
-    // realtime echo of our own optimistic writes) into a single invalidation.
+    // Another device changed something: sync the offline copy (which then
+    // refreshes the lists). Bursts (a reorder, the echo of our own changes)
+    // coalesce into one.
     let timer
     const channel = supabase
       .channel(`items-${itemsKey}`)
@@ -162,13 +134,9 @@ export function useSpaceItems(spaceId) {
           table: 'space_items',
           filter,
         },
-        ({ new: row }) => {
-          // The echo of a change already in the list (our own save) changes
-          // nothing.
-          const cached = qc.getQueryData(queryKeys.items(itemsKey))
-          if (row?.updated_at && cached?.some(i => i.id === row.id && i.updated_at === row.updated_at)) return
+        () => {
           clearTimeout(timer)
-          timer = setTimeout(() => invalidateSpaceItems(qc, itemsKey), 250)
+          timer = setTimeout(() => (supabase.offline ? supabase.offline.sync() : invalidateSpaceItems(qc, itemsKey)), 250)
         }
       )
       .subscribe()
@@ -182,7 +150,6 @@ export function useSpaceItems(spaceId) {
     mutationFn: async ({ type, title, content }) => {
       // Starred and Reminders span spaces, so they have no space to add into.
       if (isCrossSpace(spaceId)) throw new Error('Add items from a space or the dashboard.')
-      assertOnline()
       const items = query.data || []
       const position = items.length
       const plain = {
@@ -267,7 +234,6 @@ export function useSpaceItems(spaceId) {
   // instantly.
   const setTags = useMutation({
     mutationFn: async ({ id, tags }) => {
-      assertOnline()
       const encrypted = await encryptTags(tags, cryptoKey)
       const { error } = await supabase
         .from('space_items')
@@ -294,7 +260,6 @@ export function useSpaceItems(spaceId) {
   // the chip updates at once.
   const setReminder = useMutation({
     mutationFn: async ({ id, reminder }) => {
-      assertOnline()
       const { error } = await supabase
         .from('space_items')
         .update({ reminder: await encryptReminder(reminder, cryptoKey) })
@@ -321,7 +286,6 @@ export function useSpaceItems(spaceId) {
   // colour shows at once.
   const setPlain = useMutation({
     mutationFn: async ({ id, fields }) => {
-      assertOnline()
       const { error } = await supabase.from('space_items').update(fields).eq('id', id)
       if (error) throw error
     },
@@ -344,7 +308,6 @@ export function useSpaceItems(spaceId) {
   // to re-encrypt). Optimistic so the list re-numbers at once.
   const setListNumbered = useMutation({
     mutationFn: async ({ id, numbered }) => {
-      assertOnline()
       const { error } = await supabase
         .from('space_items')
         .update({ type: numbered ? 'numbered_list' : 'menu_list' })
@@ -372,7 +335,6 @@ export function useSpaceItems(spaceId) {
 
   const archive = useMutation({
     mutationFn: async (id) => {
-      assertOnline()
       const { error } = await supabase
         .from('space_items')
         .update({ archived_at: new Date().toISOString() })
@@ -386,7 +348,6 @@ export function useSpaceItems(spaceId) {
 
   const duplicate = useMutation({
     mutationFn: async (item) => {
-      assertOnline()
       const items = query.data || []
       const plain = {
         type: item.type,
@@ -434,7 +395,6 @@ export function useSpaceItems(spaceId) {
   const move = useMutation({
     mutationFn: async ({ ids, targetSpaceId }) => {
       if (!ids?.length || targetSpaceId === undefined || targetSpaceId === spaceId) return
-      assertOnline()
 
       const { count, error: countError } = await whereSpace(
         supabase.from('space_items').select('id', { count: 'exact', head: true }),
@@ -469,7 +429,6 @@ export function useSpaceItems(spaceId) {
   const bulkArchive = useMutation({
     mutationFn: async (ids) => {
       if (!ids?.length) return
-      assertOnline()
       const { error } = await supabase
         .from('space_items')
         .update({ archived_at: new Date().toISOString() })
@@ -487,7 +446,6 @@ export function useSpaceItems(spaceId) {
   const bulkDuplicate = useMutation({
     mutationFn: async (itemsToCopy) => {
       if (!itemsToCopy?.length) return
-      assertOnline()
       const basePos = query.data?.length || 0
       const rows = await Promise.all(
         itemsToCopy.map(async (item, i) => {

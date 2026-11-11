@@ -107,6 +107,7 @@ class LocalQuery {
 
   order(col, { ascending = true } = {}) { this.orders.push({ col, ascending }); return this }
   limit(n) { this.limitTo = n; return this }
+  range(from, to) { this.rangeFrom = from; this.rangeTo = to; return this }
   single() { this.one = 'single'; return this }
   maybeSingle() { this.one = 'maybe'; return this }
 
@@ -117,7 +118,8 @@ class LocalQuery {
 
 /** The local database: tables in memory, written through to the store. */
 class LocalEngine {
-  constructor(openStore) {
+  constructor(openStore, userId) {
+    this.userId = userId
     this.ready = openStore().then((store) => {
       this.store = store
       return store
@@ -152,6 +154,7 @@ class LocalEngine {
         rows.sort((a, b) => compare(a[col], b[col], ascending))
       }
       if (query.limitTo != null) rows = rows.slice(0, query.limitTo)
+      if (query.rangeFrom != null) rows = rows.slice(query.rangeFrom, query.rangeTo + 1)
       return this.single(query, rows.map(row => project(row, query.columns)), count)
     }
     if (query.returning === undefined) return { data: null, error: null, count: null }
@@ -176,7 +179,7 @@ class LocalEngine {
   newRow(table, values) {
     const row = { ...DEFAULTS[table](), ...copy(values), created_at: now() }
     if (TABLES[table] === 'id') row.id ??= crypto.randomUUID()
-    row.user_id ??= LOCAL_USER.id
+    row.user_id ??= this.userId
     if (HAS_UPDATED_AT.has(table)) row.updated_at = row.created_at
     return row
   }
@@ -329,9 +332,12 @@ const unavailable = async () => ({ data: null, error: UNAVAILABLE })
 /** The local "session": the local user, always signed in. */
 const LOCAL_SESSION = Object.freeze({ user: LOCAL_USER, access_token: 'local', token_type: 'local' })
 
-/** A Supabase-shaped client backed by local storage. */
-export function createLocalClient(openStore) {
-  const engine = new LocalEngine(openStore)
+/**
+ * A Supabase-shaped client backed by local storage. `userId` owns the rows
+ * it adds (the local user in local mode; the account for an offline copy).
+ */
+export function createLocalClient(openStore, { userId = LOCAL_USER.id } = {}) {
+  const engine = new LocalEngine(openStore, userId)
   const channel = {
     on() { return channel },
     subscribe() { return channel },
@@ -375,7 +381,7 @@ export function createLocalClient(openStore) {
         unenroll: unavailable,
       },
     },
-    /** Finishes loading the stored tables (for tests). */
+    /** The store, once loaded: its tables, to read and merge rows directly. */
     ready: () => engine.ready,
   }
 }

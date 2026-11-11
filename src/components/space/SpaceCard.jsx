@@ -18,7 +18,6 @@ import { queryKeys } from '../../lib/queryKeys'
 import { getColorPreset, parseTags, softColorValue, tagColorValue } from '../../lib/spaceColors'
 import { ActionMenu } from '../ui/ActionMenu'
 import { SelectCheck } from '../ui/SelectCheck'
-import { useOnlineStatus } from '../../hooks/useOnlineStatus'
 import { useToast } from '../../context/ToastCore'
 import { useSpaceHidden } from '../../lib/itemLock'
 import { REORDER_KEYSHORTCUTS, reorderKeyStep } from '../../lib/reorderKeys'
@@ -125,7 +124,6 @@ export function SpaceCard({
   actions,
   note,
 }) {
-  const online = useOnlineStatus()
   const { toast } = useToast()
   // Protected (itself or its parent) and not opened: the name, tags and count
   // show; the description and editing wait for the PIN (asked on opening).
@@ -157,7 +155,7 @@ export function SpaceCard({
   // Tags are the space's details, so they follow Edit: not in a read-only
   // space, nor a protected one before it's opened.
   const [addingTag, setAddingTag] = useState(false)
-  const canEditTags = !!setTags && !col.read_only && !hidden && online && !selectMode
+  const canEditTags = !!setTags && !col.read_only && !hidden && !selectMode
   const saveTags = (next) => setTags.mutate({ id: col.id, tags: next }, {
     onError: () => toast.error("Couldn't update the tags."),
   })
@@ -185,7 +183,7 @@ export function SpaceCard({
         <span onClick={stop} className="inline-flex">
           <ExpiryChip
             expiresAt={col.expires_at}
-            onClick={online && !selectMode && !actions ? () => setExpiryOpen(true) : undefined}
+            onClick={!selectMode && !actions ? () => setExpiryOpen(true) : undefined}
           />
         </span>
       )}
@@ -236,7 +234,6 @@ export function SpaceCard({
       group: 'mark',
       label: col.pinned ? 'Unpin' : 'Pin',
       icon: col.pinned ? PinOff : Pin,
-      disabled: !online,
       onClick: () => togglePin.mutate({ id: col.id, pinned: col.pinned }),
     },
     // Starring never moves the space; it adds it to the Starred view.
@@ -245,16 +242,15 @@ export function SpaceCard({
       group: 'mark',
       label: col.starred ? 'Unstar' : 'Star',
       icon: col.starred ? StarOff : Star,
-      disabled: !online,
       onClick: () => toggleStar.mutate({ id: col.id, starred: col.starred }),
     },
-    setTags && !col.read_only && !hidden && { id: 'tag', group: 'mark', label: 'Add tag', icon: Tag, disabled: !online, onClick: () => setAddingTag(true) },
+    setTags && !col.read_only && !hidden && { id: 'tag', group: 'mark', label: 'Add tag', icon: Tag, onClick: () => setAddingTag(true) },
     // Editing shows the description, so a hidden protected space opens first.
-    !col.read_only && !hidden && { id: 'edit', group: 'content', label: 'Edit', icon: Pencil, disabled: !online, onClick: () => setModal({ type: 'edit', col }) },
-    { id: 'duplicate', group: 'content', label: 'Duplicate', icon: Copy, disabled: !online, onClick: () => onDuplicate?.(col.id) },
+    !col.read_only && !hidden && { id: 'edit', group: 'content', label: 'Edit', icon: Pencil, onClick: () => setModal({ type: 'edit', col }) },
+    { id: 'duplicate', group: 'content', label: 'Duplicate', icon: Copy, onClick: () => onDuplicate?.(col.id) },
     // A read-only space stays where it is; a hidden one opens first (moving it
     // out of a protected space would show it without the PIN).
-    onMove && !col.read_only && !hidden && { id: 'move', group: 'content', label: 'Move', icon: MoveRight, disabled: !online, onClick: () => onMove(col.id) },
+    onMove && !col.read_only && !hidden && { id: 'move', group: 'content', label: 'Move', icon: MoveRight, onClick: () => onMove(col.id) },
     !hidden && { id: 'export-pdf', group: 'content', label: 'Export PDF', icon: FileDown, onClick: handleExportPdf },
     // Read-only locks the space's content (its details and items); managing
     // the space itself (pin, duplicate, archive, delete) stays available.
@@ -263,7 +259,6 @@ export function SpaceCard({
       group: 'keep',
       label: col.read_only ? 'Allow editing' : 'Read-only',
       icon: col.read_only ? PencilLine : PencilOff,
-      disabled: !online,
       onClick: () => toggleReadOnly.mutate({ id: col.id, read_only: col.read_only }, {
         onSuccess: () => toast.success(col.read_only ? 'Editing allowed' : 'Space is now read-only'),
         onError: () => toast.error("Couldn't change read-only."),
@@ -274,19 +269,17 @@ export function SpaceCard({
       group: 'keep',
       label: col.locked ? 'Unprotect' : 'Protect',
       icon: col.locked ? ShieldOff : Shield,
-      disabled: !online,
       onClick: handleToggleLock,
     },
-    { id: 'archive', group: 'keep', label: 'Archive', icon: Archive, disabled: !online, onClick: () => onArchive?.(col.id) },
+    { id: 'archive', group: 'keep', label: 'Archive', icon: Archive, onClick: () => onArchive?.(col.id) },
     {
       id: 'expiry',
       group: 'keep',
       label: col.expires_at ? 'Change self-destruct' : 'Self-destruct',
       icon: Hourglass,
-      disabled: !online,
       onClick: () => setExpiryOpen(true),
     },
-    { id: 'delete', group: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', disabled: !online, onClick: () => setDeleteConfirm(col.id) },
+    { id: 'delete', group: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', onClick: () => setDeleteConfirm(col.id) },
   ]
 
   const dragProps = {

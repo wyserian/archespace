@@ -114,8 +114,8 @@ export default function RecycleBinPage() {
       toast.success('Bin emptied')
       setConfirmEmpty(false)
       exitSelectMode()
-    } catch {
-      toast.error("Couldn't empty the bin.")
+    } catch (err) {
+      toast.error(err?.code === 'OFFLINE' ? err.message : "Couldn't empty the bin.")
     }
   }
 
@@ -129,8 +129,8 @@ export default function RecycleBinPage() {
       }
       toast.success('Permanently deleted')
       setConfirmPurge(null)
-    } catch {
-      toast.error("Couldn't delete permanently.")
+    } catch (err) {
+      toast.error(err?.code === 'OFFLINE' ? err.message : "Couldn't delete permanently.")
     }
   }
 

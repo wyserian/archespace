@@ -5,8 +5,7 @@
  * A separate one-time recovery code can also wrap the same master key.
  */
 import { supabase } from '../supabase'
-import { isOnline } from '../offlineQueue'
-import { isNetworkError, setReachable } from '../connectivity'
+import { isNetworkError, isOnline, setReachable } from '../connectivity'
 import { encryptString, decryptString, importRawAesKey, exportRawAesKey } from './cipher'
 import { deriveVaultKey, isLegacySaltDescriptor, newSaltDescriptor } from './keyDerivation'
 import { validateVaultPin } from './vaultPin'

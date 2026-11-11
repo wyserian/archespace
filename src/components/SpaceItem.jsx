@@ -47,12 +47,7 @@ import { getColorPreset } from '../lib/spaceColors'
 import { ActionMenu } from './ui/ActionMenu'
 import { buttonClass } from './ui/buttonStyles'
 import { getChecklistProgress } from '../lib/checklistProgress'
-import { isOnline, enqueueOffline } from '../lib/offlineQueue'
-import { isReachable, isNetworkError, setReachable } from '../lib/connectivity'
-import { useOnlineStatus } from '../hooks/useOnlineStatus'
-import { useEncryption } from '../context/EncryptionCore'
 import { useVaultPinPrompt } from '../context/VaultPinPromptCore'
-import { encryptItem } from '../lib/dataProtection'
 import { hideItem, revealContent, useContentHidden } from '../lib/itemLock'
 import { REORDER_KEYSHORTCUTS } from '../lib/reorderKeys'
 import { itemToClipboardText } from '../lib/itemClipboard'
@@ -114,7 +109,6 @@ function SpaceItem({
   actions,
   note,
 }) {
-  const { cryptoKey } = useEncryption()
   const askVaultPin = useVaultPinPrompt()
   // A protected item, or one in a protected space, shows its content only
   // after the vault PIN (see itemLock).
@@ -127,7 +121,6 @@ function SpaceItem({
   const [isDirty, setIsDirty]             = useState(false)
   const [saving, setSaving]               = useState(false)
   const [savedFlash, setSavedFlash] = useState(false)
-  const [pendingSync, setPendingSync] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [editorVersion, setEditorVersion] = useState(0)
   // Measured: is the content taller than the clamp threshold? Drives the
@@ -143,7 +136,6 @@ function SpaceItem({
   const [expiryOpen, setExpiryOpen] = useState(false)
   const [colorOpen, setColorOpen] = useState(false)
   const [addingTag, setAddingTag] = useState(false)
-  const online = useOnlineStatus()
 
   const latestState = useRef({ title: item.title, content: item.content })
   
@@ -257,13 +249,9 @@ function SpaceItem({
   }, [isFullscreen])
 
   /**
-   * Called by editors on every content change.
-   * Marks the item as dirty and schedules an auto-save.
-   */
-  /**
-   * Persist the current local state to the server.
-   * Accepts optional overrides for title/content (used by auto-save
-   * to avoid stale closures).
+   * Save the current title and content (to this device's offline copy, which
+   * syncs with the server). Optional overrides avoid stale closures in
+   * auto-save.
    */
   const performSave = useCallback(async (overrideTitle, overrideContent) => {
     const payload = {
@@ -272,66 +260,24 @@ function SpaceItem({
       content: overrideContent ?? latestState.current.content,
     }
 
-    // Edits typed while this save ran stay dirty, with their own save still
-    // scheduled.
-    const markSaved = () => {
-      const latest = latestState.current
-      if (latest.title !== payload.title || latest.content !== payload.content) return
-      setIsDirty(false)
-      clearTimeout(autoSaveTimer.current)
-    }
-
-    const queueEdit = async () => {
-      const encrypted = await encryptItem(
-        { title: payload.title, content: payload.content },
-        cryptoKey
-      )
-      // The title of a copy, should the item change elsewhere before this
-      // edit reaches the server (encrypted now, while the vault is open).
-      const copy = await encryptItem({ title: `${payload.title || 'Untitled'} (offline copy)` }, cryptoKey)
-      enqueueOffline({
-        type: 'item-update',
-        userId: item.user_id,
-        payload: {
-          id: payload.id,
-          title: encrypted.title,
-          content: encrypted.content,
-          // The version this edit was made on, the item's place, and the copy's title.
-          base: item.updated_at,
-          spaceId: item.space_id ?? null,
-          itemType: item.type,
-          copyTitle: copy.title,
-        },
-      })
-      setPendingSync(true)
-      markSaved()
-    }
-
-    // Queue when offline/unreachable. Use the reachability signal, not just
-    // navigator.onLine (which reads "online" on a LAN with no internet).
-    if (!isOnline() || !isReachable()) {
-      await queueEdit()
-      return
-    }
-
     setSaving(true)
-    setPendingSync(false)
     try {
       await onUpdate(payload)
-      markSaved()
+      // Edits typed while this save ran stay dirty, with their own save still
+      // scheduled.
+      const latest = latestState.current
+      if (latest.title === payload.title && latest.content === payload.content) {
+        setIsDirty(false)
+        clearTimeout(autoSaveTimer.current)
+      }
       setSavedFlash(true)
       setTimeout(() => setSavedFlash(false), 2000)
-    } catch (err) {
-      // Lost the connection mid-save: queue the edit so nothing is lost.
-      if (isNetworkError(err)) {
-        setReachable(false)
-        await queueEdit()
-      }
-      // Other errors: keep dirty state so the user can retry.
+    } catch {
+      // Keep the dirty state so the user can retry.
     } finally {
       setSaving(false)
     }
-  }, [item.id, item.user_id, item.updated_at, item.space_id, item.type, onUpdate, cryptoKey])
+  }, [item.id, onUpdate])
 
   useEffect(() => {
     const onFlush = () => { if (isDirty) performSave() }
@@ -410,8 +356,8 @@ function SpaceItem({
   // Whether the tags row (with the reminder) is shown (drives content top
   // padding so the two don't stack into a large gap).
   const showTags = !selectMode && ((item.tags?.length ?? 0) > 0 || !!item.reminder || !!item.expires_at || addingTag)
-  const canSetReminder = !!onSetReminder && online
-  const canSetExpiry = !!onSetExpiry && online
+  const canSetReminder = !!onSetReminder
+  const canSetExpiry = !!onSetExpiry
   // The Rich text toolbar: a bar across the top of the note, always shown
   // (it scrolls sideways when narrow) - except read-only or select mode. On a
   // clamped preview it expands the note first; on a dense grid card it opens
@@ -530,12 +476,6 @@ function SpaceItem({
           {note && <p className="text-[11px] leading-4 text-text-muted">{note}</p>}
         </div>
 
-        {/* Dirty indicator badge */}
-        {pendingSync && (
-          <span className="shrink-0 text-xs text-blue-400 font-medium px-2 py-0.5 bg-blue-400/10 rounded-md border border-blue-400/20">
-            Saved offline
-          </span>
-        )}
         {savedFlash && !isDirty && !saving && (
           <span className="shrink-0 text-xs text-success font-medium px-2 py-0.5 bg-success/10 rounded-md border border-success/30">
             Saved
@@ -631,7 +571,6 @@ function SpaceItem({
                         group: 'mark',
                         label: item.pinned ? 'Unpin' : 'Pin',
                         icon: item.pinned ? PinOff : Pin,
-                        disabled: !online,
                         onClick: () => onTogglePin(item.id, item.pinned),
                       },
                       onToggleStar && {
@@ -639,22 +578,20 @@ function SpaceItem({
                         group: 'mark',
                         label: item.starred ? 'Unstar' : 'Star',
                         icon: item.starred ? StarOff : Star,
-                        disabled: !online,
                         onClick: () => onToggleStar(item.id, item.starred),
                       },
-                      !readOnly && onSetColor && { id: 'color', group: 'mark', label: 'Color', icon: Palette, disabled: !online, onClick: () => setColorOpen(true) },
-                      !readOnly && onSetTags && { id: 'tag', group: 'mark', label: 'Add tag', icon: Tag, disabled: !online, onClick: () => setAddingTag(true) },
+                      !readOnly && onSetColor && { id: 'color', group: 'mark', label: 'Color', icon: Palette, onClick: () => setColorOpen(true) },
+                      !readOnly && onSetTags && { id: 'tag', group: 'mark', label: 'Add tag', icon: Tag, onClick: () => setAddingTag(true) },
                       onSetReminder && {
                         id: 'reminder',
                         group: 'mark',
                         label: item.reminder ? 'Change reminder' : 'Add reminder',
                         icon: Bell,
-                        disabled: !online,
                         onClick: () => setReminderOpen(true),
                       },
                       !readOnly && { id: 'rename', group: 'edit', label: 'Rename', icon: Pencil, onClick: () => setEditingTitle(true) },
-                      !readOnly && onDuplicate && { id: 'duplicate', group: 'edit', label: 'Duplicate', icon: Copy, disabled: !online, onClick: () => onDuplicate(item) },
-                      !readOnly && onMove && { id: 'move', group: 'edit', label: 'Move', icon: MoveRight, disabled: !online, onClick: () => onMove(item.id) },
+                      !readOnly && onDuplicate && { id: 'duplicate', group: 'edit', label: 'Duplicate', icon: Copy, onClick: () => onDuplicate(item) },
+                      !readOnly && onMove && { id: 'move', group: 'edit', label: 'Move', icon: MoveRight, onClick: () => onMove(item.id) },
                       !hidden && {
                         id: 'export-pdf',
                         group: 'edit',
@@ -671,19 +608,17 @@ function SpaceItem({
                         group: 'keep',
                         label: item.locked ? 'Unprotect' : 'Protect',
                         icon: item.locked ? ShieldOff : Shield,
-                        disabled: !online,
                         onClick: () => onToggleLock(item.id, !!item.locked),
                       },
-                      !readOnly && onArchive && { id: 'archive', group: 'keep', label: 'Archive', icon: Archive, disabled: !online, onClick: () => onArchive(item.id) },
+                      !readOnly && onArchive && { id: 'archive', group: 'keep', label: 'Archive', icon: Archive, onClick: () => onArchive(item.id) },
                       onSetExpiry && {
                         id: 'expiry',
                         group: 'keep',
                         label: item.expires_at ? 'Change self-destruct' : 'Self-destruct',
                         icon: Hourglass,
-                        disabled: !online,
                         onClick: () => setExpiryOpen(true),
                       },
-                      !readOnly && { id: 'delete', group: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', disabled: !online, onClick: () => onDelete(item.id) },
+                      !readOnly && { id: 'delete', group: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', onClick: () => onDelete(item.id) },
                     ]}
                   />
                 </>
@@ -725,7 +660,7 @@ function SpaceItem({
           <ItemTags
             tags={item.tags || []}
             onChange={(tags) => onSetTags?.(item.id, tags)}
-            disabled={!online || readOnly}
+            disabled={readOnly}
             adding={addingTag}
             onAddingChange={setAddingTag}
           />
@@ -854,7 +789,7 @@ function SpaceItem({
             onChange={handleContentChange}
             readOnly={readOnly}
             numbered={item.type === 'numbered_list'}
-            onNumberedChange={onSetListNumbered && online ? (numbered) => onSetListNumbered(item.id, numbered) : undefined}
+            onNumberedChange={onSetListNumbered ? (numbered) => onSetListNumbered(item.id, numbered) : undefined}
           />
         )}
         {item.type === 'card_list'     && <CardListEditor   key={`${item.id}:${editorVersion}`} content={localContent} onChange={handleContentChange} readOnly={readOnly} />}

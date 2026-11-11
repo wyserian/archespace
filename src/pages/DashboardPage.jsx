@@ -48,7 +48,6 @@ import { SpaceModal } from '../components/space/SpaceModal'
 import { SpaceCard } from '../components/space/SpaceCard'
 import { MoveSpacesDialog } from '../components/space/MoveSpacesDialog'
 import { usePersistedSort } from '../hooks/usePersistedSort'
-import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { sortEntities } from '../lib/sortEntities'
 import { refocusAfterMove, reorderKeyStep } from '../lib/reorderKeys'
 import { buttonClass } from '../components/ui/buttonStyles'
@@ -94,7 +93,6 @@ export default function DashboardPage() {
   const [moveSpaces, setMoveSpaces] = useState(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [confirmSignOut, setConfirmSignOut] = useState(false)
-  const online = useOnlineStatus()
   const [viewMode, setViewMode] = useState(() => {
     try {
       const saved = localStorage.getItem('arche:spaces-view')
@@ -459,10 +457,9 @@ export default function DashboardPage() {
   // The page's one main action.
   const newMenu = (
     <ActionMenu
-      label={online ? 'New' : 'Unavailable offline'}
+      label="New"
       triggerLabel="New"
       icon={Plus}
-      disabled={!online}
       actions={[
         // First, nearest the button: the one-click way to jot something down.
         { id: 'quick-note', label: 'Quick note', onClick: board.addQuickNote },
@@ -768,16 +765,12 @@ export default function DashboardPage() {
                 <Button
                   variant="primary"
                   icon={Plus}
-                  disabled={!online}
-                  title={online ? undefined : 'Unavailable offline'}
                   onClick={openAddItem}
                 >
                   Add item
                 </Button>
                 <Button
                   icon={FolderPlus}
-                  disabled={!online}
-                  title={online ? undefined : 'Unavailable offline'}
                   onClick={() => setModal({ type: 'create' })}
                 >
                   New space

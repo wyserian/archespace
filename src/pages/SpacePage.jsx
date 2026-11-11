@@ -41,7 +41,6 @@ import { MIN_SPACE_COLUMN_PX } from '../components/ui/columnFit'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { usePersistedSort } from '../hooks/usePersistedSort'
 import { useSpaceStats } from '../hooks/useSpaceStats'
-import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { useRouteMeta } from '../hooks/useRouteMeta'
 import { sortEntities } from '../lib/sortEntities'
 import { pathOf } from '../lib/spaceTree'
@@ -294,7 +293,6 @@ export default function SpacePage() {
     () => items.filter(i => selectedItemIds.has(i.id)),
     [items, selectedItemIds]
   )
-  const online = useOnlineStatus()
 
   // Typing into an item here does nothing, so say why, with the way out. Once
   // per little while (not per key), and copying (Ctrl/Cmd keys) is left alone.
@@ -305,7 +303,7 @@ export default function SpacePage() {
     if (!editable || !typing || e.ctrlKey || e.metaKey || e.altKey) return
     if (lastNudge.current && e.timeStamp - lastNudge.current < 4000) return
     lastNudge.current = e.timeStamp
-    toast.info('This space is read-only', online ? { action: { label: 'Allow editing', onClick: handleToggleReadOnly } } : undefined)
+    toast.info('This space is read-only', { action: { label: 'Allow editing', onClick: handleToggleReadOnly } })
   }
 
   // Grid (masonry) and list share the same items; list is a single column.
@@ -566,7 +564,7 @@ export default function SpacePage() {
                 </span>
               )}
               {space?.expires_at && (
-                <ExpiryChip expiresAt={space.expires_at} onClick={online ? () => setExpiryOpen(true) : undefined} />
+                <ExpiryChip expiresAt={space.expires_at} onClick={() => setExpiryOpen(true)} />
               )}
             </div>
             {space?.description && (
@@ -589,10 +587,9 @@ export default function SpacePage() {
                 at any depth). */}
             {!readOnly && !selectMode && (
               <ActionMenu
-                label={online ? 'New' : 'Unavailable offline'}
+                label="New"
                 triggerLabel="New"
                 icon={Plus}
-                disabled={!online}
                 actions={[
                   // First, nearest the button: the one-click way to jot something down.
                   { id: 'quick-note', label: 'Quick note', onClick: board.addQuickNote },
@@ -613,7 +610,6 @@ export default function SpacePage() {
                     group: 'mark',
                     label: space.pinned ? 'Unpin' : 'Pin',
                     icon: space.pinned ? PinOff : Pin,
-                    disabled: !online,
                     onClick: () => toggleSpacePin.mutate({ id, pinned: space.pinned }),
                   },
                   {
@@ -621,23 +617,21 @@ export default function SpacePage() {
                     group: 'mark',
                     label: space.starred ? 'Unstar' : 'Star',
                     icon: space.starred ? StarOff : Star,
-                    disabled: !online,
                     onClick: () => toggleSpaceStar.mutate({ id, starred: space.starred }),
                   },
-                  !readOnly && { id: 'tag', group: 'mark', label: 'Add tag', icon: Tag, disabled: !online, onClick: () => setEditingTags(true) },
-                  !readOnly && { id: 'edit', group: 'content', label: 'Edit', icon: Pencil, disabled: !online, onClick: () => setSpaceModal({ type: 'edit', col: space }) },
+                  !readOnly && { id: 'tag', group: 'mark', label: 'Add tag', icon: Tag, onClick: () => setEditingTags(true) },
+                  !readOnly && { id: 'edit', group: 'content', label: 'Edit', icon: Pencil, onClick: () => setSpaceModal({ type: 'edit', col: space }) },
                   {
                     id: 'duplicate',
                     group: 'content',
                     label: 'Duplicate',
                     icon: Copy,
-                    disabled: !online,
                     onClick: () => duplicateSpace.mutate(id, {
                       onSuccess: () => toast.success('Space duplicated'),
                       onError: () => toast.error("Couldn't duplicate the space."),
                     }),
                   },
-                  !readOnly && { id: 'move', group: 'content', label: 'Move', icon: MoveRight, disabled: !online, onClick: () => setSpaceMoveRequest({ ids: [id] }) },
+                  !readOnly && { id: 'move', group: 'content', label: 'Move', icon: MoveRight, onClick: () => setSpaceMoveRequest({ ids: [id] }) },
                   {
                     id: 'export-pdf',
                     group: 'content',
@@ -650,7 +644,6 @@ export default function SpacePage() {
                     group: 'keep',
                     label: readOnly ? 'Allow editing' : 'Read-only',
                     icon: readOnly ? PencilLine : PencilOff,
-                    disabled: !online,
                     onClick: handleToggleReadOnly,
                   },
                   {
@@ -658,16 +651,14 @@ export default function SpacePage() {
                     group: 'keep',
                     label: locked ? 'Unprotect' : 'Protect',
                     icon: locked ? ShieldOff : Shield,
-                    disabled: !online,
                     onClick: handleToggleLock,
                   },
-                  { id: 'archive', group: 'keep', label: 'Archive', icon: Archive, disabled: !online, onClick: handleArchiveSpace },
+                  { id: 'archive', group: 'keep', label: 'Archive', icon: Archive, onClick: handleArchiveSpace },
                   {
                     id: 'expiry',
                     group: 'keep',
                     label: space.expires_at ? 'Change self-destruct' : 'Self-destruct',
                     icon: Hourglass,
-                    disabled: !online,
                     onClick: () => setExpiryOpen(true),
                   },
                   {
@@ -676,7 +667,6 @@ export default function SpacePage() {
                     label: 'Delete',
                     icon: Trash2,
                     variant: 'danger',
-                    disabled: !online,
                     onClick: () => { if (!blockedByUnsaved()) setSpaceDeleteConfirm(id) },
                   },
                 ]}
@@ -709,7 +699,6 @@ export default function SpacePage() {
             <button
               type="button"
               onClick={handleToggleReadOnly}
-              disabled={!online}
               className="font-semibold text-accent hover:underline underline-offset-2 disabled:opacity-50 disabled:no-underline"
             >
               Allow editing
@@ -733,8 +722,6 @@ export default function SpacePage() {
                 variant="primary"
                 icon={Plus}
                 className="mt-4"
-                disabled={!online}
-                title={online ? undefined : 'Unavailable offline'}
                 onClick={openAddItem}
               >
                 Add first item

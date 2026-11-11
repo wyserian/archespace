@@ -18,8 +18,8 @@ export const TABLES = {
   user_settings: 'user_id',
 }
 
-function openDb() {
-  return openIdb(DB_NAME, DB_VERSION, (db) => {
+function openDb(name) {
+  return openIdb(name, DB_VERSION, (db) => {
     for (const [table, keyPath] of Object.entries(TABLES)) {
       if (!db.objectStoreNames.contains(table)) db.createObjectStore(table, { keyPath })
     }
@@ -33,23 +33,29 @@ const done = (tx) => new Promise((resolve, reject) => {
 })
 
 /**
- * An IndexedDB-backed store: `tables[name]` is a Map of key -> row, and
- * `save` / `remove` write changes through.
+ * An IndexedDB-backed store (local mode's own database by default, or `name`):
+ * `tables[name]` is a Map of key -> row, `save` / `remove` write changes
+ * through, and `reload` reads every table again (after another tab wrote).
  */
-export async function openIndexedDbStore() {
-  const db = await openDb()
-  const tables = {}
-  for (const table of Object.keys(TABLES)) {
-    const tx = db.transaction(table, 'readonly')
-    const rows = await new Promise((resolve, reject) => {
-      const req = tx.objectStore(table).getAll()
-      req.onsuccess = () => resolve(req.result)
-      req.onerror = () => reject(req.error)
-    })
-    tables[table] = new Map(rows.map(row => [row[TABLES[table]], row]))
+export async function openIndexedDbStore(name = DB_NAME) {
+  const db = await openDb(name)
+  const tables = Object.fromEntries(Object.keys(TABLES).map(t => [t, new Map()]))
+  const reload = async () => {
+    for (const table of Object.keys(TABLES)) {
+      const tx = db.transaction(table, 'readonly')
+      const rows = await new Promise((resolve, reject) => {
+        const req = tx.objectStore(table).getAll()
+        req.onsuccess = () => resolve(req.result)
+        req.onerror = () => reject(req.error)
+      })
+      tables[table].clear()
+      for (const row of rows) tables[table].set(row[TABLES[table]], row)
+    }
   }
+  await reload()
   return {
     tables,
+    reload,
     async save(table, rows) {
       const tx = db.transaction(table, 'readwrite')
       for (const row of rows) tx.objectStore(table).put(row)
@@ -66,13 +72,13 @@ export async function openIndexedDbStore() {
 /** A store that lives only in memory (tests). */
 export function openMemoryStore() {
   const tables = Object.fromEntries(Object.keys(TABLES).map(t => [t, new Map()]))
-  return { tables, async save() {}, async remove() {} }
+  return { tables, async save() {}, async remove() {}, async reload() {} }
 }
 
-/** Delete everything local mode has stored in this browser. */
-export function eraseLocalData() {
+/** Delete everything local mode (or the database `name`) has stored in this browser. */
+export function eraseLocalData(name = DB_NAME) {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.deleteDatabase(DB_NAME)
+    const req = indexedDB.deleteDatabase(name)
     req.onsuccess = () => resolve()
     req.onerror = () => reject(req.error)
     // Another tab has it open; it's deleted once that tab closes.

@@ -7,9 +7,14 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { clearVaultSession } from '../lib/crypto/vaultSession'
-import { clearOfflineCache } from '../lib/offlineCache'
 import { logAudit } from '../lib/auditLog'
 import { AuthContext } from './AuthContextCore'
+
+/** Leave nothing readable behind: the unlocked vault and the offline copy. */
+async function leaveDevice() {
+  clearVaultSession()
+  await supabase.offline?.erase()
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null)
@@ -17,14 +22,19 @@ export function AuthProvider({ children }) {
   const [passwordRecovery, setPasswordRecovery] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // The offline copy follows the signed-in account (local mode has none).
+    const follow = (session) => {
+      supabase.offline?.bind(session?.user?.id ?? null)
       setUser(session?.user ?? null)
+    }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      follow(session)
       setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        setUser(session?.user ?? null)
+        follow(session)
         if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true)
         if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') setPasswordRecovery(false)
       }
@@ -69,7 +79,7 @@ export function AuthProvider({ children }) {
   const deleteAccount = async () => {
     const { error } = await supabase.rpc('delete_current_user')
     if (error) return { error }
-    clearVaultSession()
+    await leaveDevice()
     setPasswordRecovery(false)
     await supabase.auth.signOut({ scope: 'local' })
     setUser(null)
@@ -90,7 +100,7 @@ export function AuthProvider({ children }) {
       }
     }
 
-    clearVaultSession()
+    await leaveDevice()
     const { error: signOutError } = await supabase.auth.signOut({ scope: 'global' })
     if (!signOutError) setPasswordRecovery(false)
     return { error: signOutError }
@@ -103,8 +113,8 @@ export function AuthProvider({ children }) {
   const signOut = async (options = { scope: 'local' }) => {
     // Record the logout while the session (and auth.uid()) is still valid.
     await logAudit({ action: 'logout' })
-    clearVaultSession()
-    clearOfflineCache() // fire-and-forget; ciphertext-only but no need to keep it
+    await supabase.offline?.sync() // send what waits, while still signed in
+    await leaveDevice()
     setPasswordRecovery(false)
     return supabase.auth.signOut(options)
   }
