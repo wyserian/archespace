@@ -61,6 +61,7 @@ export async function saveRows(userId, key, rows) {
  * whose self-destruct time has passed are left out, as the server hides them.
  */
 export async function loadRows(userId, key) {
+  if (isLocalMode()) return null
   try {
     const db = await openDb()
     const value = await new Promise((resolve, reject) => {

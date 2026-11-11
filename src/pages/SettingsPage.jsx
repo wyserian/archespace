@@ -27,6 +27,7 @@ import WeakPinWarning from '../components/WeakPinWarning'
 import { VAULT_PIN_MIN_LENGTH, VAULT_AUTO_LOCK_OPTIONS } from '../lib/constants'
 import { screenLockSupported } from '../lib/crypto/vaultAutoLock'
 import { Switch } from '../components/ui/Switch'
+import { Select } from '../components/ui/Select'
 import { validatePassword } from '../lib/passwordPolicy'
 import { PasswordRules } from '../components/PasswordRules'
 import { logAudit } from '../lib/auditLog'
@@ -905,16 +906,13 @@ export default function SettingsPage() {
                     title="Auto-lock"
                     description="Lock the vault after a period of inactivity. Applies to this device only."
                     action={
-                      <select
+                      <Select
                         value={autoLockId}
-                        onChange={(e) => { setAutoLock(e.target.value); toast.success('Auto-lock updated.') }}
+                        options={VAULT_AUTO_LOCK_OPTIONS}
+                        onChange={(id) => { setAutoLock(id); toast.success('Auto-lock updated.') }}
                         aria-label="Auto-lock after"
                         className="rounded-xl border border-bg-border-soft bg-bg-surface px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
-                      >
-                        {VAULT_AUTO_LOCK_OPTIONS.map(o => (
-                          <option key={o.id} value={o.id}>{o.label}</option>
-                        ))}
-                      </select>
+                      />
                     }
                   />
                   {screenLockSupported && (

@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Modal } from './ui/UI'
+import { Select } from './ui/Select'
 import { buttonClass } from './ui/buttonStyles'
 import {
   MAX_REMINDER_NAME, REMINDER_EVERY, REMINDER_MODES, addDays, dayString, defaultReminder, formatDate,
@@ -183,14 +184,13 @@ export function ReminderDialog({ initial, onSave, onRemove, onClose }) {
           <div className={`grid gap-3 ${mode === 'repeat' ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <div>
               <label htmlFor="reminder-every" className={LABEL}>Repeats</label>
-              <select
+              <Select
                 id="reminder-every"
                 value={every}
-                onChange={e => setEvery(e.target.value)}
+                options={REMINDER_EVERY}
+                onChange={setEvery}
                 className={FIELD}
-              >
-                {REMINDER_EVERY.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
-              </select>
+              />
             </div>
             {mode === 'repeat' && (
               <div>
