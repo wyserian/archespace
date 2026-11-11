@@ -37,7 +37,8 @@ A companion Mobile/Flutter app lives in a [separate repository](https://github.c
 - **Reminders** that repeat or stay until turned off, each with or without a sound, all listed in one view
 - **Search** across spaces, tags and content
 - **Starred**, **Self-destruct** (soonest first), **archive** and **bin** views
-- **Realtime sync** with the [mobile app](https://github.com/wyserian/archespace-mobile), and **full offline use**: an encrypted copy on the device opens everything at once and takes every change, syncing when the connection is back (deleting for good, backup import and account settings need a connection)
+- **Realtime sync** with the [mobile app](https://github.com/wyserian/archespace-mobile)
+- **Works offline**, syncing when back (deleting for good, backup import and account settings need a connection)
 - **Encrypted backups** and **PDF export**
 - **Local mode**: no account, nothing leaves the browser
 - **Two-factor sign-in**
@@ -226,7 +227,7 @@ A living list of directions the project is exploring. These are intentions, not 
 
 ## Contributing
 
-Contributions are welcome: bug fixes, features, docs, and translations.
+Contributions are welcome: bug fixes, features, and docs.
 
 - Fork, branch off `main`, and open a focused pull request.
 - Run `npm run lint`, `npm test`, and `npm run build` before submitting.
