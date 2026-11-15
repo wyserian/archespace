@@ -513,7 +513,7 @@ function SearchPanel({ editor, anchorRef, count, index, invalid, onClose }) {
       role="dialog"
       aria-label="Find and replace"
       style={{ top: pos.top, left: pos.left, width: pos.width }}
-      className="fixed z-[90] rounded-2xl border border-bg-border bg-bg-elevated shadow-xl"
+      className="fixed z-[90] rounded-2xl bg-bg-elevated shadow-xl"
     >
       <div className="flex items-center gap-1 px-3 pt-2.5 pb-2">
         <span className="flex-1 text-xs font-medium tabular-nums text-text-muted" aria-live="polite">
