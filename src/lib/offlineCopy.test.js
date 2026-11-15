@@ -88,9 +88,10 @@ describe('offline copy', () => {
     const { data: item } = await client.from('space_items').insert({ type: 'textbox', title: 'v1' }).select().single()
     await copy.sync()
     await tick()
-    await client.from('space_items').update({ title: 'v2' }).eq('id', item.id)
+    // As the item editor saves: asking for the saved row back.
+    await client.from('space_items').update({ title: 'v2' }).eq('id', item.id).select().single()
     await tick()
-    await client.from('space_items').update({ title: 'v3' }).eq('id', item.id)
+    await client.from('space_items').update({ title: 'v3' }).eq('id', item.id).select().single()
     await copy.sync()
     expect((await serverRows()).map(i => i.title)).toEqual(['v3'])
   })

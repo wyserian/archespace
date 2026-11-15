@@ -198,7 +198,10 @@ export function createOfflineClient(remote, { openStore, openOutbox }) {
   async function send(op) {
     if (op.rpc) return outcome((await remote.rpc(op.rpc, op.args)).error)
     if (!op.base) return outcome((await apply(remote, op.table, op.calls)).error)
-    const { data, error } = await apply(remote, op.table, op.calls)
+    // Only if still on the version it was made on, answered as a list (the
+    // app's own select / single would make it one row or none).
+    const calls = op.calls.filter(([method]) => !['select', 'single', 'maybeSingle'].includes(method))
+    const { data, error } = await apply(remote, op.table, calls)
       .eq('updated_at', op.base)
       .select('id, updated_at')
     if (error) return outcome(error)
