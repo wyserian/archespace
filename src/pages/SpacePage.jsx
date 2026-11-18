@@ -7,7 +7,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Plus, CheckSquare, ListChecks, FileDown, Search, SearchX, X, PencilOff, PencilLine, Shield, ShieldCheck, ShieldOff,
   ChevronRight, MoreHorizontal, MoreVertical, Folder, Pin, PinOff, Star, StarOff, Tag, Pencil, Copy, MoveRight, Archive, Trash2,
-  Hourglass,
+  Hourglass, Undo2, Redo2,
 } from 'lucide-react'
 import { ItemTags } from '../components/ItemTags'
 import { parseTags } from '../lib/spaceColors'
@@ -285,6 +285,12 @@ export default function SpacePage() {
     selectMode, setSelectMode, selectedSpaceIds, selectedItemIds,
     selectedCount, selectionLabel, runBulkAction, exitSelectMode, selectAll, toggleSpace, toggleItem,
   } = useDualEntitySelection(sortedSubSpaces, sortedItems, { hasDirty: board.hasDirty })
+
+  // Undo / redo of item content edits in this space (useItemBoard).
+  const editable = !readOnly && !selectMode
+  useShortcut('undo', board.undo, editable)
+  useShortcut('redo', board.redo, editable)
+
   const selectedSpaces = useMemo(
     () => subSpaces.filter(s => selectedSpaceIds.has(s.id)),
     [subSpaces, selectedSpaceIds]
@@ -583,6 +589,12 @@ export default function SpacePage() {
               to the space itself. The view, sort and select controls live in
               the search row above the items. */}
           <div className="flex items-center gap-1 shrink-0 relative">
+            {editable && (
+              <>
+                <IconButton icon={Undo2} label="Undo item edit" size="md" disabled={!board.canUndo} onClick={board.undo} />
+                <IconButton icon={Redo2} label="Redo item edit" size="md" disabled={!board.canRedo} onClick={board.redo} />
+              </>
+            )}
             {/* New: a menu of New item / New space (a sub-space of this one,
                 at any depth). */}
             {!readOnly && !selectMode && (

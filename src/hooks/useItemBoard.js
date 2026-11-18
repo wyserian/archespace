@@ -18,6 +18,7 @@ import { useToast } from '../context/ToastCore'
 import { ITEM_TYPE_OPTIONS } from '../lib/itemTypes'
 import { isReadOnlyError, READ_ONLY_MESSAGE } from '../lib/readOnly'
 import { hideItem, isItemRevealed } from '../lib/itemLock'
+import { EMPTY_HISTORY, recordEdit, afterUndo, afterRedo, withoutTop, sameContent } from '../lib/itemHistory'
 import { useVaultPinPrompt } from '../context/VaultPinPromptCore'
 
 export function useItemBoard(spaceId) {
@@ -59,10 +60,23 @@ export function useItemBoard(spaceId) {
   // lets the memoized SpaceItem skip re-rendering the whole list on each edit.
   const dirtyItemsRef = useRef(dirtyItems)
   const toastRef = useRef(toast)
+  const itemsRef = useRef(items)
   useEffect(() => {
     dirtyItemsRef.current = dirtyItems
     toastRef.current = toast
+    itemsRef.current = items
   })
+
+  // Undo / redo of item content edits on this page (itemHistory.js), kept
+  // while it shows this space; another space starts afresh.
+  const [history, setHistory] = useState(EMPTY_HISTORY)
+  const [historyFor, setHistoryFor] = useState(spaceId)
+  if (historyFor !== spaceId) {
+    setHistoryFor(spaceId)
+    setHistory(EMPTY_HISTORY)
+  }
+  const historyRef = useRef(history)
+  useEffect(() => { historyRef.current = history })
 
   const hasDirty = useCallback(
     (ids) => ids.some(itemId => dirtyItemsRef.current.has(itemId)),
@@ -76,11 +90,60 @@ export function useItemBoard(spaceId) {
   const archiveMutate = archive.mutate
 
   // A save refused because the space was made read-only elsewhere says so;
-  // the card keeps the edit unsaved so it can be discarded.
-  const handleItemUpdate = useCallback((payload) => updateAsync(payload).catch((err) => {
-    if (isReadOnlyError(err)) toastRef.current.error(READ_ONLY_MESSAGE)
-    throw err
-  }), [updateAsync])
+  // the card keeps the edit unsaved so it can be discarded. A saved content
+  // change becomes an undo step.
+  const handleItemUpdate = useCallback(async (payload) => {
+    const before = itemsRef.current.find(it => it.id === payload.id)?.content
+    try {
+      const saved = await updateAsync(payload)
+      if (before !== undefined) setHistory(h => recordEdit(h, payload.id, before, payload.content))
+      return saved
+    } catch (err) {
+      if (isReadOnlyError(err)) toastRef.current.error(READ_ONLY_MESSAGE)
+      throw err
+    }
+  }, [updateAsync])
+
+  // Undo / redo write an item's content back. An edit still unsaved is saved
+  // first, so it is what undo takes back. A step whose item changed since
+  // (elsewhere) or left the page can't apply, and goes.
+  const stepping = useRef(false)
+  const step = useCallback(async (side) => {
+    if (stepping.current) return
+    stepping.current = true
+    const undoing = side === 'past'
+    try {
+      if (dirtyItemsRef.current.size) {
+        window.dispatchEvent(new Event('arche:flush-saves'))
+        for (let i = 0; i < 60 && dirtyItemsRef.current.size; i++) {
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        if (dirtyItemsRef.current.size) {
+          toastRef.current.error("Couldn't save your edit, so it can't be undone yet.")
+          return
+        }
+      }
+      // Read after saving: the save just made is the step undo takes back.
+      const top = historyRef.current[side].at(-1)
+      if (!top) return
+      const item = itemsRef.current.find(it => it.id === top.id)
+      if (!item || !sameContent(item.content, undoing ? top.after : top.before)) {
+        setHistory(h => withoutTop(h, side))
+        toastRef.current.error(item
+          ? `That item changed since, so this can't be ${undoing ? 'undone' : 'redone'}.`
+          : 'That item is no longer here.')
+        return
+      }
+      await updateAsync({ id: item.id, title: item.title, content: undoing ? top.before : top.after })
+      setHistory(undoing ? afterUndo : afterRedo)
+    } catch (err) {
+      toastRef.current.error(isReadOnlyError(err) ? READ_ONLY_MESSAGE : `Couldn't ${undoing ? 'undo' : 'redo'} that.`)
+    } finally {
+      stepping.current = false
+    }
+  }, [updateAsync])
+  const undo = useCallback(() => step('past'), [step])
+  const redo = useCallback(() => step('future'), [step])
   const handleSetTags = useCallback((itemId, tags) => setTags.mutate({ id: itemId, tags }), [setTags])
   const setReminderMutate = setReminder.mutate
   const handleSetReminder = useCallback(
@@ -309,5 +372,11 @@ export function useItemBoard(spaceId) {
     setMoveRequest,
     handleMoveItems,
     navBlocker,
+    // Undo / redo of item content edits (an unsaved edit counts: it is saved,
+    // then undone).
+    undo,
+    redo,
+    canUndo: history.past.length > 0 || dirtyItems.size > 0,
+    canRedo: history.future.length > 0 && dirtyItems.size === 0,
   }
 }

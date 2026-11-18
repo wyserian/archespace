@@ -31,6 +31,18 @@ export function ShortcutsProvider({ children }) {
         return
       }
 
+      // Undo / redo, unless a text field or the whiteboard has its own.
+      const key = e.key.toLowerCase()
+      if (mod && (key === 'z' || key === 'y')) {
+        if (isTyping || e.defaultPrevented || target?.closest?.('.excalidraw')) return
+        const fn = handlersRef.current.get(key === 'y' || e.shiftKey ? 'redo' : 'undo')
+        if (fn) {
+          e.preventDefault()
+          fn()
+        }
+        return
+      }
+
       if (isTyping && !mod) return
 
       if (e.key === '?' && !mod) {

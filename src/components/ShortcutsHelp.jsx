@@ -17,6 +17,8 @@ const SHORTCUTS = [
   { keys: ['I'],      label: 'Create a new item (inside a space)' },
   { keys: [MOD, 'L'], label: 'Lock the vault' },
   { keys: [MOD, 'S'], label: 'Save all edited items on the page' },
+  { keys: [MOD, 'Z'], label: 'Undo the last item edit (inside a space)' },
+  { keys: [MOD, 'Shift', 'Z'], label: 'Redo it' },
   { keys: ['↑'],      label: 'Move the focused list row up' },
   { keys: ['↓'],      label: 'Move the focused list row down' },
   { keys: [ALT, '↑'], label: 'Move the focused space or item up' },
