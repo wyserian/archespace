@@ -34,6 +34,7 @@ A companion Mobile/Flutter app lives in a [separate repository](https://github.c
 - **Self-destruct**: a space or item deletes itself for good at a time you set
 - **Spaces** with sub-spaces nested to any depth, tags and colours
 - **Item types**: notes, rich text, lists, checklists, cards, tables, Kanban boards, whiteboards and code ([Item types](#item-types)), each with an optional card colour
+- **Undo and redo** of item edits within a space
 - **Reminders** that repeat or stay until turned off, each with or without a sound, all listed in one view
 - **Search** across spaces, tags and content
 - **Starred**, **Self-destruct** (soonest first), **archive** and **bin** views

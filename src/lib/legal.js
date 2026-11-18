@@ -7,5 +7,5 @@
  * or Privacy Policy changes materially, so we can tell which version a given
  * user agreed to. Keep TERMS_VERSION as a sortable YYYY-MM-DD string.
  */
-export const TERMS_VERSION = '2026-11-11'
-export const TERMS_LAST_UPDATED = '11 November 2026'
+export const TERMS_VERSION = '2026-11-18'
+export const TERMS_LAST_UPDATED = '18 November 2026'
