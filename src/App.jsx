@@ -187,7 +187,7 @@ function RouteErrorBoundary() {
       message={isChunkError
         ? 'A new version of ArcheSpace was deployed. Please reload to get the latest update.'
         : 'An unexpected error occurred. Try reloading the page or going back to the dashboard.'}
-      errorMessage={isChunkError ? undefined : error?.message}
+      error={isChunkError ? undefined : error}
     />
   )
 }

@@ -4,13 +4,28 @@
  * Used by both the React error boundary (ErrorBoundary) and the router error
  * boundary (RouteErrorBoundary in App.jsx). The `chunk` variant swaps the icon
  * and is used when a stale dynamic import fails after a redeploy.
+ *
+ * The error itself is never shown (it can hold user content); "Copy error
+ * details" copies a redacted report for a support email (errorReport.js).
  */
 
-import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { useState } from 'react'
+import { AlertTriangle, Copy, RefreshCw } from 'lucide-react'
 import { buttonClass } from './ui/buttonStyles'
+import { errorReport } from '../lib/errorReport'
 
-export default function ErrorScreen({ variant = 'error', title, message, errorMessage }) {
+export default function ErrorScreen({ variant = 'error', title, message, error }) {
   const isChunk = variant === 'chunk'
+  const [copied, setCopied] = useState(null)
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(errorReport(error))
+      setCopied('Copied - paste it into an email to support')
+    } catch {
+      setCopied("Couldn't copy. Check the browser's clipboard permission.")
+    }
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-bg-base text-text-primary">
@@ -27,17 +42,6 @@ export default function ErrorScreen({ variant = 'error', title, message, errorMe
           {message}
         </p>
 
-        {errorMessage && (
-          <details className="text-left text-xs rounded-xl p-3 bg-bg-elevated border border-bg-border">
-            <summary className="cursor-pointer font-medium text-text-secondary">
-              Error details
-            </summary>
-            <pre className="mt-2 whitespace-pre-wrap break-all text-danger">
-              {errorMessage}
-            </pre>
-          </details>
-        )}
-
         <div className="flex gap-3 justify-center pt-2">
           <button
             onClick={() => window.location.reload()}
@@ -52,6 +56,20 @@ export default function ErrorScreen({ variant = 'error', title, message, errorMe
             Go to dashboard
           </button>
         </div>
+
+        {error != null && (
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={copy}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-text-muted hover:text-text-primary transition-colors"
+            >
+              <Copy size={13} />
+              Copy error details
+            </button>
+            <p aria-live="polite" className="text-xs text-text-muted">{copied}</p>
+          </div>
+        )}
       </div>
     </div>
   )

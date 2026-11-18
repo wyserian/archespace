@@ -26,7 +26,7 @@ export default class ErrorBoundary extends Component {
         <ErrorScreen
           title="Something went wrong"
           message="An unexpected error occurred. Try reloading the page or going back to the dashboard."
-          errorMessage={this.state.error?.message}
+          error={this.state.error}
         />
       )
     }
