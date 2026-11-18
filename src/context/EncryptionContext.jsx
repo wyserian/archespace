@@ -149,14 +149,12 @@ export function EncryptionProvider({ children }) {
     return () => clearTimeout(timer)
   }, [refreshPasskeys])
 
-  const lock = useCallback((reason) => {
+  const lock = useCallback(() => {
     clearVaultSession()
     hideAllItems() // opened locked items need the PIN again
     setCryptoKey(null)
     setUnlockError('')
-    // `reason` is a string for programmatic calls ('auto'); when lock is
-    // wired directly to an onClick it receives an event, so default to 'manual'.
-    logAudit({ action: 'vault_lock', details: { reason: typeof reason === 'string' ? reason : 'manual' } })
+    logAudit({ action: 'vault_lock' })
   }, [])
 
   const applyUnlockedKey = useCallback(async (key) => {
@@ -228,7 +226,7 @@ export function EncryptionProvider({ children }) {
     try {
       const key = await unlockVaultWithPasskey(userId)
       await applyUnlockedKey(key)
-      logAudit({ action: 'vault_unlock', details: { method: 'passkey' } })
+      logAudit({ action: 'vault_unlock' })
       return key
     } catch (err) {
       const msg = err?.message || "Couldn't unlock with passkey."
@@ -455,7 +453,7 @@ export function EncryptionProvider({ children }) {
     if (lockMs == null) return // "Never"
 
     const doLock = () => {
-      lockRef.current('auto')
+      lockRef.current()
       window.dispatchEvent(new CustomEvent('arche:vault-auto-locked'))
     }
 
@@ -500,7 +498,7 @@ export function EncryptionProvider({ children }) {
     const detector = new window.IdleDetector()
     detector.addEventListener('change', () => {
       if (detector.screenState !== 'locked') return
-      lockRef.current('screen_lock')
+      lockRef.current()
       window.dispatchEvent(new CustomEvent('arche:vault-auto-locked', { detail: { reason: 'screen' } }))
     })
     // 60s is the smallest idle threshold allowed; only screenState is used.

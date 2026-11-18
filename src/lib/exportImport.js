@@ -108,7 +108,7 @@ export async function exportSpaces(spaces, cryptoKey) {
     a.click()
     URL.revokeObjectURL(url)
 
-    await logAudit({ action: 'export', details: { count: spaces.length } })
+    await logAudit({ action: 'export' })
     return { unreadable }
   } catch (error) {
     console.error('Export failed:', error)
@@ -382,10 +382,7 @@ export async function importSpaces(file, userId, cryptoKey, { askBackupPin } = {
     itemsSkipped += result.skipped
   }
 
-  await logAudit({
-    action: 'import',
-    details: { spaces_count: spacesList.length, items_count: itemsImported, items_skipped: itemsSkipped },
-  })
+  await logAudit({ action: 'import' })
 
   return { spaces: spacesList.length, items: itemsImported, skipped: itemsSkipped }
 }

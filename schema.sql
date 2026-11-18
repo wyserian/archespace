@@ -60,7 +60,8 @@ CREATE TABLE IF NOT EXISTS audit_log (
   id         uuid        DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id    uuid        REFERENCES auth.users(id) ON DELETE SET NULL,
   action     text        NOT NULL,
-  details    jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  -- The app that did it; NULL for events the database records itself.
+  client     text        CHECK (client IN ('web', 'android', 'ios')),
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
@@ -157,6 +158,16 @@ ALTER TABLE space_items ADD COLUMN IF NOT EXISTS expires_at timestamptz DEFAULT 
 
 -- An item card's colour (plain, like a space's).
 ALTER TABLE space_items ADD COLUMN IF NOT EXISTS color text DEFAULT NULL;
+
+-- The audit log keeps who, what, from which app and when: no details
+-- column, and the client function takes the action and the app.
+ALTER TABLE audit_log DROP COLUMN IF EXISTS details;
+ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS client text;
+ALTER TABLE audit_log DROP CONSTRAINT IF EXISTS audit_log_client_check;
+ALTER TABLE audit_log ADD CONSTRAINT audit_log_client_check
+  CHECK (client IN ('web', 'android', 'ios'));
+DROP FUNCTION IF EXISTS public.log_client_event(text, jsonb);
+DROP FUNCTION IF EXISTS public.log_client_event(text);
 
 -- 2. INDEXES
 
@@ -734,10 +745,9 @@ DECLARE
   v_html    text;
   v_text    text;
 BEGIN
-  -- User row is already gone; keep identity in details.
-  INSERT INTO public.audit_log (user_id, action, details)
-  VALUES (NULL, 'account_deleted',
-          jsonb_build_object('user_id', OLD.id, 'email', OLD.email, 'deleted_at', now()));
+  -- The user row is already gone, so the entry names no one.
+  INSERT INTO public.audit_log (user_id, action)
+  VALUES (NULL, 'account_deleted');
 
   -- Nothing to send to if the row had no email.
   IF OLD.email IS NULL THEN
@@ -806,17 +816,12 @@ SET search_path = public
 AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN
-    INSERT INTO audit_log (user_id, action, details)
-    VALUES (NEW.id, 'account_created', jsonb_build_object(
-      'email', NEW.email,
-      'terms_version', NEW.raw_user_meta_data->>'terms_version',
-      'terms_accepted_at_client', NEW.raw_user_meta_data->>'terms_accepted_at'
-    ));
+    INSERT INTO audit_log (user_id, action)
+    VALUES (NEW.id, 'account_created');
 
     -- Record consent proof when the sign-up client reported a policy version.
     -- terms_accepted_at is stamped server-side (now()), so it is authoritative
-    -- and cannot be back-dated; the client's own timestamp is kept in the audit
-    -- entry above for reference only. Skipped for accounts created without a
+    -- and cannot be back-dated. Skipped for accounts created without a
     -- version (e.g. admin-created users).
     IF NEW.raw_user_meta_data ? 'terms_version'
        AND coalesce(NEW.raw_user_meta_data->>'terms_version', '') <> '' THEN
@@ -829,8 +834,8 @@ BEGIN
   END IF;
 
   IF NEW.email IS DISTINCT FROM OLD.email THEN
-    INSERT INTO audit_log (user_id, action, details)
-    VALUES (NEW.id, 'email_change', jsonb_build_object('from', OLD.email, 'to', NEW.email));
+    INSERT INTO audit_log (user_id, action)
+    VALUES (NEW.id, 'email_change');
   ELSIF NEW.recovery_sent_at IS DISTINCT FROM OLD.recovery_sent_at AND NEW.recovery_sent_at IS NOT NULL THEN
     INSERT INTO audit_log (user_id, action)
     VALUES (NEW.id, 'password_reset_requested');
@@ -846,10 +851,7 @@ CREATE TRIGGER trg_log_auth_event
   FOR EACH ROW EXECUTE FUNCTION public.log_auth_event();
 
 -- Whitelisted client-side audit writes, for the current user only.
-CREATE OR REPLACE FUNCTION public.log_client_event(
-  p_action  text,
-  p_details jsonb DEFAULT '{}'::jsonb
-)
+CREATE OR REPLACE FUNCTION public.log_client_event(p_action text, p_client text)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -871,10 +873,14 @@ BEGIN
     RAISE EXCEPTION 'Unsupported audit action: %', p_action;
   END IF;
 
-  INSERT INTO audit_log (user_id, action, details)
-  VALUES (auth.uid(), p_action, coalesce(p_details, '{}'::jsonb));
+  IF p_client IS NULL OR p_client NOT IN ('web', 'android', 'ios') THEN
+    RAISE EXCEPTION 'Unsupported audit client: %', p_client;
+  END IF;
+
+  INSERT INTO audit_log (user_id, action, client)
+  VALUES (auth.uid(), p_action, p_client);
 END;
 $$;
 
-REVOKE ALL   ON FUNCTION public.log_client_event(text, jsonb) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.log_client_event(text, jsonb) TO authenticated;
+REVOKE ALL   ON FUNCTION public.log_client_event(text, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.log_client_event(text, text) TO authenticated;

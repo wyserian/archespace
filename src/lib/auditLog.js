@@ -8,13 +8,10 @@
  */
 import { supabase } from './supabase'
 
-/** @param {{ action: string, details?: object }} entry */
-export async function logAudit({ action, details = {} }) {
+/** Records `action` from the web app (who and when are added by the server). */
+export async function logAudit({ action }) {
   try {
-    const { error } = await supabase.rpc('log_client_event', {
-      p_action: action,
-      p_details: details,
-    })
+    const { error } = await supabase.rpc('log_client_event', { p_action: action, p_client: 'web' })
     // Auditing must never block a user action, but a rejected call
     // should still surface in the console instead of vanishing silently.
     if (error) console.debug('[audit] log_client_event failed:', error.message)
