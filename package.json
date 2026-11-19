@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node -e \"require('fs').copyFileSync('dist/index.html','dist/404.html')\"",
+    "build": "vite build && node -e \"require('fs').copyFileSync('dist/client/index.html','dist/client/404.html')\"",
     "lint": "eslint .",
     "build:mobile-editor": "node scripts/build-mobile-editor.mjs",
     "test": "vitest run",

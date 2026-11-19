@@ -109,7 +109,7 @@ npm run build    # production build
 npm run preview  # preview the build locally (Wrangler)
 ```
 
-Deploys are automatic on Cloudflare's Git-connected builds: pushing to `main` runs `npm ci && npm run build` and deploys `dist/`. Any static host works too: build and serve `dist/` with an SPA fallback to `index.html` (`dist/404.html` is generated for hosts that need one).
+Deploys are automatic on Cloudflare's Git-connected builds: pushing to `main` runs `npm ci && npm run build` and deploys the site with its small Worker (`worker/index.js`, which only handles the `/download/android` redirect to the latest APK). Any static host works too: build and serve `dist/client/` with an SPA fallback to `index.html` (`dist/client/404.html` is generated for hosts that need one); the Android download link then needs that redirect set up some other way.
 
 ## Tech stack
 
@@ -164,6 +164,7 @@ archespace/
     App.jsx
     index.css
     main.jsx
+  worker/
   schema.sql
   schema.test.sql
   eslint.config.js
@@ -185,6 +186,7 @@ Key areas:
 - `src/lib/crypto/` contains AES-GCM encryption, Argon2id key derivation, vault setup and unlock, non-extractable session key storage, PIN recovery code, and WebAuthn PRF passkey wrapping/unlock with a local (IndexedDB) passkey store.
 - `src/lib/` contains the Supabase client, data protection helpers, item type definitions, protected-content state, clipboard serialization, encrypted backup import/export, the offline copy and its outbox (`offlineCopy.js`, `outbox.js`), connectivity detection, rate limiting, audit logging, two-factor (TOTP) and backup-code helpers, PDF export, password policy, and build info.
 - `schema.sql` contains tables, indexes, RLS policies, triggers (including read-only spaces), RPC functions, self-destruct (the "Hide expired" policies and `purge_expired`, scheduled with `pg_cron` when enabled), realtime setup, vault recovery and PIN lockout, the `mfa_backup_codes` table with AAL2 enforcement for two-factor auth, the account-deletion email trigger, and the auth audit log. (Passkey unlock stores its wrapped key on each client, so there is no passkey table.)
+- `worker/index.js` is the Cloudflare Worker in front of the site: it serves the built files and redirects `/download/android` to the latest mobile release's arm64 APK.
 - `schema.test.sql` checks the two-factor rules: run it on a test project after `schema.sql`; it rolls back everything it does.
 - `email-templates/` contains ready-to-paste Supabase auth email templates; `scripts/generate-icons.mjs` renders the PWA icons and social image; `public/_headers` holds deployment headers for hosts such as Cloudflare Pages.
 

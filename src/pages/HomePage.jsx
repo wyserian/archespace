@@ -19,6 +19,7 @@ import {
   ChevronDown,
   ChevronsLeft,
   Command,
+  Download,
   FileDown,
   Fingerprint,
   FolderTree,
@@ -79,8 +80,9 @@ const navLink =
 const tileClass =
   'flex min-h-[44px] items-center gap-3 rounded-xl bg-white/[0.05] p-3.5 text-left transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300'
 
-// The Android app, linked under the hero's buttons: its latest release (APK).
-const ANDROID_APP_URL = `${MOBILE_REPO_URL}/releases/latest`
+// The Android app, under the hero's buttons: the Worker's /download/android
+// redirects to the latest release's arm64 APK (worker/index.js).
+const ANDROID_APP_URL = '/download/android'
 
 // Section links shown in the header (desktop) and the mobile menu.
 const navSections = [
@@ -375,25 +377,19 @@ export default function HomePage() {
               </span>
               <ArrowRight size={15} className="ml-auto shrink-0 text-white/40 transition group-hover:translate-x-0.5 group-hover:text-emerald-200" />
             </button>
-            <a
-              href={ANDROID_APP_URL}
-              target="_blank"
-              rel="noreferrer"
-              className={`group ${tileClass}`}
-            >
+            <a href={ANDROID_APP_URL} className={`group ${tileClass}`}>
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/80">
                 <Smartphone size={17} />
               </span>
               <span className="min-w-0">
                 <span className="block text-sm font-semibold text-white">Get the Android app</span>
-                <span className="block text-xs leading-5 text-white/50">Latest release, from GitHub</span>
+                <span className="block text-xs leading-5 text-white/50">Downloads the latest APK</span>
               </span>
-              <ArrowUpRight
+              <Download
                 size={15}
                 aria-hidden="true"
-                className="ml-auto shrink-0 text-white/40 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-emerald-200"
+                className="ml-auto shrink-0 text-white/40 transition group-hover:translate-y-0.5 group-hover:text-emerald-200"
               />
-              <span className="sr-only">(opens on GitHub)</span>
             </a>
           </div>
         </div>

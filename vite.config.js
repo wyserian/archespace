@@ -94,6 +94,7 @@ function seoPlugin() {
       return html.replaceAll('{{SITE_URL}}', siteUrl)
     },
     generateBundle() {
+      if (this.environment?.name !== 'client') return // the site, not the Worker
       this.emitFile({ type: 'asset', fileName: 'robots.txt', source: robotsTxt })
       this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: sitemapXml })
     },
@@ -127,6 +128,7 @@ function excalidrawFontsPlugin() {
       })
     },
     generateBundle() {
+      if (this.environment?.name !== 'client') return // the site, not the Worker
       for (const path of served) {
         this.emitFile({
           type: 'asset',
