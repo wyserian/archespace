@@ -701,7 +701,11 @@ export default function DashboardPage() {
         {/* Page heading */}
         <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
           <div>
-            <h2 className="text-xl font-semibold text-text-primary">{firstSectionLabel}</h2>
+            {selectMode ? (
+              <p className="text-sm font-semibold text-text-primary tabular-nums" aria-live="polite">{selectedCount} selected</p>
+            ) : (
+              <h2 className="text-xl font-semibold text-text-primary">{firstSectionLabel}</h2>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {/* View, sort and select are quiet tools. */}

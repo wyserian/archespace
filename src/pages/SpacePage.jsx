@@ -749,6 +749,9 @@ export default function SpacePage() {
                 where Select was. */}
             {hasContent && (
               <div className="mb-3 flex items-center gap-2">
+                {selectMode && (
+                  <span className="text-sm font-semibold text-text-primary tabular-nums" aria-live="polite">{selectedCount} selected</span>
+                )}
                 {!selectMode && (
                   <div className="flex h-8 sm:h-9 min-w-0 flex-1 sm:max-w-md items-center gap-2 rounded-full bg-bg-card pl-3.5 pr-1.5 focus-within:ring-1 focus-within:ring-accent-border transition-shadow">
                     <Search size={15} className="shrink-0 text-text-muted" />

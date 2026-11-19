@@ -142,10 +142,16 @@ export default function RecycleBinPage() {
           <IconButton icon={ArrowLeft} label="Back" size="md" className="-ml-1.5 sm:hidden" onClick={() => navigate('/app')} />
 
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-semibold text-text-primary">Bin</h1>
-            <p className="text-xs text-text-muted mt-0.5">
-              {total} {total === 1 ? 'item' : 'items'} - deleted items are kept here until permanently removed
-            </p>
+            {selectMode ? (
+              <p className="text-sm font-semibold text-text-primary tabular-nums" aria-live="polite">{selectedCount} selected</p>
+            ) : (
+              <>
+                <h1 className="text-sm font-semibold text-text-primary">Bin</h1>
+                <p className="text-xs text-text-muted mt-0.5">
+                  {total} {total === 1 ? 'item' : 'items'} - deleted items are kept here until permanently removed
+                </p>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">

@@ -1,5 +1,6 @@
 /**
  * BulkSelectionBar.jsx - Floating toolbar for bulk actions on selected rows.
+ * The selected count is shown by the page, beside its Done button.
  */
 import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
@@ -43,12 +44,9 @@ export default function BulkSelectionBar({ count, onClear, actions }) {
       {/* A floating surface, set off the page by a raised background and its
           shadow (no outline); the actions inside are quiet round icon
           buttons, destructive ones in red. */}
-      <div className="flex items-center gap-2 pl-4 pr-2 py-2 rounded-2xl bg-bg-elevated shadow-2xl shadow-black/30">
-        <span className="text-sm font-semibold text-text-primary tabular-nums shrink-0">
-          {count} selected
-        </span>
-        {/* Only the actions wrap (many of them on a narrow phone); the count
-            and the clear button stay on the bar's row. */}
+      <div className="flex items-center gap-2 px-2 py-2 rounded-2xl bg-bg-elevated shadow-2xl shadow-black/30">
+        {/* Only the actions wrap (many of them on a narrow phone); the clear
+            button stays on the bar's row. */}
         <div className="flex flex-wrap items-center gap-0.5">
           {actions.filter(Boolean).map(({ id, label, icon, onClick, variant }) => (
             <IconButton

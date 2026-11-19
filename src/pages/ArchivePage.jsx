@@ -126,10 +126,16 @@ export default function ArchivePage() {
           {/* Phones only: from sm up the sidebar is the way around. */}
           <IconButton icon={ArrowLeft} label="Back" size="md" className="-ml-1.5 sm:hidden" onClick={() => navigate('/app')} />
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-semibold text-text-primary">Archive</h1>
-            <p className="text-xs text-text-muted mt-0.5">
-              {total} archived - hidden from dashboard, not deleted
-            </p>
+            {selectMode ? (
+              <p className="text-sm font-semibold text-text-primary tabular-nums" aria-live="polite">{selectedCount} selected</p>
+            ) : (
+              <>
+                <h1 className="text-sm font-semibold text-text-primary">Archive</h1>
+                <p className="text-xs text-text-muted mt-0.5">
+                  {total} archived - hidden from dashboard, not deleted
+                </p>
+              </>
+            )}
           </div>
           {selectMode && selectableTotal > 0 && (
             <Button variant="ghost" size="sm" icon={ListChecks} iconOnlyOnMobile aria-label="Select all" onClick={selectAll}>
