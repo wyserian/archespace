@@ -7,7 +7,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Plus, CheckSquare, ListChecks, FileDown, Search, SearchX, X, PencilOff, PencilLine, Shield, ShieldCheck, ShieldOff,
   ChevronRight, MoreHorizontal, MoreVertical, Folder, Pin, PinOff, Star, StarOff, Tag, Pencil, Copy, MoveRight, Archive, Trash2,
-  Hourglass, Undo2, Redo2,
+  Hourglass,
 } from 'lucide-react'
 import { ItemTags } from '../components/ItemTags'
 import { parseTags } from '../lib/spaceColors'
@@ -29,7 +29,8 @@ import { SpaceCard } from '../components/space/SpaceCard'
 import { SpaceModal } from '../components/space/SpaceModal'
 import { MoveSpacesDialog } from '../components/space/MoveSpacesDialog'
 import { exportSpaceToPdf } from '../lib/pdfExport'
-import BulkSelectionBar from '../components/BulkSelectionBar'
+import BulkSelectionBar, { SelectedCount } from '../components/BulkSelectionBar'
+import { UndoRedoButtons } from '../components/UndoRedoButtons'
 import { BULK_ICONS } from '../components/BulkSelectionIcons'
 import { ConfirmDialog, Modal } from '../components/ui/UI'
 import { SortMenu } from '../components/ui/SortMenu'
@@ -735,7 +736,7 @@ export default function SpacePage() {
             {hasContent && (
               <div className="mb-3 flex items-center gap-2">
                 {selectMode && (
-                  <span className="text-sm font-semibold text-text-primary tabular-nums" aria-live="polite">{selectedCount} selected</span>
+                  <SelectedCount count={selectedCount} />
                 )}
                 {!selectMode && (
                   <div className="flex h-8 sm:h-9 min-w-0 flex-1 sm:max-w-md items-center gap-2 rounded-full bg-bg-card pl-3.5 pr-1.5 focus-within:ring-1 focus-within:ring-accent-border transition-shadow">
@@ -771,10 +772,7 @@ export default function SpacePage() {
                 <div className="ml-auto flex shrink-0 items-center gap-1.5">
                   {/* Undo, redo, sort, select, then the view toggle last. */}
                   {editable && (
-                    <span className="flex items-center">
-                      <IconButton icon={Undo2} label="Undo item edit" disabled={!board.canUndo} onClick={board.undo} />
-                      <IconButton icon={Redo2} label="Redo item edit" disabled={!board.canRedo} onClick={board.redo} />
-                    </span>
+                    <UndoRedoButtons board={board} />
                   )}
                   {!selectMode && subSpaces.length + items.length > 1 && (
                     <SortMenu value={itemSort} onChange={setItemSort} />

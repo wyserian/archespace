@@ -45,7 +45,7 @@ export default function PasswordResetPage() {
     setSaving(true)
     const { error: updateError } = await updatePasswordAndSignOut(
       password,
-      () => logAudit({ action: 'password_reset' })
+      () => logAudit('password_reset')
     )
     setSaving(false)
     if (updateError) {

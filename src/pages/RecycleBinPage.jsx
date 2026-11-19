@@ -10,7 +10,7 @@ import {
 import { useRecycleBin } from '../hooks/useRecycleBin'
 import { useDualEntitySelection } from '../hooks/useDualEntitySelection'
 import { useToast } from '../context/ToastCore'
-import BulkSelectionBar from '../components/BulkSelectionBar'
+import BulkSelectionBar, { SelectedCount } from '../components/BulkSelectionBar'
 import { BULK_ICONS } from '../components/BulkSelectionIcons'
 import StoredGrid from '../components/StoredGrid'
 import { Spinner, Modal } from '../components/ui/UI'
@@ -143,7 +143,7 @@ export default function RecycleBinPage() {
 
           <div className="flex-1 min-w-0">
             {selectMode ? (
-              <p className="text-sm font-semibold text-text-primary tabular-nums" aria-live="polite">{selectedCount} selected</p>
+              <SelectedCount count={selectedCount} />
             ) : (
               <>
                 <h1 className="text-sm font-semibold text-text-primary">Bin</h1>

@@ -8,7 +8,7 @@ import { ArrowLeft, Archive, RotateCcw, Trash2, CheckSquare, ListChecks } from '
 import { useArchive } from '../hooks/useArchive'
 import { useDualEntitySelection } from '../hooks/useDualEntitySelection'
 import { useToast } from '../context/ToastCore'
-import BulkSelectionBar from '../components/BulkSelectionBar'
+import BulkSelectionBar, { SelectedCount } from '../components/BulkSelectionBar'
 import { BULK_ICONS } from '../components/BulkSelectionIcons'
 import StoredGrid from '../components/StoredGrid'
 import { ConfirmDialog, Spinner } from '../components/ui/UI'
@@ -127,7 +127,7 @@ export default function ArchivePage() {
           <IconButton icon={ArrowLeft} label="Back" size="md" className="-ml-1.5 sm:hidden" onClick={() => navigate('/app')} />
           <div className="flex-1 min-w-0">
             {selectMode ? (
-              <p className="text-sm font-semibold text-text-primary tabular-nums" aria-live="polite">{selectedCount} selected</p>
+              <SelectedCount count={selectedCount} />
             ) : (
               <>
                 <h1 className="text-sm font-semibold text-text-primary">Archive</h1>

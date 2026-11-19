@@ -154,7 +154,7 @@ export function EncryptionProvider({ children }) {
     hideAllItems() // opened locked items need the PIN again
     setCryptoKey(null)
     setUnlockError('')
-    logAudit({ action: 'vault_lock' })
+    logAudit('vault_lock')
   }, [])
 
   const applyUnlockedKey = useCallback(async (key) => {
@@ -179,7 +179,7 @@ export function EncryptionProvider({ children }) {
       const key = await unlockUserVault(userId, pin)
       clearClientRateLimit(rateKey)
       await applyUnlockedKey(key)
-      logAudit({ action: 'vault_unlock' })
+      logAudit('vault_unlock')
       return key
     } catch (err) {
       const msg = err?.message || "Couldn't unlock vault."
@@ -226,7 +226,7 @@ export function EncryptionProvider({ children }) {
     try {
       const key = await unlockVaultWithPasskey(userId)
       await applyUnlockedKey(key)
-      logAudit({ action: 'vault_unlock' })
+      logAudit('vault_unlock')
       return key
     } catch (err) {
       const msg = err?.message || "Couldn't unlock with passkey."
@@ -249,7 +249,7 @@ export function EncryptionProvider({ children }) {
       const key = await enrollPasskeyVault(userId, pin, user?.email || 'ArcheSpace vault', label)
       await applyUnlockedKey(key)
       await refreshPasskeys()
-      logAudit({ action: 'vault_passkey_enroll' })
+      logAudit('vault_passkey_enroll')
     } catch (err) {
       const msg = err?.message || "Couldn't add passkey."
       setUnlockError(msg)
@@ -263,7 +263,7 @@ export function EncryptionProvider({ children }) {
     if (!userId) throw new Error('Not signed in')
     await removePasskeyVault(id)
     await refreshPasskeys()
-    logAudit({ action: 'vault_passkey_remove' })
+    logAudit('vault_passkey_remove')
   }, [userId, refreshPasskeys])
 
   // Create the vault but do NOT unlock yet: the caller shows the one-time
@@ -274,7 +274,7 @@ export function EncryptionProvider({ children }) {
     setUnlockError('')
     try {
       const result = await setupUserVault(userId, pin)
-      logAudit({ action: 'vault_setup' })
+      logAudit('vault_setup')
       // A brand-new account starts with a short tour (never after a reset).
       await createWelcomeSpace(userId, result.masterKey)
       return result
@@ -305,7 +305,7 @@ export function EncryptionProvider({ children }) {
         // Best-effort; a stale local passkey just fails to unlock later.
       }
       await refreshPasskeys()
-      logAudit({ action: 'vault_reset' })
+      logAudit('vault_reset')
       return result
     } catch (err) {
       const msg = err?.message || "Couldn't reset the vault."
@@ -330,7 +330,7 @@ export function EncryptionProvider({ children }) {
     try {
       const key = await changeVaultPinWithVerification(userId, currentPin, newPin)
       await applyUnlockedKey(key)
-      logAudit({ action: 'vault_pin_change' })
+      logAudit('vault_pin_change')
     } catch (err) {
       const msg = err?.message || "Couldn't change PIN."
       setUnlockError(msg)
@@ -347,7 +347,7 @@ export function EncryptionProvider({ children }) {
     try {
       const { masterKey, recoveryCode } = await createVaultRecoveryCode(userId, currentPin)
       await applyUnlockedKey(masterKey)
-      logAudit({ action: 'recovery_code_created' })
+      logAudit('recovery_code_created')
       return { recoveryCode }
     } catch (err) {
       const msg = err?.message || "Couldn't set up recovery code."
@@ -366,7 +366,7 @@ export function EncryptionProvider({ children }) {
       const { masterKey, recoveryCode: nextRecoveryCode } =
         await recoverVaultWithRecoveryCode(userId, recoveryCode, newPin)
       await applyUnlockedKey(masterKey)
-      logAudit({ action: 'vault_pin_reset' })
+      logAudit('vault_pin_reset')
       return { recoveryCode: nextRecoveryCode }
     } catch (err) {
       const msg = err?.message || "Couldn't change PIN."
@@ -384,7 +384,7 @@ export function EncryptionProvider({ children }) {
     try {
       const { masterKey, recoveryCode: nextRecoveryCode } =
         await recoverVaultWithRecoveryCode(userId, recoveryCode, newPin)
-      logAudit({ action: 'vault_pin_reset' })
+      logAudit('vault_pin_reset')
       // Unlock is deferred until the new recovery code is acknowledged.
       return { masterKey, recoveryCode: nextRecoveryCode }
     } catch (err) {

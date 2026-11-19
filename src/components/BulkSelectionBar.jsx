@@ -1,6 +1,6 @@
 /**
- * BulkSelectionBar.jsx - Floating toolbar for bulk actions on selected rows.
- * The selected count is shown by the page, beside its Done button.
+ * BulkSelectionBar.jsx - Floating toolbar for bulk actions on selected rows,
+ * and SelectedCount, the "N selected" a page shows beside its Done button.
  */
 import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
@@ -66,3 +66,7 @@ export default function BulkSelectionBar({ count, onClear, actions }) {
   )
 }
 
+/** "N selected", read out as it changes. */
+export function SelectedCount({ count }) {
+  return <p className="text-sm font-semibold text-text-primary tabular-nums" aria-live="polite">{count} selected</p>
+}

@@ -351,7 +351,7 @@ export default function SettingsPage() {
     }
     const { error } = await updatePasswordAndSignOut(
       newPassword,
-      () => logAudit({ action: 'password_change' })
+      () => logAudit('password_change')
     )
     setPasswordLoading(false)
     if (error) {

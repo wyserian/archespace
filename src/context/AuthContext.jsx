@@ -112,7 +112,7 @@ export function AuthProvider({ children }) {
    */
   const signOut = async (options = { scope: 'local' }) => {
     // Record the logout while the session (and auth.uid()) is still valid.
-    await logAudit({ action: 'logout' })
+    await logAudit('logout')
     await supabase.offline?.sync() // send what waits, while still signed in
     await leaveDevice()
     setPasswordRecovery(false)

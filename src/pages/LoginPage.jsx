@@ -230,7 +230,7 @@ export default function LoginPage() {
       return
     }
 
-    logAudit({ action: 'login' })
+    logAudit('login')
     clearClientRateLimit(loginRateKey)
     setCooldownTick(tick => tick + 1)
     await saveBrowserCredential(email, password)

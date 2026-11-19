@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, Folder, FolderPlus,
   Trash2, Archive, Command, CheckSquare, ListChecks, Settings, Lock, Menu, Keyboard, LogOut,
-  Star, Bell, Hourglass, X, Undo2, Redo2,
+  Star, Bell, Hourglass, X,
 } from 'lucide-react'
 import SpaceItem from '../components/SpaceItem'
 import ItemBoardModals from '../components/ItemBoardModals'
@@ -21,7 +21,8 @@ import { useShortcut } from '../context/ShortcutsCore'
 import GlobalSearchResults from '../components/GlobalSearchResults'
 import { useDragReorder } from '../hooks/useDragReorder'
 import { useCommandPalette } from '../context/CommandPaletteCore'
-import BulkSelectionBar from '../components/BulkSelectionBar'
+import BulkSelectionBar, { SelectedCount } from '../components/BulkSelectionBar'
+import { UndoRedoButtons } from '../components/UndoRedoButtons'
 import { BULK_ICONS } from '../components/BulkSelectionIcons'
 import { useAuth } from '../context/AuthContextCore'
 import { useEncryption } from '../context/EncryptionCore'
@@ -695,16 +696,13 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
           <div>
             {selectMode && (
-              <p className="text-sm font-semibold text-text-primary tabular-nums" aria-live="polite">{selectedCount} selected</p>
+              <SelectedCount count={selectedCount} />
             )}
           </div>
           <div className="flex items-center gap-2">
             {/* Undo, redo, sort, select, then the view toggle last. */}
             {hasEntries && !selectMode && (
-              <span className="flex items-center">
-                <IconButton icon={Undo2} label="Undo item edit" disabled={!board.canUndo} onClick={board.undo} />
-                <IconButton icon={Redo2} label="Redo item edit" disabled={!board.canRedo} onClick={board.redo} />
-              </span>
+              <UndoRedoButtons board={board} />
             )}
             {topLevelSpaces.length + dashboardItems.length > 1 && !selectMode && (
               <SortMenu value={spaceSort} onChange={setSpaceSort} />
