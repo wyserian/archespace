@@ -5,7 +5,11 @@
 [![Live](https://img.shields.io/badge/live-archespace.app-32d3aa)](https://archespace.app)
 [![License](https://img.shields.io/github/license/wyserian/archespace)](LICENSE)
 
-ArcheSpace is an open-source, encrypted space for capturing and organising your information, notes, projects, secrets, code, checklists and ideas. Group them into spaces, and fill each space with the content type that fits: plain notes, rich text documents, lists and checklists, tables, Kanban boards, code snippets and whiteboards. Anything sensitive can be protected so it only opens with your vault PIN. Everything is taggable, searchable and kept in one place, synced across your devices.
+ArcheSpace is a personal private space, made open for everyone.
+
+It was built to keep everything in one place: projects and their secrets, ideas, features and bugs, and any random data. Most note apps are a flat list behind an "Add note" button; ArcheSpace is structured more like a file manager: spaces inside spaces, each holding the right kind of item - a note, rich text, a list or checklist, a table, a Kanban board, code or a whiteboard.
+
+It started as a tool for one person, went online to be usable from anywhere, and is open for anyone to use.
 
 Privacy is built in, not bolted on. ArcheSpace is a self-hostable web app with Supabase sync and a client-side encrypted vault, so your content stays private even from the app's owner and developers. It follows a zero-knowledge architecture: everything is encrypted in your browser and the backend only ever stores ciphertext, so the server, its operators, and the developers never see your data in readable form.
 

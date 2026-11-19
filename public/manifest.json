@@ -1,7 +1,7 @@
 {
   "name": "ArcheSpace",
   "short_name": "ArcheSpace",
-  "description": "An open-source, zero-knowledge encrypted space to capture and organise your notes, projects, secrets, code, checklists and ideas, synced across all your devices.",
+  "description": "An open source, zero knowledge encrypted space to organize your notes, projects, secrets, code, and ideas in flexible spaces, just like a file manager, with everything synced across all your devices.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#18181f",

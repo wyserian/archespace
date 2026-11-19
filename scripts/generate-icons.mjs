@@ -51,7 +51,7 @@ const ogImage = () => `
     ${mark(203, 300)}
   </g>
   <text x="460" y="305" font-family="Arial, sans-serif" font-size="84" font-weight="700" fill="#ffffff">ArcheSpace</text>
-  <text x="462" y="368" font-family="Arial, sans-serif" font-size="34" fill="#aeb4c2">Everything in One Encrypted Space</text>
+  <text x="462" y="368" font-family="Arial, sans-serif" font-size="34" fill="#aeb4c2">Your Private Space</text>
   <text x="100" y="580" font-family="Arial, sans-serif" font-size="26" font-weight="600" fill="${MINT}">archespace.app</text>
 </svg>`
 

@@ -1,34 +1,55 @@
 /**
- * HomePage.jsx - The public landing page: what ArcheSpace is, its features,
- * how it works (what the server stores, and checking what you run), how to
- * get in touch, and a compact footer.
+ * HomePage.jsx - The public landing page: what ArcheSpace is, why it exists
+ * and what it offers, how it works (what the server stores, and checking what
+ * you run), how to get in touch, and a compact footer.
  * Left-aligned and plain, on the always-dark landing palette.
  */
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
+  Archive,
   ArchiveRestore,
+  ArrowLeft,
   ArrowRight,
+  ArrowUpDown,
+  ArrowUpRight,
+  Bell,
   BellRing,
   CheckCircle2,
+  ChevronDown,
+  ChevronsLeft,
+  Command,
   FileDown,
   Fingerprint,
   FolderTree,
   GitCommitHorizontal,
   HardDrive,
+  Hourglass,
+  Keyboard,
   Layers,
+  LayoutGrid,
+  List,
+  Lock,
   LockKeyhole,
   Mail,
   Menu,
-  Palette,
+  MoreVertical,
+  Pin,
+  Plus,
   RefreshCw,
   Search,
   Server,
+  Settings,
   ShieldAlert,
   ShieldCheck,
   Smartphone,
+  SquareCheck,
+  Star,
+  Trash2,
+  Undo2,
   X,
 } from 'lucide-react'
+import { TypeBadge } from '../components/ui/TypeBadge'
 import { APP_VERSION, COMMIT_URL, MOBILE_REPO_URL, REPO_URL } from '../lib/buildInfo'
 import { enterLocalMode } from '../lib/localMode'
 
@@ -54,32 +75,46 @@ const btnGhost =
   'inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/15 transition-colors'
 const navLink =
   'rounded-lg px-3 py-2 text-sm text-white/70 hover:text-white transition-colors'
+// A quiet tile link (the hero's other ways in, the source links).
+const tileClass =
+  'flex min-h-[44px] items-center gap-3 rounded-xl bg-white/[0.05] p-3.5 text-left transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300'
 
 // The Android app, linked under the hero's buttons: its latest release (APK).
 const ANDROID_APP_URL = `${MOBILE_REPO_URL}/releases/latest`
 
 // Section links shown in the header (desktop) and the mobile menu.
 const navSections = [
-  { id: 'top', href: '#top', label: 'Home' },
-  { id: 'features', href: '#features', label: 'Features' },
-  { id: 'how-it-works', href: '#how-it-works', label: 'How It Works' },
+  { id: 'why', href: '#why', label: 'Why' },
+  { id: 'how-it-works', href: '#how-it-works', label: 'How' },
   { id: 'contact', href: '#contact', label: 'Contact' },
+]
+
+// The kinds of item a space holds, shown in Why with their real type badges.
+const itemKinds = [
+  ['textbox', 'Note'],
+  ['richtext', 'Rich text'],
+  ['menu_list', 'List'],
+  ['checkbox_list', 'Checklist'],
+  ['table', 'Table'],
+  ['kanban', 'Kanban board'],
+  ['code', 'Code'],
+  ['whiteboard', 'Whiteboard'],
 ]
 
 // Every feature worth knowing about, each in a line.
 const features = [
-  { icon: FolderTree, title: 'Spaces', desc: 'Group everything into spaces with sub-spaces as deep as you like, with colours, tags and pins.' },
-  { icon: Layers, title: 'Item types', desc: 'Notes, rich text, lists, checklists, cards, tables, Kanban boards, code and whiteboards; colour, star, copy, duplicate or move any of them.' },
+  { icon: FolderTree, title: 'Spaces', desc: 'Spaces inside spaces, as deep as you like, with colours, tags and pins.' },
+  { icon: Layers, title: 'Item types', desc: 'Notes, rich text, lists, checklists, cards, tables, Kanban boards, code and whiteboards.' },
   { icon: Search, title: 'Search', desc: 'Find anything across all your spaces, and filter by tag.' },
-  { icon: BellRing, title: 'Reminders', desc: 'Once, repeating, or until you turn them off, with notifications (sound or silent) and a list of them all.' },
-  { icon: HardDrive, title: 'No account needed', desc: 'Use it without signing up; everything stays encrypted on your device, with no server at all.' },
-  { icon: ShieldCheck, title: 'Protected, read-only, self-destruct', desc: 'Hide sensitive items and spaces until your vault PIN opens them, freeze a space against edits, or set one to delete itself for good at a set time.' },
-  { icon: Fingerprint, title: 'Biometrics and two-factor', desc: 'Unlock with a fingerprint, face or passkey, lock when your screen locks, and add authenticator codes at sign-in.' },
-  { icon: RefreshCw, title: 'Sync and offline', desc: 'Syncs across your devices, and keeps working without a connection.' },
-  { icon: FileDown, title: 'Backups and export', desc: 'Encrypted backup files, and PDF export of a space or an item.' },
-  { icon: ArchiveRestore, title: 'Starred, self-destruct, archive and bin', desc: 'Star what matters, see what is set to self-destruct, archive what is done, and restore what you deleted.' },
-  { icon: Palette, title: 'Themes and shortcuts', desc: 'Dark and light themes with accents, a command palette and keyboard shortcuts.' },
-  { icon: Server, title: 'Open source and self-hostable', desc: 'MIT licensed; host it yourself on your own Supabase project.' },
+  { icon: BellRing, title: 'Reminders', desc: 'One-off or repeating notifications, all in one list.' },
+  { icon: HardDrive, title: 'No account needed', desc: 'Use it without signing up; everything stays encrypted on your device.' },
+  { icon: ShieldCheck, title: 'Protected, read-only, self-destruct', desc: 'Keep items behind your PIN, freeze a space against edits, or have one delete itself on time.' },
+  { icon: Fingerprint, title: 'Biometrics and two-factor', desc: 'Unlock with a fingerprint, face or passkey; authenticator codes at sign-in.' },
+  { icon: RefreshCw, title: 'Sync and offline', desc: 'Synced across your devices, and fully usable offline.' },
+  { icon: FileDown, title: 'Backups and export', desc: 'Encrypted backups that restore on web or mobile, and PDF export.' },
+  { icon: ArchiveRestore, title: 'Starred, archive and bin', desc: "Star what matters, archive what's done, restore what you deleted." },
+  { icon: Undo2, title: 'Undo, shortcuts and themes', desc: 'Undo and redo edits, a command palette, keyboard shortcuts, and dark and light themes.' },
+  { icon: Server, title: 'Open source and self-hostable', desc: 'MIT licensed; host it on your own Supabase project.' },
 ]
 
 const steps = [
@@ -102,10 +137,8 @@ const steps = [
 
 const serverFacts = [
   'Two separate secrets: your login proves who you are, your vault key unlocks your content.',
-  'Your vault key is created on your device and never leaves it.',
   'We store only unreadable ciphertext plus plain metadata: ids, timestamps, and order.',
   'There is no reset link and no backdoor. Lose both your PIN and recovery code, and the data can never be unlocked again.',
-  'Without an account there is no server at all: everything stays on your device.',
 ]
 
 /** A section heading: a plain title and an optional one-line intro. */
@@ -113,7 +146,7 @@ function SectionHeading({ title, children }) {
   return (
     <div className="reveal max-w-2xl">
       <h2 className="text-2xl font-semibold tracking-normal sm:text-3xl">{title}</h2>
-      {children ? <p className="mt-3 max-w-xl text-sm leading-6 text-white/62">{children}</p> : null}
+      {children ? <p className="mt-3 max-w-xl text-[15px] leading-6 text-white/62 sm:text-sm">{children}</p> : null}
     </div>
   )
 }
@@ -246,18 +279,23 @@ export default function HomePage() {
             ARCHE<span className="text-white">SPACE</span>
           </a>
 
-          <nav className="hidden items-center gap-1 lg:flex">
-            {navSections.map(section => (
-              <a
-                key={section.id}
-                href={section.href}
-                aria-current={activeSection === section.id ? 'true' : undefined}
-                className={`${navLink} ${activeSection === section.id ? 'text-white' : ''}`}
-              >
-                {section.label}
-              </a>
-            ))}
-          </nav>
+          <div className="hidden items-center gap-1 lg:flex">
+            <nav className="flex items-center gap-1">
+              {navSections.map(section => (
+                <a
+                  key={section.id}
+                  href={section.href}
+                  aria-current={activeSection === section.id ? 'true' : undefined}
+                  className={`${navLink} ${activeSection === section.id ? 'text-white' : ''}`}
+                >
+                  {section.label}
+                </a>
+              ))}
+            </nav>
+            {/* Account actions where people look for them. */}
+            <Link to="/login" className={`${navLink} ml-3`}>Sign in</Link>
+            <Link to="/signup" className={`${btnPrimary} ml-1 px-4 py-2`}>Get started</Link>
+          </div>
 
           <div className="flex items-center gap-2 lg:hidden">
             <button
@@ -267,7 +305,7 @@ export default function HomePage() {
               aria-label={menuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={menuOpen}
               aria-controls="home-mobile-menu"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-white transition-colors hover:bg-white/15"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-white/10 text-white transition-colors hover:bg-white/15"
             >
               {menuOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
@@ -287,7 +325,11 @@ export default function HomePage() {
                   {section.label}
                 </a>
               ))}
-</nav>
+              <div className="mt-2 flex gap-3 border-t border-white/10 pt-4 pb-2">
+                <Link to="/signup" className={`${btnPrimary} min-h-11`}>Get started</Link>
+                <Link to="/login" className={`${btnGhost} min-h-11`}>Sign in</Link>
+              </div>
+            </nav>
           </div>
         )}
       </header>
@@ -296,73 +338,267 @@ export default function HomePage() {
       <section id="top" className="relative flex min-h-[100svh] items-center overflow-hidden px-4 pb-24 pt-28 sm:px-6">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(50,211,170,0.14),transparent_55%),linear-gradient(180deg,#0f1117_0%,#12151d_100%)]" />
         <div className="hero-enter relative z-10 mx-auto w-full max-w-6xl">
-          {/* Size carries the emphasis: a quiet lead-in, then the key words
-              large and bright (no second colour to compete with the buttons). */}
-          <h1 className="tracking-[-0.025em]">
-            <span className="block text-[clamp(1.5rem,min(6.6vw,6.8vh),2.625rem)] font-medium leading-tight text-white/65">
-              Everything in One{' '}
-            </span>
-            <span className="mt-1 block text-[clamp(2rem,min(9.4vw,11.6vh),4.5rem)] font-bold leading-[1.02] text-white">
-              Encrypted Space
-            </span>
+          {/* Two lines on a phone, one line from the sm width up: a quiet
+              lead-in, then the key words bright (no second colour to compete
+              with the buttons). */}
+          <h1 className="text-[clamp(1.75rem,8.5vw,2.5rem)] font-bold leading-[1.1] tracking-[-0.025em] text-white sm:whitespace-nowrap sm:text-[clamp(1.25rem,min(6vw,9vh),3.5rem)] sm:leading-[1.05]">
+            <span className="block font-medium text-white/65 sm:inline">Everything in</span>{' '}Private Space
           </h1>
-          <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-white/65 sm:text-[17px] sm:leading-[30px]">
-            An open-source, zero-knowledge encrypted space to capture and organise your notes,
-            projects, secrets, code, checklists and ideas, synced across all your devices.
+          <p className="mt-4 max-w-xl text-base leading-relaxed text-white/65 sm:text-lg">
+            Notes, projects, snippets and drawings, organized like a file manager.
           </p>
 
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <Link to="/signup" className={`${btnPrimary} sm:px-6 sm:py-3`}>
+          <div className="mt-9 flex flex-wrap gap-3">
+            <Link to="/signup" className={`${btnPrimary} min-h-11 sm:px-6 sm:py-3`}>
               Get started
               <ArrowRight size={16} />
             </Link>
-            <Link to="/login" className={`${btnGhost} sm:px-6 sm:py-3`}>
+            <Link to="/login" className={`${btnGhost} min-h-11 sm:px-6 sm:py-3`}>
               Sign in
             </Link>
           </div>
 
-          {/* Other ways in, set apart from the main actions by a hairline. */}
-          <div className="mt-10 max-w-md space-y-1 border-t border-white/10 pt-5">
+          {/* Other ways in: two quiet tiles under the main actions, each with
+              what it is and where it goes. */}
+          <div className="mt-10 grid max-w-2xl gap-3 sm:grid-cols-2">
             <button
               type="button"
               onClick={enterLocalMode}
-              className="group flex min-h-[44px] w-full items-center gap-3 text-left text-sm font-medium text-emerald-200 transition-colors hover:text-emerald-100"
+              className={`group ${tileClass}`}
             >
-              <HardDrive size={16} className="shrink-0" />
-              <span>
-                Try it without an account
-                <span className="block text-xs font-normal text-white/50">
-                  No sign-up; everything stays encrypted on your device.
-                </span>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-300/10 text-emerald-200">
+                <HardDrive size={17} />
               </span>
-              <ArrowRight size={14} className="ml-auto shrink-0 transition-transform group-hover:translate-x-0.5" />
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-white">Try it without an account</span>
+                <span className="block text-xs leading-5 text-white/50">No sign-up; encrypted on this device</span>
+              </span>
+              <ArrowRight size={15} className="ml-auto shrink-0 text-white/40 transition group-hover:translate-x-0.5 group-hover:text-emerald-200" />
             </button>
             <a
               href={ANDROID_APP_URL}
               target="_blank"
               rel="noreferrer"
-              className="group flex min-h-[44px] w-full items-center gap-3 text-sm font-medium text-white/70 transition-colors hover:text-white"
+              className={`group ${tileClass}`}
             >
-              <Smartphone size={16} className="shrink-0 text-white/55" />
-              Get the Android app
-              <ArrowRight size={14} className="ml-auto shrink-0 transition-transform group-hover:translate-x-0.5" />
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/80">
+                <Smartphone size={17} />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-white">Get the Android app</span>
+                <span className="block text-xs leading-5 text-white/50">Latest release, from GitHub</span>
+              </span>
+              <ArrowUpRight
+                size={15}
+                aria-hidden="true"
+                className="ml-auto shrink-0 text-white/40 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-emerald-200"
+              />
+              <span className="sr-only">(opens on GitHub)</span>
             </a>
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="scroll-mt-20 border-t border-white/5 bg-[#101820] px-4 py-20 sm:px-6">
+      {/* Why: the story behind it, then what it offers */}
+      <section id="why" className="scroll-mt-20 border-t border-white/5 bg-[#0f1117] px-4 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-6xl">
-          <SectionHeading title="Features" />
+          <SectionHeading title="Why ArcheSpace" />
+          <div className="mt-6 grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+            <div className="reveal max-w-2xl space-y-6 text-[15px] leading-7 text-white/72">
+              {/* The lead, its two key ideas picked out in the accent. */}
+              <p className="text-base leading-7 text-white sm:text-lg sm:leading-8">
+                An open source, <span className="font-semibold text-emerald-200">zero knowledge encrypted</span> space
+                to organize your notes, projects, secrets, code, and ideas in flexible spaces,{' '}
+                <span className="font-semibold text-emerald-200">just like a file manager</span>, with everything
+                synced across all your devices.
+              </p>
 
-          <ul className="reveal mt-10 grid gap-x-10 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
+              {/* The story, set off as a quote. */}
+              <p className="border-l-2 border-emerald-300/60 pl-4 text-white/80">
+                A personal private space, built to keep everything in one place: projects and their
+                secrets, ideas, features and bugs, and any random data. It started as a space for one
+                person, then went public to be usable from anywhere, and is now open for anyone.
+              </p>
+
+              {/* The file-manager idea, its kinds of item as the app's own badges. */}
+              <div>
+                <p>
+                  Most note apps are a flat list behind an &quot;Add note&quot; button. ArcheSpace is
+                  structured more like a file manager: spaces inside spaces, each holding the right kind
+                  of item:
+                </p>
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {itemKinds.map(([type, label]) => (
+                    <li
+                      key={type}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.05] py-1 pl-1 pr-2.5 text-xs text-white/80"
+                    >
+                      <TypeBadge type={type} size={11} />
+                      {label}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* The web app as it looks (dark theme, mint accent): the sidebar,
+                a space open with its toolbar, and its items as cards. A
+                picture only (not interactive). */}
+            <figure
+              role="img"
+              aria-label="The ArcheSpace web app: the Projects space open, with a Kanban roadmap, a bug checklist, protected API keys and a code snippet as cards."
+              className="reveal overflow-hidden rounded-2xl border border-white/10 bg-[#0f1117] shadow-2xl shadow-black/40"
+            >
+              <div aria-hidden="true" className="flex text-[#f5f7f2] [zoom:1.35] sm:[zoom:1]">
+                {/* Sidebar */}
+                <div className="hidden w-[112px] shrink-0 flex-col bg-[#151b21] px-2 py-2.5 sm:flex">
+                  <div className="flex items-center justify-between px-1">
+                    <p className="text-[10px] font-bold tracking-[0.03em] text-[#32d3aa]">ARCHE<span className="text-white">SPACE</span></p>
+                    <ChevronsLeft size={10} className="text-[#7b8e85]" />
+                  </div>
+                  <p className="mt-3 flex items-center gap-1.5 px-1 text-[8px] text-[#a8b7ad]">
+                    <LayoutGrid size={10} /> All spaces <span className="ml-auto text-[#7b8e85]">6</span>
+                  </p>
+                  <p className="mt-2.5 flex items-center gap-0.5 px-1 text-[6.5px] font-semibold uppercase tracking-wide text-[#7b8e85]">
+                    Spaces <ChevronDown size={8} />
+                  </p>
+                  {['Projects', 'Personal', 'Side ideas'].map((name, i) => (
+                    <p
+                      key={name}
+                      className={`mt-0.5 truncate rounded-md px-2 py-[3px] text-[8px] ${i === 0 ? 'bg-white/[0.07] font-semibold text-white' : 'text-[#a8b7ad]'}`}
+                    >
+                      {name}
+                    </p>
+                  ))}
+                  <p className="mt-2.5 px-1 text-[6.5px] font-semibold uppercase tracking-wide text-[#7b8e85]">Library</p>
+                  {[[Bell, 'Reminders'], [Star, 'Starred', 1], [Hourglass, 'Self-destruct'], [Archive, 'Archive'], [Trash2, 'Bin']].map(([Icon, name, count]) => (
+                    <p key={name} className="mt-1 flex items-center gap-1.5 px-1 text-[8px] text-[#a8b7ad]">
+                      <Icon size={10} /> {name}
+                      {count && <span className="ml-auto text-[#7b8e85]">{count}</span>}
+                    </p>
+                  ))}
+                  <div className="mt-auto pt-4">
+                    {[[Command, 'Commands'], [Keyboard, 'Shortcuts'], [Lock, 'Lock vault'], [Settings, 'Settings']].map(([Icon, name]) => (
+                      <p key={name} className="mt-1 flex items-center gap-1.5 px-1 text-[8px] text-[#a8b7ad]">
+                        <Icon size={10} /> {name}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+
+                {/* The open space */}
+                <div className="min-w-0 flex-1">
+                  {/* Header */}
+                  <div className="flex items-center gap-2 bg-[#121820] px-3 py-2">
+                    <ArrowLeft size={11} className="text-[#a8b7ad]" />
+                    <p className="truncate text-[10px] font-semibold">Projects</p>
+                    <span className="ml-auto flex shrink-0 items-center gap-1 rounded-md bg-[#32d3aa] px-2 py-1 text-[8px] font-semibold text-[#0c1a16]">
+                      <Plus size={10} /> New
+                    </span>
+                    <MoreVertical size={11} className="shrink-0 text-[#a8b7ad]" />
+                  </div>
+
+                  <div className="p-2.5">
+                    {/* Toolbar */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full bg-[#151b21] px-2.5 py-1 text-[8px] text-[#7b8e85]">
+                        <Search size={10} /> <span className="truncate">Search this space</span>
+                      </div>
+                      <span className="flex shrink-0 rounded-md bg-[#151b21] p-0.5">
+                        <span className="rounded bg-[#32d3aa]/20 p-0.5 text-[#32d3aa]"><LayoutGrid size={9} /></span>
+                        <span className="p-0.5 text-[#7b8e85]"><List size={9} /></span>
+                      </span>
+                      <span className="flex shrink-0 items-center gap-1 text-[8px] text-[#a8b7ad]"><ArrowUpDown size={9} /> Custom</span>
+                      <span className="hidden shrink-0 items-center gap-1 text-[8px] text-[#a8b7ad] lg:flex"><SquareCheck size={9} /> Select</span>
+                    </div>
+
+                    {/* Cards */}
+                    <div className="mt-2.5 grid gap-2 sm:grid-cols-2">
+                      {/* Kanban */}
+                      <div className="rounded-xl bg-[#151b21] p-2">
+                        <div className="flex items-center gap-1.5">
+                          <Pin size={10} className="shrink-0 fill-[#32d3aa] text-[#32d3aa]" />
+                          <TypeBadge type="kanban" size={9} />
+                          <p className="truncate text-[9px] font-semibold">Roadmap</p>
+                          <Star size={9} className="shrink-0 fill-[#32d3aa] text-[#32d3aa]" />
+                          <MoreVertical size={10} className="ml-auto shrink-0 text-[#7b8e85]" />
+                        </div>
+                        <div className="mt-2 grid grid-cols-3 gap-1">
+                          {[['To do', ['Sync', 'Tags']], ['Doing', ['Export']], ['Done', ['Search', 'Login']]].map(([stage, cards]) => (
+                            <div key={stage} className="rounded-lg border border-[#2c3938] bg-[#0f1419] p-1">
+                              <p className="text-[6.5px] font-semibold text-[#a8b7ad]">{stage}</p>
+                              {cards.map(card => (
+                                <p key={card} className="mt-1 truncate rounded bg-[#1b2427] px-1 py-0.5 text-[6.5px]">{card}</p>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Checklist */}
+                      <div className="rounded-xl bg-[#151b21] p-2">
+                        <div className="flex items-center gap-1.5">
+                          <TypeBadge type="checkbox_list" size={9} />
+                          <p className="truncate text-[9px] font-semibold">Bugs to fix</p>
+                          <MoreVertical size={10} className="ml-auto shrink-0 text-[#7b8e85]" />
+                        </div>
+                        <div className="mt-1.5 h-1 rounded-full bg-[#1b2427]">
+                          <div className="h-1 w-1/2 rounded-full bg-[#32d3aa]" />
+                        </div>
+                        {[['Login loop on Safari', true], ['Slow search', true], ['Tag colours', false], ['Export date', false]].map(([task, done]) => (
+                          <p key={task} className="mt-1 flex items-center gap-1.5 text-[8px]">
+                            <span className={`h-2.5 w-2.5 shrink-0 rounded-sm border ${done ? 'border-[#32d3aa] bg-[#32d3aa]' : 'border-[#7b8e85]'}`} />
+                            <span className={`truncate ${done ? 'text-[#7b8e85] line-through' : ''}`}>{task}</span>
+                          </p>
+                        ))}
+                        <p className="mt-1 flex items-center gap-1 text-[7px] text-[#7b8e85]"><Plus size={8} /> Add item</p>
+                      </div>
+
+                      {/* Protected (from the sm width) */}
+                      <div className="hidden rounded-xl bg-[#151b21] p-2 sm:block">
+                        <div className="flex items-center gap-1.5">
+                          <TypeBadge type="textbox" size={9} />
+                          <p className="truncate text-[9px] font-semibold">API keys</p>
+                          <MoreVertical size={10} className="ml-auto shrink-0 text-[#7b8e85]" />
+                        </div>
+                        <div className="mt-2 flex flex-col items-center rounded-lg border border-[#2c3938] bg-[#0f1419] py-3">
+                          <ShieldCheck size={13} className="text-[#a8b7ad]" />
+                          <p className="mt-1 text-[8px] font-medium">Protected</p>
+                          <p className="text-[7px] text-[#7b8e85]">Opens with your vault PIN</p>
+                        </div>
+                      </div>
+
+                      {/* Code (from the sm width) */}
+                      <div className="hidden rounded-xl bg-[#151b21] p-2 sm:block">
+                        <div className="flex items-center gap-1.5">
+                          <TypeBadge type="code" size={9} />
+                          <p className="truncate text-[9px] font-semibold">Deploy script</p>
+                          <MoreVertical size={10} className="ml-auto shrink-0 text-[#7b8e85]" />
+                        </div>
+                        <div className="mt-2 rounded-lg border border-[#2c3938] bg-[#0f1419] p-2 font-mono text-[7px] leading-[13px] text-[#d4dad4]">
+                          <p className="truncate"><span className="text-[#c792ea]">npm</span> run build</p>
+                          <p className="truncate"><span className="text-[#c792ea]">npx</span> wrangler deploy</p>
+                          <p className="truncate text-[#7b8e85]"># done in 42s</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <figcaption className="border-t border-white/5 bg-[#151b21] px-3 py-1.5 text-[10px] text-white/45">
+                A space in the web app
+              </figcaption>
+            </figure>
+          </div>
+
+          <h3 className="reveal mt-14 text-lg font-semibold text-white">Features</h3>
+          <ul className="reveal mt-6 grid gap-x-10 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
             {features.map(({ icon: Icon, title, desc }) => (
               <li key={title} className="flex gap-3">
                 <Icon size={18} className="mt-0.5 shrink-0 text-emerald-200" />
                 <div>
                   <h3 className="text-sm font-semibold text-white">{title}</h3>
-                  <p className="mt-1 text-sm leading-6 text-white/62">{desc}</p>
+                  <p className="mt-1 text-[15px] leading-6 text-white/62 sm:text-sm">{desc}</p>
                 </div>
               </li>
             ))}
@@ -370,8 +606,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* How it works, ending with what the server stores */}
-      <section id="how-it-works" className="scroll-mt-20 bg-[#0f1117] px-4 py-20 sm:px-6">
+      {/* How: the steps, then what the server stores */}
+      <section id="how-it-works" className="scroll-mt-20 border-t border-white/5 bg-[#101820] px-4 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-6xl">
           <SectionHeading title="How It Works" />
 
@@ -384,17 +620,13 @@ export default function HomePage() {
                   </span>
                   <h3 className="text-lg font-semibold text-white">{title}</h3>
                 </div>
-                <p className="mt-3 text-sm leading-6 text-white/62">{body}</p>
+                <p className="mt-3 text-[15px] leading-6 text-white/62 sm:text-sm">{body}</p>
               </li>
             ))}
           </ol>
 
           <div className="reveal mt-12">
             <h3 className="text-lg font-semibold text-white">What the Server Stores</h3>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-white/62">
-              Your vault key never reaches us, so nothing on the server can be read by us or
-              anyone else.
-            </p>
 
             <div className="mt-8 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
               <div className="grid gap-4 sm:grid-cols-2">
@@ -433,7 +665,7 @@ export default function HomePage() {
                 {serverFacts.map(fact => (
                   <li key={fact} className="flex items-start gap-3 rounded-lg bg-white/[0.05] p-4">
                     <ShieldCheck size={16} className="mt-0.5 shrink-0 text-emerald-200" />
-                    <span className="text-sm leading-6 text-white/72">{fact}</span>
+                    <span className="text-[15px] leading-6 text-white/72 sm:text-sm">{fact}</span>
                   </li>
                 ))}
               </ul>
@@ -445,29 +677,34 @@ export default function HomePage() {
               <GitCommitHorizontal size={18} className="shrink-0 text-emerald-200" />
               Check What You Run
             </h3>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-white/62">
+            <p className="mt-2 max-w-xl text-[15px] leading-6 text-white/62 sm:text-sm">
               Settings shows the exact commit your browser is running, so you can confirm that
               what ships is what&apos;s published.
             </p>
-            <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
-              <a
-                href={REPO_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-200 hover:underline"
-              >
-                <GithubMark size={15} />
-                Web app source
-              </a>
-              <a
-                href={MOBILE_REPO_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-200 hover:underline"
-              >
-                <GithubMark size={15} />
-                Mobile app source
-              </a>
+            {/* Each source as a card: which app, the repository it opens, and
+                an arrow saying it leaves the page. */}
+            <div className="mt-5 grid max-w-2xl gap-3 sm:grid-cols-2">
+              {[[REPO_URL, 'Web app source'], [MOBILE_REPO_URL, 'Mobile app source']].map(([url, label]) => (
+                <a
+                  key={url}
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`group ${tileClass}`}
+                >
+                  <GithubMark size={22} className="shrink-0 text-white" />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-white">{label}</span>
+                    <span className="block truncate text-xs text-white/50">{url.replace('https://github.com/', '')}</span>
+                  </span>
+                  <ArrowUpRight
+                    size={16}
+                    aria-hidden="true"
+                    className="ml-auto shrink-0 text-white/40 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-emerald-200"
+                  />
+                  <span className="sr-only">(opens on GitHub)</span>
+                </a>
+              ))}
             </div>
           </div>
         </div>
@@ -478,10 +715,9 @@ export default function HomePage() {
         <div className="reveal mx-auto flex max-w-6xl flex-col gap-6 md:flex-row md:items-center md:justify-between md:gap-12">
           <div className="max-w-2xl">
             <h2 className="text-2xl font-semibold text-white sm:text-3xl">Contact</h2>
-            <p className="mt-3 text-sm leading-6 text-white/62">
+            <p className="mt-3 text-[15px] leading-6 text-white/62 sm:text-sm">
               Write to us about setup or sign-in, your vault and recovery, a bug, or an idea.
-              For a bug, tell us what happened, the app version (in Settings or the footer) and
-              whether it was on web or Android.
+              For a bug, tell us what happened and the app version.
             </p>
             <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-white/55">
               <ShieldAlert size={14} className="mt-0.5 shrink-0 text-emerald-200" />
@@ -489,7 +725,7 @@ export default function HomePage() {
               they couldn&apos;t help us read your data anyway.
             </p>
           </div>
-          <a href="mailto:support@archespace.app" className={`shrink-0 self-start md:self-auto ${btnGhost}`}>
+          <a href="mailto:support@archespace.app" className={`min-h-11 shrink-0 self-start md:self-auto ${btnGhost}`}>
             <Mail size={16} className="text-emerald-200" />
             support@archespace.app
           </a>
@@ -501,17 +737,17 @@ export default function HomePage() {
         <div className="mx-auto flex max-w-6xl flex-col gap-3 text-xs text-white/65 sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {year} · Crafted and maintained by{' '}
-            <a href="https://github.com/wyserian" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
+            <a href="https://github.com/wyserian" target="_blank" rel="noreferrer" className="inline-flex min-h-[44px] items-center sm:min-h-0 hover:text-white transition-colors">
               Wyserian
             </a>
           </p>
           <div className="flex items-center gap-4">
-            <a href="/privacy" className="hover:text-white transition-colors">Privacy</a>
-            <a href="/terms" className="hover:text-white transition-colors">Terms</a>
-            <a href={`${REPO_URL}/blob/main/SECURITY.md`} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
+            <a href="/privacy" className="inline-flex min-h-[44px] items-center sm:min-h-0 hover:text-white transition-colors">Privacy</a>
+            <a href="/terms" className="inline-flex min-h-[44px] items-center sm:min-h-0 hover:text-white transition-colors">Terms</a>
+            <a href={`${REPO_URL}/blob/main/SECURITY.md`} target="_blank" rel="noreferrer" className="inline-flex min-h-[44px] items-center sm:min-h-0 hover:text-white transition-colors">
               Security
             </a>
-            <a href={COMMIT_URL} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
+            <a href={COMMIT_URL} target="_blank" rel="noreferrer" className="inline-flex min-h-[44px] items-center sm:min-h-0 hover:text-white transition-colors">
               v{APP_VERSION}
             </a>
           </div>
