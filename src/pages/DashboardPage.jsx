@@ -445,12 +445,10 @@ export default function DashboardPage() {
     </div>
   )
 
-  // Spaces and items are separate sections under the shared controls. The page
-  // heading names the first section; a matching "Items" heading starts the
-  // second, only when both show.
+  // Spaces and items are separate sections under the shared controls; an
+  // "Items" heading starts the second, only when both show.
   const showSpacesSection = sortedSpaces.length > 0
   const showItemsSection = sortedItems.length > 0
-  const firstSectionLabel = showSpacesSection || !showItemsSection ? 'Spaces' : 'Items'
 
   // One section's cards: masonry in grid view, one column in list.
   const renderSection = (nodes, cols = gridCols, minWidth) => (viewMode === 'grid' ? (
@@ -708,13 +706,12 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Page heading */}
+        {/* Tools row: the selected count on the left while selecting; the
+            tools on the right. */}
         <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
           <div>
-            {selectMode ? (
+            {selectMode && (
               <p className="text-sm font-semibold text-text-primary tabular-nums" aria-live="polite">{selectedCount} selected</p>
-            ) : (
-              <h2 className="text-xl font-semibold text-text-primary">{firstSectionLabel}</h2>
             )}
           </div>
           <div className="flex items-center gap-2">

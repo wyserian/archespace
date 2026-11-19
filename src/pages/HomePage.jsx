@@ -453,7 +453,7 @@ export default function HomePage() {
                     <ChevronsLeft size={10} className="text-[#7b8e85]" />
                   </div>
                   <p className="mt-3 flex items-center gap-1.5 px-1 text-[8px] text-[#a8b7ad]">
-                    <LayoutGrid size={10} /> All spaces <span className="ml-auto text-[#7b8e85]">6</span>
+                    <LayoutGrid size={10} /> Dashboard
                   </p>
                   <p className="mt-2.5 flex items-center gap-0.5 px-1 text-[6.5px] font-semibold uppercase tracking-wide text-[#7b8e85]">
                     Spaces <ChevronDown size={8} />

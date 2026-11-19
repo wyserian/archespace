@@ -209,7 +209,7 @@ const router = createBrowserRouter([
       {
         element: <AppShell />,
         children: [
-          { path: '/app', element: <ProtectedRoute title="Your spaces"><DashboardPage /></ProtectedRoute> },
+          { path: '/app', element: <ProtectedRoute title="Dashboard"><DashboardPage /></ProtectedRoute> },
           { path: '/space/:id', element: <ProtectedRoute><SpacePage /></ProtectedRoute> },
           { path: '/recycle-bin', element: <ProtectedRoute title="Bin"><RecycleBinPage /></ProtectedRoute> },
           { path: '/starred', element: <ProtectedRoute title="Starred"><StarredPage /></ProtectedRoute> },

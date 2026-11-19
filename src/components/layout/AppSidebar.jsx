@@ -138,7 +138,7 @@ export default function AppSidebar({
 
       {/* Nav */}
       <nav className="flex-1 min-h-0 flex flex-col gap-0.5 px-2 pt-1">
-        <NavItem icon={LayoutGrid} label="All spaces" active={active === 'spaces'} count={spaces.length} collapsed={collapsed} onClick={() => navigate('/app')} />
+        <NavItem icon={LayoutGrid} label="Dashboard" active={active === 'spaces'} collapsed={collapsed} onClick={() => navigate('/app')} />
 
         {/* The space list folds under its heading and is the only part that
             scrolls. Hidden when collapsed, where bare folder icons say nothing. */}
