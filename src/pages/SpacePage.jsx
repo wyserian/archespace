@@ -589,12 +589,6 @@ export default function SpacePage() {
               to the space itself. The view, sort and select controls live in
               the search row above the items. */}
           <div className="flex items-center gap-1 shrink-0 relative">
-            {editable && (
-              <>
-                <IconButton icon={Undo2} label="Undo item edit" size="md" disabled={!board.canUndo} onClick={board.undo} />
-                <IconButton icon={Redo2} label="Redo item edit" size="md" disabled={!board.canRedo} onClick={board.redo} />
-              </>
-            )}
             {/* New: a menu of New item / New space (a sub-space of this one,
                 at any depth). */}
             {!readOnly && !selectMode && (
@@ -784,8 +778,12 @@ export default function SpacePage() {
                   </div>
                 )}
                 <div className="ml-auto flex shrink-0 items-center gap-1.5">
-                  {!selectMode && (
-                    <ViewToggle value={viewMode} onChange={changeViewMode} />
+                  {/* Undo, redo, sort, select, then the view toggle last. */}
+                  {editable && (
+                    <span className="flex items-center">
+                      <IconButton icon={Undo2} label="Undo item edit" disabled={!board.canUndo} onClick={board.undo} />
+                      <IconButton icon={Redo2} label="Redo item edit" disabled={!board.canRedo} onClick={board.redo} />
+                    </span>
                   )}
                   {!selectMode && subSpaces.length + items.length > 1 && (
                     <SortMenu value={itemSort} onChange={setItemSort} />
@@ -811,6 +809,9 @@ export default function SpacePage() {
                   >
                     {selectMode ? 'Done' : 'Select'}
                   </Button>
+                  {!selectMode && (
+                    <ViewToggle value={viewMode} onChange={changeViewMode} />
+                  )}
                 </div>
               </div>
             )}

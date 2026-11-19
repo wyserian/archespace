@@ -223,12 +223,6 @@ export default function DashboardPage() {
   // Undo / redo of the dashboard items' content edits (useItemBoard).
   useShortcut('undo', board.undo, !selectMode)
   useShortcut('redo', board.redo, !selectMode)
-  const undoRedo = (
-    <>
-      <IconButton icon={Undo2} label="Undo item edit" size="md" disabled={!board.canUndo} onClick={board.undo} />
-      <IconButton icon={Redo2} label="Redo item edit" size="md" disabled={!board.canRedo} onClick={board.redo} />
-    </>
-  )
   const selectedSpaces = useMemo(
     () => spaces.filter(c => selectedSpaceIds.has(c.id)),
     [spaces, selectedSpaceIds]
@@ -666,7 +660,7 @@ export default function DashboardPage() {
               />
             )}
           </div>
-          {!selectMode && <div className="ml-auto flex items-center gap-1">{undoRedo}{newMenu}</div>}
+          {!selectMode && <div className="ml-auto">{newMenu}</div>}
           </div>
         </div>
 
@@ -715,9 +709,12 @@ export default function DashboardPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            {/* View, sort and select are quiet tools. */}
+            {/* Undo, redo, sort, select, then the view toggle last. */}
             {hasEntries && !selectMode && (
-              <ViewToggle value={viewMode} onChange={changeViewMode} />
+              <span className="flex items-center">
+                <IconButton icon={Undo2} label="Undo item edit" disabled={!board.canUndo} onClick={board.undo} />
+                <IconButton icon={Redo2} label="Redo item edit" disabled={!board.canRedo} onClick={board.redo} />
+              </span>
             )}
             {topLevelSpaces.length + dashboardItems.length > 1 && !selectMode && (
               <SortMenu value={spaceSort} onChange={setSpaceSort} />
@@ -738,8 +735,11 @@ export default function DashboardPage() {
                 {selectMode ? 'Done' : 'Select'}
               </Button>
             )}
+            {hasEntries && !selectMode && (
+              <ViewToggle value={viewMode} onChange={changeViewMode} />
+            )}
             {/* From sm up, New sits in the search row instead. */}
-            {!selectMode && <div className="flex items-center gap-1 sm:hidden">{undoRedo}{newMenu}</div>}
+            {!selectMode && <div className="sm:hidden">{newMenu}</div>}
           </div>
         </div>
 
