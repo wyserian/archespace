@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, Folder, FolderPlus,
   Trash2, Archive, Command, CheckSquare, ListChecks, Settings, Lock, Menu, Keyboard, LogOut,
-  Star, Bell, Hourglass, X,
+  Star, Bell, Hourglass, X, Undo2, Redo2,
 } from 'lucide-react'
 import SpaceItem from '../components/SpaceItem'
 import ItemBoardModals from '../components/ItemBoardModals'
@@ -219,6 +219,16 @@ export default function DashboardPage() {
     selectMode, setSelectMode, selectedSpaceIds, selectedItemIds,
     selectedCount, selectionLabel, runBulkAction, exitSelectMode, selectAll, toggleSpace, toggleItem,
   } = useDualEntitySelection(sortedSpaces, sortedItems, { hasDirty: board.hasDirty })
+
+  // Undo / redo of the dashboard items' content edits (useItemBoard).
+  useShortcut('undo', board.undo, !selectMode)
+  useShortcut('redo', board.redo, !selectMode)
+  const undoRedo = (
+    <>
+      <IconButton icon={Undo2} label="Undo item edit" size="md" disabled={!board.canUndo} onClick={board.undo} />
+      <IconButton icon={Redo2} label="Redo item edit" size="md" disabled={!board.canRedo} onClick={board.redo} />
+    </>
+  )
   const selectedSpaces = useMemo(
     () => spaces.filter(c => selectedSpaceIds.has(c.id)),
     [spaces, selectedSpaceIds]
@@ -658,7 +668,7 @@ export default function DashboardPage() {
               />
             )}
           </div>
-          {!selectMode && <div className="ml-auto">{newMenu}</div>}
+          {!selectMode && <div className="ml-auto flex items-center gap-1">{undoRedo}{newMenu}</div>}
           </div>
         </div>
 
@@ -732,7 +742,7 @@ export default function DashboardPage() {
               </Button>
             )}
             {/* From sm up, New sits in the search row instead. */}
-            {!selectMode && <div className="sm:hidden">{newMenu}</div>}
+            {!selectMode && <div className="flex items-center gap-1 sm:hidden">{undoRedo}{newMenu}</div>}
           </div>
         </div>
 
