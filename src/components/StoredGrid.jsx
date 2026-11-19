@@ -9,14 +9,14 @@ import SpaceItem from './SpaceItem'
 import { SpaceCard } from './space/SpaceCard'
 import { CardColumns } from './ui/CardColumns'
 import { MIN_SPACE_COLUMN_PX } from './ui/columnFit'
-import { useMediaQuery } from '../hooks/useMediaQuery'
+import { useColumnCount } from '../hooks/useColumnCount'
 
 const SECTION_HEADING = 'mb-3 px-1 text-base font-semibold text-text-primary'
 
 export default function StoredGrid({
   spaces, items, selectMode, selectedSpaceIds, selectedItemIds, onToggleSpace, onToggleItem, actions, note,
 }) {
-  const cols = useMediaQuery('(min-width: 1024px)') ? 3 : 2
+  const cols = useColumnCount()
   // A space's count: the items here with it (archived or deleted along with it).
   const stats = useMemo(() => {
     const counts = {}

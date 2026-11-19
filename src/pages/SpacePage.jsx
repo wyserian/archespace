@@ -18,6 +18,7 @@ import { useSpaces, useSetSpaceExpiry, useToggleSpaceProtection } from '../hooks
 import { ExpiryChip } from '../components/ExpiryChip'
 import { ExpiryDialog } from '../components/ExpiryDialog'
 import { useItemBoard } from '../hooks/useItemBoard'
+import { useViewMode } from '../hooks/useViewMode'
 import ItemBoardModals from '../components/ItemBoardModals'
 import { useToast } from '../context/ToastCore'
 import { useRegisterPageActions } from '../context/PageActionsCore'
@@ -313,18 +314,8 @@ export default function SpacePage() {
   }
 
   // Grid (masonry) and list share the same items; list is a single column.
-  const [viewMode, setViewMode] = useState(() => {
-    try {
-      const saved = localStorage.getItem('arche:items-view')
-      if (saved === 'list' || saved === 'grid') return saved
-    } catch { /* storage unavailable */ }
-    // No saved preference: grid on large screens, list on mobile.
-    return typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches ? 'list' : 'grid'
-  })
-  const changeViewMode = (mode) => {
-    setViewMode(mode)
-    try { localStorage.setItem('arche:items-view', mode) } catch { /* storage unavailable */ }
-  }
+  // List on phones and grid on larger screens, until you pick (per size).
+  const [viewMode, changeViewMode] = useViewMode('arche:items-view')
 
   // On small screens grid cards are narrow (two columns), so render them denser
   // (smaller text and padding) while still showing the full item content.

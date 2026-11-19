@@ -14,6 +14,7 @@ import {
 import SpaceItem from '../components/SpaceItem'
 import ItemBoardModals from '../components/ItemBoardModals'
 import { useItemBoard } from '../hooks/useItemBoard'
+import { useViewMode } from '../hooks/useViewMode'
 import { describeSelection, useDualEntitySelection } from '../hooks/useDualEntitySelection'
 import { TagFilter } from '../components/TagFilter'
 import { useShortcut } from '../context/ShortcutsCore'
@@ -93,19 +94,8 @@ export default function DashboardPage() {
   const [moveSpaces, setMoveSpaces] = useState(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [confirmSignOut, setConfirmSignOut] = useState(false)
-  const [viewMode, setViewMode] = useState(() => {
-    try {
-      const saved = localStorage.getItem('arche:spaces-view')
-      if (saved === 'list' || saved === 'grid') return saved
-    } catch { /* storage unavailable */ }
-    // No saved preference: grid on large screens, list on mobile.
-    return typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches ? 'list' : 'grid'
-  })
-
-  const changeViewMode = useCallback((mode) => {
-    setViewMode(mode)
-    try { localStorage.setItem('arche:spaces-view', mode) } catch { /* storage unavailable */ }
-  }, [])
+  // List on phones and grid on larger screens, until you pick (per size).
+  const [viewMode, changeViewMode] = useViewMode('arche:spaces-view')
 
   // Grid is a masonry of 2 columns, 3 on lg.
   const gridCols = useMediaQuery('(min-width: 1024px)') ? 3 : 2
