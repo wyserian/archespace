@@ -220,6 +220,8 @@ export default defineConfig({
       // that most visits never use, so they aren't downloaded up front: each
       // is cached the first time it loads (below), and works offline after.
       globIgnores: LAZY_FEATURE_GLOBS,
+      // Downloads are the Worker's redirects (worker/index.js), not app pages.
+      navigateFallbackDenylist: [/^\/download\//],
       runtimeCaching: [
         {
           urlPattern: LAZY_FEATURE_URL,
